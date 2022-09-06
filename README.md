@@ -49,5 +49,6 @@ type param = await EventDispatcher.Get<type>("eventName", params);
 type param = await EventDispatcher.Get<type>(ClientId, "eventName", params);
 type param = await EventDispatcher.Get<type>(Player, "eventName", params);
 ```
+Callbacks can be called serverside too because it might happen that the server needs info from certain clients and this will help you doing it.
 
 The library comes with some goodies like the extensions "ToJson()", "FromJson()", "ToBytes()", "FromBytes()", "BytesToString()", "StringToBytes()" to help with custom and debugging serialization printing.
