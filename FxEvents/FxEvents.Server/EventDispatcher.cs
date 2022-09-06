@@ -39,8 +39,8 @@ namespace FxEvents
 
         public static void Send(Player player, string endpoint, params object[] args) => Events.Send(Convert.ToInt32(player.Handle), endpoint, args);
         public static void Send(ClientId client, string endpoint, params object[] args) => Events.Send(client.Handle, endpoint, args);
-        public static void Send(List<Player> players, string endpoint, params object[] args) => Events.Send(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
-        public static void Send(List<ClientId> clients, string endpoint, params object[] args) => Events.Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
+        public static void Send(IEnumerable<Player> players, string endpoint, params object[] args) => Events.Send(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
+        public static void Send(IEnumerable<ClientId> clients, string endpoint, params object[] args) => Events.Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
         public static Task<T> Get<T>(Player player, string endpoint, params object[] args) where T : class => Events.Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
         public static Task<T> Get<T>(ClientId client, string endpoint, params object[] args) where T : class => Events.Get<T>(client.Handle, endpoint, args);
         public static void Mount(string endpoint, Delegate @delegate) => Events.Mount(endpoint, @delegate);
