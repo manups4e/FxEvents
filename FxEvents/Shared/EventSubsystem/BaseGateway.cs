@@ -48,7 +48,7 @@ namespace FxEvents.Shared.EventSubsystem
                 var parameters = new List<object>();
                 var @delegate = subscription.Delegate;
                 var method = @delegate.Method;
-                var takesSource = method.GetParameters().Any(self => self.ParameterType == source.GetType());
+                var takesSource = method.GetParameters().Any(self => (source.GetType().IsAssignableFrom(self.ParameterType)));
                 var startingIndex = takesSource ? 1 : 0;
 
                 object CallInternalDelegate()
