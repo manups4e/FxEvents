@@ -31,8 +31,7 @@ namespace FxEvents
             EventHandlers[eventName] += action;
         }
 
-        public static void Push(string pipeline, ISource source, byte[] buffer) => Events.Push(pipeline, source, buffer);
-        public static async void Send(string endpoint, params object[] args) => Events.Send(endpoint, args);
+        public static void Send(string endpoint, params object[] args) => Events.Send(endpoint, args);
         public static async Task<T> Get<T>(string endpoint, params object[] args) => await Events.Get<T>(endpoint, args);
         public static void Mount(string endpoint, Delegate @delegate) => Events.Mount(endpoint, @delegate);
         public static void Unmount(string endpoint) => Events.Unmount(endpoint);
