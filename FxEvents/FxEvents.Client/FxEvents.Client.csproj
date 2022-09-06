@@ -1,0 +1,78 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+		<ProjectGuid>4f57e7a2-97b7-499b-8f9a-57f0af74c9ac</ProjectGuid>
+		<OutputType>Library</OutputType>
+		<AppDesignerFolder>Properties</AppDesignerFolder>
+		<RootNamespace>FxEvents.Client</RootNamespace>
+		<AssemblyName>FxEvents.Client</AssemblyName>
+		<TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+		<FileAlignment>512</FileAlignment>
+		<Deterministic>true</Deterministic>
+		<TargetFramework>net472</TargetFramework>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>embedded</DebugType>
+		<Optimize>false</Optimize>
+		<OutputPath>bin\Debug\</OutputPath>
+		<DefineConstants>CLIENT</DefineConstants>
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>4</WarningLevel>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+		<DebugType>pdbonly</DebugType>
+		<Optimize>true</Optimize>
+		<OutputPath>bin\Release\</OutputPath>
+		<DefineConstants>CLIENT</DefineConstants>
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>4</WarningLevel>
+	</PropertyGroup>
+	<ItemGroup>
+		<Reference Include="System" />
+
+		<Reference Include="System.Core" />
+		<Reference Include="System.Xml.Linq" />
+		<Reference Include="System.Data.DataSetExtensions" />
+		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
+		<Reference Include="Newtonsoft.Json">
+			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
+		</Reference>
+
+
+		<Reference Include="Microsoft.CSharp" />
+
+		<Reference Include="System.Data" />
+
+		<Reference Include="System.Net.Http" />
+
+		<Reference Include="System.Xml" />
+		<PackageReference Include="CitizenFX.Core.Client" Version="1.0.5854" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\Shared\**\*.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<Folder Include="Properties\" />
+	</ItemGroup>
+	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+	<ItemGroup>
+		<SourceFiles Include="$(OutDir)/FxEvents.Client.dll" />
+		<SourceFiles Include="$(OutDir)/Newtonsoft.Json.dll" />
+		<SourceFiles Remove="$(OutDir)Citizen*.*" />
+		<SourceFiles Remove="$(OutDir)*.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="..\Shared\EventSubsystem\Attributes\PostSerializationAttribute.cs" />
+	</ItemGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="L:\FiveM\ManuGamemode\resources\fx_events\Client\" />
+		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="L:\FiveM\ManuGamemode\resources\lst\Client\" />
+	</Target>
+
+</Project>
