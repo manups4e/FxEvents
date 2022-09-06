@@ -58,17 +58,4 @@
 		<Folder Include="Properties\" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-
-	<ItemGroup>
-		<SourceFiles Include="$(OutDir)/FxEvents.Client.dll" />
-		<SourceFiles Include="$(OutDir)/Newtonsoft.Json.dll" />
-		<SourceFiles Remove="$(OutDir)Citizen*.*" />
-		<SourceFiles Remove="$(OutDir)*.json" />
-	</ItemGroup>
-
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="L:\FiveM\ManuGamemode\resources\fx_events\Client\" />
-		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="L:\FiveM\ManuGamemode\resources\lst\Client\" />
-	</Target>
-
 </Project>

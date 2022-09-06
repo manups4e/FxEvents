@@ -29,17 +29,4 @@
 			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
 		</Reference>
 	</ItemGroup>
-
-	<ItemGroup>
-		<SourceFiles Include="$(OutDir)*.dll" />
-		<SourceFiles Remove="$(OutDir)Citizen*.*" />
-		<SourceFiles Remove="$(OutDir)*.json" />
-	</ItemGroup>
-
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="L:\FiveM\ManuGamemode\resources\fx_events\Server\" />
-		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="L:\FiveM\ManuGamemode\resources\lst\Server\" />
-	</Target>
-
-
 </Project>
