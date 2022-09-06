@@ -17,8 +17,8 @@ namespace FxEvents.Shared.EventSubsystem
 {
     // TODO: Concurrency, block a request simliar to a already processed one unless tagged with the [Concurrent] method attribute to combat force spamming events to achieve some kind of bug.
     public delegate Task EventDelayMethod(int ms = 0);
-    public delegate Task EventMessagePreparation(string pipeline, ISource source, IMessage message);
-    public delegate void EventMessagePush(string pipeline, ISource source, byte[] buffer);
+    public delegate Task EventMessagePreparation(string pipeline, int source, IMessage message);
+    public delegate void EventMessagePush(string pipeline, int source, byte[] buffer);
 
     public abstract class BaseGateway
     {
@@ -33,7 +33,7 @@ namespace FxEvents.Shared.EventSubsystem
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
 
-        public async Task ProcessInboundAsync(ISource source, byte[] serialized)
+        public async Task ProcessInboundAsync(int source, byte[] serialized)
         {
             using var context = new SerializationContext(EventConstant.InboundPipeline, "(Process) In", Serialization, serialized);
             var message = context.Deserialize<EventMessage>();
@@ -41,14 +41,14 @@ namespace FxEvents.Shared.EventSubsystem
             await ProcessInboundAsync(message, source);
         }
 
-        public async Task ProcessInboundAsync(EventMessage message, ISource source)
+        public async Task ProcessInboundAsync(EventMessage message, int source)
         {
             object InvokeDelegate(EventHandler subscription)
             {
                 var parameters = new List<object>();
                 var @delegate = subscription.Delegate;
                 var method = @delegate.Method;
-                var takesSource = method.GetParameters().Any(self => self.ParameterType == source.GetType());
+                var takesSource = method.GetParameters().Any(self => self.ParameterType == typeof(ISource));
                 var startingIndex = takesSource ? 1 : 0;
 
                 object CallInternalDelegate()
@@ -163,7 +163,7 @@ namespace FxEvents.Shared.EventSubsystem
             waiting.Callback.Invoke(response.Data);
         }
 
-        protected async Task<EventMessage> SendInternal(EventFlowType flow, ISource source, string endpoint, params object[] args)
+        protected async Task<EventMessage> SendInternal(EventFlowType flow, int source, string endpoint, params object[] args)
         {
             var stopwatch = StopwatchUtil.StartNew();
             var parameters = new List<EventParameter>();
@@ -201,9 +201,9 @@ namespace FxEvents.Shared.EventSubsystem
                 { 
 
 #if CLIENT
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source.Handle == -1?"Server":API.GetPlayerName(source.Handle))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1?"Server":API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source.Handle == -1?"Server":API.GetPlayerName(""+source.Handle))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1?"Server":API.GetPlayerName(""+source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
                 }
 
@@ -211,7 +211,7 @@ namespace FxEvents.Shared.EventSubsystem
             }
         }
 
-        protected async Task<T> GetInternal<T>(ISource source, string endpoint, params object[] args)
+        protected async Task<T> GetInternal<T>(int source, string endpoint, params object[] args)
         {
             var stopwatch = StopwatchUtil.StartNew();
             var message = await SendInternal(EventFlowType.Circular, source, endpoint, args);
@@ -238,9 +238,9 @@ namespace FxEvents.Shared.EventSubsystem
             if (EventDispatcher.Debug)
             {
 #if CLIENT
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source.Handle == -1 ? "Server" : API.GetPlayerName(source.Handle))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #elif SERVER
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source.Handle == -1?"Server":API.GetPlayerName(""+source.Handle))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1?"Server":API.GetPlayerName(""+source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #endif
             }
             return holder.Value;
