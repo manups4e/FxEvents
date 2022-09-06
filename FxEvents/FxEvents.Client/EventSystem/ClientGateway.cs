@@ -29,11 +29,11 @@ namespace FxEvents.EventSystem
             {
                 try
                 {
-                    await ProcessInboundAsync(new ServerId(), serialized);
+                    await ProcessInboundAsync(new ServerId().Handle, serialized);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex.ToString());
+                    Logger.Error("InboundPipeline:" + ex.ToString());
                 }
             }));
 
@@ -45,7 +45,7 @@ namespace FxEvents.EventSystem
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex.ToString());
+                    Logger.Error("OutboundPipeline:" + ex.ToString());
                 }
             }));
 
@@ -53,7 +53,7 @@ namespace FxEvents.EventSystem
             BaseScript.TriggerServerEvent(EventConstant.SignaturePipeline);
         }
 
-        public async Task PrepareAsync(string pipeline, ISource source, IMessage message)
+        public async Task PrepareAsync(string pipeline, int source, IMessage message)
         {
             if (_signature == null)
             {
@@ -68,21 +68,21 @@ namespace FxEvents.EventSystem
             message.Signature = _signature;
         }
 
-        public void Push(string pipeline, ISource source, byte[] buffer)
+        public void Push(string pipeline, int source, byte[] buffer)
         {
-            if (source.Handle != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
+            if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
             BaseScript.TriggerServerEvent(pipeline, buffer);
         }
 
 
         public async void Send(string endpoint, params object[] args)
         {
-            await SendInternal(EventFlowType.Straight, new ServerId(), endpoint, args);
+            await SendInternal(EventFlowType.Straight, new ServerId().Handle, endpoint, args);
         }
 
         public async Task<T> Get<T>(string endpoint, params object[] args)
         {
-            return await GetInternal<T>(new ServerId(), endpoint, args);
+            return await GetInternal<T>(new ServerId().Handle, endpoint, args);
         }
     }
 }

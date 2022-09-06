@@ -12,14 +12,16 @@ using FxEvents.Shared.Payload;
 using FxEvents.Shared.Serialization;
 using CitizenFX.Core.Native;
 using CitizenFX.Core;
+using System.Reflection;
+using System.Linq.Expressions;
 
 namespace FxEvents.Shared.EventSubsystem
 {
     // TODO: Concurrency, block a request simliar to a already processed one unless tagged with the [Concurrent] method attribute to combat force spamming events to achieve some kind of bug.
     public delegate Task EventDelayMethod(int ms = 0);
-    public delegate Task EventMessagePreparation(string pipeline, ISource source, IMessage message);
-    public delegate void EventMessagePush(string pipeline, ISource source, byte[] buffer);
-
+    public delegate Task EventMessagePreparation(string pipeline, int source, IMessage message);
+    public delegate void EventMessagePush(string pipeline, int source, byte[] buffer);
+    public delegate ISource ConstructorCustomActivator<T>(int handle);
     public abstract class BaseGateway
     {
         internal Log Logger = new();
@@ -33,7 +35,7 @@ namespace FxEvents.Shared.EventSubsystem
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
 
-        public async Task ProcessInboundAsync(ISource source, byte[] serialized)
+        public async Task ProcessInboundAsync(int source, byte[] serialized)
         {
             using var context = new SerializationContext(EventConstant.InboundPipeline, "(Process) In", Serialization, serialized);
             var message = context.Deserialize<EventMessage>();
@@ -41,14 +43,14 @@ namespace FxEvents.Shared.EventSubsystem
             await ProcessInboundAsync(message, source);
         }
 
-        public async Task ProcessInboundAsync(EventMessage message, ISource source)
+        public async Task ProcessInboundAsync(EventMessage message, int source)
         {
             object InvokeDelegate(EventHandler subscription)
             {
                 var parameters = new List<object>();
                 var @delegate = subscription.Delegate;
                 var method = @delegate.Method;
-                var takesSource = method.GetParameters().Any(self => (source.GetType().IsAssignableFrom(self.ParameterType)));
+                bool takesSource = method.GetParameters().Any(self => (typeof(ISource).IsAssignableFrom(self.ParameterType)));
                 var startingIndex = takesSource ? 1 : 0;
 
                 object CallInternalDelegate()
@@ -58,7 +60,36 @@ namespace FxEvents.Shared.EventSubsystem
 
                 if (takesSource)
                 {
-                    parameters.Add(source);
+                    ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType));
+                    var type = param.ParameterType;
+                    if (typeof(ISource).IsAssignableFrom(type))
+                    {
+                        var constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)));
+                        if (constructor == null)
+                        {
+                            throw new Exception("no constructor to initialize the ISource class");
+                        }
+
+                        var parameter = Expression.Parameter(typeof(int), "handle");
+                        var expression = Expression.New(constructor, parameter);
+                        if (typeof(ISource) == typeof(object))
+                        {
+                            var generic = typeof(ConstructorCustomActivator<>).MakeGenericType(type);
+                            var activator = Expression.Lambda(generic, expression, parameter).Compile();
+
+                            var objectInstance = (ISource)activator.DynamicInvoke(source);
+                            parameters.Add(objectInstance);
+                        }
+                        else
+                        {
+
+                            var activator = (ConstructorCustomActivator<ISource>)Expression
+                                .Lambda(typeof(ConstructorCustomActivator<ISource>), expression, parameter).Compile();
+
+                            var objectInstance = activator.Invoke(source);
+                            parameters.Add(objectInstance);
+                        }
+                    }
                 }
 
                 if (message.Parameters == null) return CallInternalDelegate();
@@ -163,7 +194,7 @@ namespace FxEvents.Shared.EventSubsystem
             waiting.Callback.Invoke(response.Data);
         }
 
-        protected async Task<EventMessage> SendInternal(EventFlowType flow, ISource source, string endpoint, params object[] args)
+        protected async Task<EventMessage> SendInternal(EventFlowType flow, int source, string endpoint, params object[] args)
         {
             var stopwatch = StopwatchUtil.StartNew();
             var parameters = new List<EventParameter>();
@@ -201,9 +232,9 @@ namespace FxEvents.Shared.EventSubsystem
                 { 
 
 #if CLIENT
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source.Handle == -1?"Server":API.GetPlayerName(source.Handle))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1?"Server":API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source.Handle == -1?"Server":API.GetPlayerName(""+source.Handle))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1?"Server":API.GetPlayerName(""+source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
                 }
 
@@ -211,7 +242,7 @@ namespace FxEvents.Shared.EventSubsystem
             }
         }
 
-        protected async Task<T> GetInternal<T>(ISource source, string endpoint, params object[] args)
+        protected async Task<T> GetInternal<T>(int source, string endpoint, params object[] args)
         {
             var stopwatch = StopwatchUtil.StartNew();
             var message = await SendInternal(EventFlowType.Circular, source, endpoint, args);
@@ -238,9 +269,9 @@ namespace FxEvents.Shared.EventSubsystem
             if (EventDispatcher.Debug)
             {
 #if CLIENT
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source.Handle == -1 ? "Server" : API.GetPlayerName(source.Handle))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #elif SERVER
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source.Handle == -1?"Server":API.GetPlayerName(""+source.Handle))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1?"Server":API.GetPlayerName(""+source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #endif
             }
             return holder.Value;

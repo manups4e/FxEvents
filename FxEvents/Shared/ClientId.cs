@@ -11,6 +11,7 @@ using FxEvents.Shared.EventSubsystem;
 
 namespace FxEvents.Shared
 {
+    /*
     public class ClientId : ISource
     {
         public int Handle { get; set; }
@@ -49,4 +50,5 @@ namespace FxEvents.Shared
         }
 
     }
+    */
 }

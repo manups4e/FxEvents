@@ -32,10 +32,10 @@ namespace FxEvents.EventSystem
             EventDispatcher.Instance.AddEventHandler(EventConstant.OutboundPipeline, new Action<string, byte[]>(Outbound));
         }
 
-        public void Push(string pipeline, ISource source, byte[] buffer)
+        public void Push(string pipeline, int source, byte[] buffer)
         {
-            if (source.Handle != new ServerId().Handle)
-                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[source.Handle], pipeline, buffer);
+            if (source != new ServerId().Handle)
+                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[source], pipeline, buffer);
             else
                 BaseScript.TriggerClientEvent(pipeline, buffer);
         }
@@ -45,11 +45,11 @@ namespace FxEvents.EventSystem
         {
             try
             {
-                var client = (ClientId)source;
+                var client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (_signatures.ContainsKey(client.Handle))
+                if (_signatures.ContainsKey(client))
                 {
-                    Logger.Warning($"Client {API.GetPlayerName(""+client.Handle)}[{client.Handle}] tried acquiring event signature more than once.");
+                    Logger.Warning($"Client {API.GetPlayerName(""+client)}[{client}] tried acquiring event signature more than once.");
                     return;
                 }
 
@@ -62,8 +62,8 @@ namespace FxEvents.EventSystem
 
                 var signature = BitConverter.ToString(holder).Replace("-", "").ToLower();
 
-                _signatures.Add(client.Handle, signature);
-                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[client.Handle], EventConstant.SignaturePipeline, signature);
+                _signatures.Add(client, signature);
+                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[client], EventConstant.SignaturePipeline, signature);
             }
             catch (Exception ex)
             {
@@ -75,9 +75,9 @@ namespace FxEvents.EventSystem
         {
             try
             {
-                var client = (ClientId)source;
+                var client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (!_signatures.TryGetValue(client.Handle, out var signature)) return;
+                if (!_signatures.TryGetValue(client, out var signature)) return;
 
                 using var context = new SerializationContext(EventConstant.InboundPipeline, null, Serialization, buffer);
 
@@ -92,7 +92,7 @@ namespace FxEvents.EventSystem
                 }
                 catch (TimeoutException)
                 {
-                    API.DropPlayer(client.Handle.ToString(), $"Operation timed out: {message.Endpoint.ToBase64()}");
+                    API.DropPlayer(client.ToString(), $"Operation timed out: {message.Endpoint.ToBase64()}");
                 }
             }
             catch (Exception ex)
@@ -101,7 +101,7 @@ namespace FxEvents.EventSystem
             }
         }
 
-        public bool VerifySignature(ISource source, IMessage message, string signature)
+        public bool VerifySignature(int source, IMessage message, string signature)
         {
             if (message.Signature == signature) return true;
 
@@ -116,9 +116,9 @@ namespace FxEvents.EventSystem
         {
             try
             {
-                var client = (ClientId)source;
+                var client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (!_signatures.TryGetValue(client.Handle, out var signature)) return;
+                if (!_signatures.TryGetValue(client, out var signature)) return;
 
                 using var context = new SerializationContext(EventConstant.OutboundPipeline, null, Serialization, buffer);
 
@@ -135,9 +135,9 @@ namespace FxEvents.EventSystem
         }
 
         public void Send(Player player, string endpoint, params object[] args) => Send(Convert.ToInt32(player.Handle), endpoint, args);
-        public void Send(ClientId client, string endpoint, params object[] args) => Send(client.Handle, endpoint, args);
+        public void Send(ISource client, string endpoint, params object[] args) => Send(client.Handle, endpoint, args);
         public void Send(List<Player> players, string endpoint, params object[] args) => Send(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
-        public void Send(List<ClientId> clients, string endpoint, params object[] args) => Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
+        public void Send(List<ISource> clients, string endpoint, params object[] args) => Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
 
         public async void Send(List<int> targets, string endpoint, params object[] args)
         {
@@ -152,18 +152,18 @@ namespace FxEvents.EventSystem
 
         public async void Send(int target, string endpoint, params object[] args)
         {
-            await SendInternal(EventFlowType.Straight, new ClientId(target), endpoint, args);
+            await SendInternal(EventFlowType.Straight, target, endpoint, args);
         }
 
         public Task<T> Get<T>(Player player, string endpoint, params object[] args) where T : class =>
             Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
 
-        public Task<T> Get<T>(ClientId client, string endpoint, params object[] args) where T : class =>
+        public Task<T> Get<T>(ISource client, string endpoint, params object[] args) where T : class =>
             Get<T>(client.Handle, endpoint, args);
 
         public async Task<T> Get<T>(int target, string endpoint, params object[] args) where T : class
         {
-            return await GetInternal<T>((ClientId)target, endpoint, args);
+            return await GetInternal<T>(target, endpoint, args);
         }
     }
 }

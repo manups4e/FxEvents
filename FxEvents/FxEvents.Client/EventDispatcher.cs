@@ -13,6 +13,7 @@ namespace FxEvents
         internal static Log Logger;
         internal static EventDispatcher Instance { get; set; }
         internal static ClientGateway Events;
+        internal PlayerList GetPlayers => Players;
         public static bool Debug { get; set; } = false;
         public EventDispatcher() 
         {
