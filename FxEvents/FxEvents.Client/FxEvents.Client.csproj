@@ -66,10 +66,6 @@
 		<SourceFiles Remove="$(OutDir)*.json" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Compile Remove="..\Shared\EventSubsystem\Attributes\PostSerializationAttribute.cs" />
-	</ItemGroup>
-
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="L:\FiveM\ManuGamemode\resources\fx_events\Client\" />
 		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="L:\FiveM\ManuGamemode\resources\lst\Client\" />
