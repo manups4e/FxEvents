@@ -6,14 +6,12 @@ using Logger;
 using System;
 using System.Threading.Tasks;
 
-
 namespace FxEvents
 {
     public class EventDispatcher : BaseScript
     {
         internal static Log Logger;
         internal static EventDispatcher Instance { get; set; }
-        internal PlayerList GetPlayers => Players;
         internal static ClientGateway Events;
         public static bool Debug { get; set; } = false;
         public EventDispatcher() 
