@@ -51,14 +51,14 @@ namespace FxEvents.Shared.EventSubsystem
                 var @delegate = subscription.Delegate;
                 var method = @delegate.Method;
                 bool takesSource = method.GetParameters().Any(self => (typeof(ISource).IsAssignableFrom(self.ParameterType)));
-                var startingIndex = takesSource ? 1 : 0;
+                var startingIndex = takesSource && API.IsDuplicityVersion() ? 1 : 0;
 
                 object CallInternalDelegate()
                 {
                     return @delegate.DynamicInvoke(parameters.ToArray());
                 }
 
-                if (takesSource)
+                if (takesSource && API.IsDuplicityVersion())
                 {
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType));
                     var type = param.ParameterType;
@@ -101,7 +101,11 @@ namespace FxEvents.Shared.EventSubsystem
                 for (var idx = 0; idx < array.Length; idx++)
                 {
                     var parameter = array[idx];
-                    var type = parameterInfos[startingIndex + idx].ParameterType;
+                    var pp = parameterInfos[startingIndex + idx];
+                    Logger.Debug("message:" + (message.Endpoint));
+                    Logger.Debug("pp == null:" + (pp == null));
+                    Logger.Debug("pp == " + (pp.Name));
+                    var type = pp.ParameterType;
 
                     using var context = new SerializationContext(message.Endpoint, $"(Process) Parameter Index {idx}",
                         Serialization, parameter.Data);
