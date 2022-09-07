@@ -101,11 +101,7 @@ namespace FxEvents.Shared.EventSubsystem
                 for (var idx = 0; idx < array.Length; idx++)
                 {
                     var parameter = array[idx];
-                    var pp = parameterInfos[startingIndex + idx];
-                    Logger.Debug("message:" + (message.Endpoint));
-                    Logger.Debug("pp == null:" + (pp == null));
-                    Logger.Debug("pp == " + (pp.Name));
-                    var type = pp.ParameterType;
+                    var type = parameterInfos[startingIndex + idx].ParameterType;
 
                     using var context = new SerializationContext(message.Endpoint, $"(Process) Parameter Index {idx}",
                         Serialization, parameter.Data);
