@@ -18,7 +18,7 @@ namespace FxEvents
         internal ExportDictionary GetExports => Exports;
         internal PlayerList GetPlayers => Players;
         internal static ServerGateway Events { get; set; }
-        public static bool Debug { get; set; } = false;
+        internal static bool Debug { get; set; }
 
 
         public EventDispatcher()
@@ -26,6 +26,8 @@ namespace FxEvents
             Instance = this;
             Logger = new Log();
             Events = new ServerGateway();
+            string debugMode = API.GetResourceMetadata(API.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            Debug = debugMode == "yes" || debugMode == "true" || Convert.ToInt32(debugMode) > 0;
         }
 
         /// <summary>

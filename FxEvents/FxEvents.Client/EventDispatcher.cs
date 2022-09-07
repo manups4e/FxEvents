@@ -4,6 +4,7 @@ using FxEvents.EventSystem;
 using FxEvents.Shared.EventSubsystem;
 using Logger;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace FxEvents
@@ -14,12 +15,14 @@ namespace FxEvents
         internal static EventDispatcher Instance { get; set; }
         internal static ClientGateway Events;
         internal PlayerList GetPlayers => Players;
-        public static bool Debug { get; set; } = false;
+        internal static bool Debug { get; set; }
         public EventDispatcher() 
         {
             Logger = new();
             Instance = this;
             Events = new();
+            string debugMode = API.GetResourceMetadata(API.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            Debug = debugMode == "yes" || debugMode == "true" || Convert.ToInt32(debugMode) > 0;
         }
 
         /// <summary>
