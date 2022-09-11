@@ -21,7 +21,7 @@ namespace Logger
         /// <summary>
         /// sends an green info message in console
         /// </summary>
-        /// <param name="text">Testo del messaggio</param>
+        /// <param name="text">Text of the message</param>
         public async void Info(string text)
         {
             string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
@@ -33,7 +33,7 @@ namespace Logger
         /// <summary>
         /// sends a purple debug message in console. (it checks for the fxevents_debug_mode in the fxmanifest, refer to EventDispatcher)
         /// </summary>
-        /// <param name="text">Testo del messaggio</param>
+        /// <param name="text">Text of the message</param>
         public async void Debug(string text)
         {
             if (EventDispatcher.Debug) return;
@@ -46,7 +46,7 @@ namespace Logger
         /// <summary>
         /// Sends a yellow Warning message
         /// </summary>
-        /// <param name="text">Testo del messaggio</param>
+        /// <param name="text">Text of the message</param>
         public async void Warning(string text)
         {
             string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
@@ -58,7 +58,7 @@ namespace Logger
         /// <summary>
         /// Sends a red Error message
         /// </summary>
-        /// <param name="text">Testo del messaggio</param>
+        /// <param name="text">Text of the message</param>
         public async void Error(string text)
         {
             string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
@@ -70,7 +70,7 @@ namespace Logger
         /// <summary>
         /// Sends a dark red Fatal Error message
         /// </summary>
-        /// <param name="text">Testo del messaggio</param>
+        /// <param name="text">Text of the message</param>
         public async void Fatal(string text)
         {
             string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
