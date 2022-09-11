@@ -19,7 +19,7 @@ namespace Logger
         public Log() { }
 
         /// <summary>
-        /// sends an green info message in console
+        /// Sends an green info message in console
         /// </summary>
         /// <param name="text">Text of the message</param>
         public async void Info(string text)
@@ -31,7 +31,7 @@ namespace Logger
         }
 
         /// <summary>
-        /// sends a purple debug message in console. (it checks for the fxevents_debug_mode in the fxmanifest, refer to EventDispatcher)
+        /// Sends a purple debug message in console. (it checks for the fxevents_debug_mode in the fxmanifest, refer to EventDispatcher)
         /// </summary>
         /// <param name="text">Text of the message</param>
         public async void Debug(string text)
