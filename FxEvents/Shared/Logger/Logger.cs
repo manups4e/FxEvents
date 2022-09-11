@@ -59,7 +59,7 @@ namespace Logger
         /// Sends a red errorPrefixor message
         /// </summary>
         /// <param name="text">Text of the message</param>
-        public async void errorPrefixor(string text)
+        public async void Error(string text)
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [errorPrefixOR] -- ";
