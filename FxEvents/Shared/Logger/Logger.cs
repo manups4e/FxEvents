@@ -31,7 +31,7 @@ namespace Logger
         }
 
         /// <summary>
-        /// sends a purple debug message in console. (it checks for the DEBUG convar on server cfg)
+        /// sends a purple debug message in console. (it checks for the fxevents_debug_mode in the fxmanifest, refer to EventDispatcher)
         /// </summary>
         /// <param name="text">Testo del messaggio</param>
         public async void Debug(string text)
