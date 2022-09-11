@@ -1,3 +1,4 @@
+using FxEvents;
 using System;
 
 namespace Logger
@@ -35,7 +36,7 @@ namespace Logger
         /// <param name="text">Testo del messaggio</param>
         public async void Debug(string text)
         {
-            if (API.GetConvarInt("DEBUG", 0) == 0) return;
+            if (EventDispatcher.Debug) return;
             string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string err = "-- [DEBUG] -- ";
             string colore = LIGHT_BLUE;
