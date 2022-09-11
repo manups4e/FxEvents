@@ -24,10 +24,10 @@ namespace Logger
         /// <param name="text">Text of the message</param>
         public async void Info(string text)
         {
-            string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string err = "-- [INFO] -- ";
-            string colore = LIGHT_GREEN;
-            CitizenFX.Core.Debug.WriteLine($"{colore}{incipit} {err} {text}.^7");
+            string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
+            string errorPrefix = "-- [INFO] -- ";
+            string color = LIGHT_GREEN;
+            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
         /// <summary>
@@ -37,10 +37,10 @@ namespace Logger
         public async void Debug(string text)
         {
             if (EventDispatcher.Debug) return;
-            string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string err = "-- [DEBUG] -- ";
-            string colore = LIGHT_BLUE;
-            CitizenFX.Core.Debug.WriteLine($"{colore}{incipit} {err} {text}.^7");
+            string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
+            string errorPrefix = "-- [DEBUG] -- ";
+            string color = LIGHT_BLUE;
+            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
         /// <summary>
@@ -49,10 +49,10 @@ namespace Logger
         /// <param name="text">Text of the message</param>
         public async void Warning(string text)
         {
-            string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string err = "-- [WARNING] --";
-            string colore = YELLOW;
-            CitizenFX.Core.Debug.WriteLine($"{colore}{incipit} {err} {text}.^7");
+            string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
+            string errorPrefix = "-- [WARNING] --";
+            string color = YELLOW;
+            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
         /// <summary>
@@ -61,10 +61,10 @@ namespace Logger
         /// <param name="text">Text of the message</param>
         public async void Error(string text)
         {
-            string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string err = "-- [ERROR] -- ";
-            string colore = LIGHT_RED;
-            CitizenFX.Core.Debug.WriteLine($"{colore}{incipit} {err} {text}.^7");
+            string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
+            string errorPrefix = "-- [ERROR] -- ";
+            string color = LIGHT_RED;
+            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
         /// <summary>
@@ -73,10 +73,10 @@ namespace Logger
         /// <param name="text">Text of the message</param>
         public async void Fatal(string text)
         {
-            string incipit = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string err = "-- [FATAL] -- ";
-            string colore = DARK_RED;
-            CitizenFX.Core.Debug.WriteLine($"{colore}{incipit} {err} {text}.^7");
+            string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
+            string errorPrefix = "-- [FATAL] -- ";
+            string color = DARK_RED;
+            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
     }
 }
