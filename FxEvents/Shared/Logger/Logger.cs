@@ -62,7 +62,7 @@ namespace Logger
         public async void Error(string text)
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string errorPrefix = "-- [errorPrefixOR] -- ";
+            string errorPrefix = "-- [ERROR] -- ";
             string color = LIGHT_RED;
             CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
