@@ -8,8 +8,10 @@ namespace FxEvents.Shared.Snowflakes
     {
         public static readonly Snowflake Empty = new Snowflake(0);
 
-        private readonly ulong _value;
+        private ulong _value;
+        public ulong Value { get => _value; set => _value = value; }
 
+        public Snowflake() { _value = 0; }
         public static Snowflake Next()
         {
             return SnowflakeGenerator.Instance.Next();

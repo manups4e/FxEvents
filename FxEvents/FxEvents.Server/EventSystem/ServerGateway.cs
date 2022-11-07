@@ -23,7 +23,7 @@ namespace FxEvents.EventSystem
         public ServerGateway()
         {
             SnowflakeGenerator.Create((short)new Random().Next(200, 399));
-            Serialization = new BinarySerialization();
+            Serialization = new MsgPackSerialization();
             DelayDelegate = async delay => await BaseScript.Delay(delay);
             PushDelegate = Push;
             _signatures = new();
