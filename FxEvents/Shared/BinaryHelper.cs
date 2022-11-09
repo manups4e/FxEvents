@@ -9,11 +9,12 @@ namespace FxEvents.Shared
 {
     public static class BinaryHelper
     {
-        private static BinarySerialization _serialization = new();
+        private static BinarySerialization binarySerialization = new();
+        private static MsgPackSerialization msgpackSerialization = new();
 
         public static byte[] ToBytes<T>(this T obj)
         {
-            using SerializationContext context = new("BinaryHelper", "ToBytes", _serialization);
+            using SerializationContext context = new("BinaryHelper", "ToBytes", msgpackSerialization);
             context.Serialize(typeof(T), obj);
             return context.GetData();
         }
@@ -39,7 +40,7 @@ namespace FxEvents.Shared
 
         public static T FromBytes<T>(this byte[] data)
         {
-            using SerializationContext context = new(data.ToString(), "FromBytes", _serialization, data);
+            using SerializationContext context = new(data.ToString(), "FromBytes", msgpackSerialization, data);
             return context.Deserialize<T>();
         }
     }

@@ -7,6 +7,7 @@ namespace FxEvents.Shared.Payload
     {
         public byte[] Data { get; set; }
 
+        public EventParameter() { }
         public EventParameter(byte[] data)
         {
             Data = data;

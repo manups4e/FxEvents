@@ -15,6 +15,7 @@ namespace FxEvents.Shared.Serialization.Implementations
 
     public delegate T DeserializationObjectActivator<out T>(BinaryReader reader);
 
+    [Obsolete("This implementations is obsolete now that MsgPack is available")]
     public class BinarySerialization : ISerialization
     {
         public const string PackMethod = "PackSerializedBytes";
