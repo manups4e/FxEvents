@@ -155,7 +155,7 @@ namespace FxEvents.Shared.EventSubsystem
                 }
                 else
                 {
-                    response.Data = Array.Empty<byte>();
+                    response.Data = new byte[] {};
                 }
 
                 using (var context = new SerializationContext(message.Endpoint, "(Process) Response", Serialization))
@@ -246,8 +246,8 @@ namespace FxEvents.Shared.EventSubsystem
         {
             var stopwatch = StopwatchUtil.StartNew();
             var message = await SendInternal(EventFlowType.Circular, source, endpoint, args);
-            var token = new CancellationTokenSource();
             var holder = new EventValueHolder<T>();
+            TaskCompletionSource<bool> TokenLoading = new();
 
             _queue.Add(new EventObservable(message, data =>
             {
@@ -256,14 +256,10 @@ namespace FxEvents.Shared.EventSubsystem
                 holder.Data = data;
                 holder.Value = context.Deserialize<T>();
 
-                token.Cancel();
+                TokenLoading.SetResult(true);
             }));
 
-            while (!token.IsCancellationRequested)
-            {
-                await DelayDelegate();
-            }
-
+            await TokenLoading.Task;
 
             var elapsed = stopwatch.Elapsed.TotalMilliseconds;
             if (EventDispatcher.Debug)
