@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -111,7 +112,8 @@ namespace FxEvents.Shared.Serialization.Implementations
         public object Deserialize(Type type, SerializationContext context)
         {
             var ser = MessagePackSerializer.Get(type, _context);
-            return ser.Unpack(context.Reader.BaseStream);
+            var @return = ser.Unpack(context.Reader.BaseStream);
+            return @return;
         }
 
         public T Deserialize<T>(SerializationContext context) => Deserialize<T>(typeof(T), context);
@@ -198,7 +200,8 @@ namespace FxEvents.Shared.Serialization.Implementations
                     throw new SerializationException(context, type, $"Type {type.Name} is missing its emtpy constructor");
                 }
                 var ser = MessagePackSerializer.Get<T>(_context);
-                return ser.Unpack(context.Reader.BaseStream);
+                var @return = ser.Unpack(context.Reader.BaseStream);
+                return @return;
             }
         }
 
