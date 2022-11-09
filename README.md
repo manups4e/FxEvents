@@ -9,10 +9,10 @@ Usage examples:
  
 ## To mount an event:
 ```c#
-EventDispatcher.Mount("eventName", new Action<ClientId, type1, type2>((source, val1, val2) =>    
+EventDispatcher.Mount("eventName", new Action<ISource, type1, type2>((source, val1, val2) =>    
 {
   // code to be used inside the event.
-  // ClientId is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
+  // ISource is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
   // Clientside is the same thing without the ClientId parameter
 }));
 ```
@@ -26,18 +26,18 @@ EventDispatcher.Send("eventName", params);
 // serverside
 EventDispatcher.Send(Player, "eventName", params);
 EventDispatcher.Send(List<Player>, "eventName", params);
-EventDispatcher.Send(ClientId, "eventName", params);
-EventDispatcher.Send(List<ClientId>, "eventName", params);
+EventDispatcher.Send(ISource, "eventName", params);
+EventDispatcher.Send(List<ISource>, "eventName", params);
 ```
 
 ## To trigger a callback
 ### Mounting it
 ```c#
-EventDispatcher.Mount("eventName", new Func<ClientId, type1, type2, Task<returnType>>(async (source, val1, val2) =>    
+EventDispatcher.Mount("eventName", new Func<ISource, type1, type2, Task<returnType>>(async (source, val1, val2) =>    
 {
   // code to be used inside the event.
-  // ClientId is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
-  // Clientside is the same thing without the ClientId parameter
+  // ISource is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
+  // Clientside is the same thing without the ISource parameter
   return val3
 }));
 ```
