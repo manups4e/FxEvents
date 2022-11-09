@@ -7,10 +7,10 @@
 		<AppDesignerFolder>Properties</AppDesignerFolder>
 		<RootNamespace>FxEvents.Client</RootNamespace>
 		<AssemblyName>FxEvents.Client</AssemblyName>
-		<TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+		<TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
 		<FileAlignment>512</FileAlignment>
 		<Deterministic>true</Deterministic>
-		<TargetFramework>net472</TargetFramework>
+		<TargetFramework>net452</TargetFramework>
 		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
