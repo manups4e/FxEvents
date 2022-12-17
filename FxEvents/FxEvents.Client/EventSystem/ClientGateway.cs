@@ -55,7 +55,7 @@ namespace FxEvents.EventSystem
 
         public async Task PrepareAsync(string pipeline, int source, IMessage message)
         {
-            if (_signature == null)
+            if (string.IsNullOrWhiteSpace(_signature))
             {
                 var stopwatch = StopwatchUtil.StartNew();
                 while (_signature == null) await BaseScript.Delay(0);
@@ -73,7 +73,6 @@ namespace FxEvents.EventSystem
             if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
             BaseScript.TriggerServerEvent(pipeline, buffer);
         }
-
 
         public async void Send(string endpoint, params object[] args)
         {
