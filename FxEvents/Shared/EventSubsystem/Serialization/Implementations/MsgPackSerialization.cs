@@ -227,47 +227,5 @@ namespace FxEvents.Shared.Serialization.Implementations
 
             return builder.ToString();
         }
-        public object? DeserializePrimitive(Type type, SerializationContext context)
-        {
-            try
-            {
-                if (context.Reader == null) throw new Exception("SerializationContext.Reader is null.");
-                switch (Type.GetTypeCode(type))
-                {
-                    case TypeCode.Boolean:
-                        return context.Reader.ReadBoolean();
-                    case TypeCode.Byte:
-                        return context.Reader.ReadByte();
-                    case TypeCode.Char:
-                        return context.Reader.ReadChar();
-                    case TypeCode.Double:
-                        return context.Reader.ReadDouble();
-                    case TypeCode.Int16:
-                        return context.Reader.ReadInt16();
-                    case TypeCode.Int32:
-                        return context.Reader.ReadInt32();
-                    case TypeCode.Int64:
-                        return context.Reader.ReadInt64();
-                    case TypeCode.Single:
-                        return context.Reader.ReadSingle();
-                    case TypeCode.String:
-                        return context.Reader.ReadString();
-                    case TypeCode.SByte:
-                        return context.Reader.ReadSByte();
-                    case TypeCode.UInt16:
-                        return context.Reader.ReadUInt16();
-                    case TypeCode.UInt32:
-                        return context.Reader.ReadUInt32();
-                    case TypeCode.UInt64:
-                        return context.Reader.ReadUInt64();
-                }
-
-                return default;
-            }
-            catch (Exception ex)
-            {
-                throw new SerializationException(context, type, $"Could not deserialize primitive: {type}", ex);
-            }
-        }
     }
 }
