@@ -133,7 +133,11 @@ namespace FxEvents.Shared.EventSubsystem
                     {
                         token.Cancel();
 
+#if CLIENT
                         await task;
+#elif SERVER
+                        await task.ConfigureAwait(false);
+#endif
 
                         result = (object)((dynamic)task).Result;
                     }
@@ -156,6 +160,14 @@ namespace FxEvents.Shared.EventSubsystem
                 else
                 {
                     response.Data = new byte[] {};
+                }
+
+                if (PrepareDelegate != null)
+                {
+                    stopwatch.Stop();
+
+                    await PrepareDelegate(response.Endpoint, source, response);
+                    stopwatch.Start();
                 }
 
                 using (var context = new SerializationContext(message.Endpoint, "(Process) Response", Serialization))
@@ -217,7 +229,6 @@ namespace FxEvents.Shared.EventSubsystem
                 stopwatch.Stop();
 
                 await PrepareDelegate(EventConstant.InboundPipeline, source, message);
-
                 stopwatch.Start();
             }
 
