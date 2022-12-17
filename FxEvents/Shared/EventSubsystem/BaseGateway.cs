@@ -133,7 +133,7 @@ namespace FxEvents.Shared.EventSubsystem
                     {
                         token.Cancel();
 
-                        await task.ConfigureAwait(false);
+                        await task;
 
                         result = (object)((dynamic)task).Result;
                     }
