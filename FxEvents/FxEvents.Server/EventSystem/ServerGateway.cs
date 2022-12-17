@@ -107,7 +107,7 @@ namespace FxEvents.EventSystem
 
             Logger.Error($"[{message.Endpoint}] Client {source} had invalid event signature, aborting:");
             Logger.Error($"[{message.Endpoint}] \tSupplied Signature: {message.Signature}");
-            Logger.Error($"[{message.Endpoint}] \tActual Signature: {message.Signature}");
+            Logger.Error($"[{message.Endpoint}] \tActual Signature: {signature}");
 
             return false;
         }
@@ -155,13 +155,13 @@ namespace FxEvents.EventSystem
             await SendInternal(EventFlowType.Straight, target, endpoint, args);
         }
 
-        public Task<T> Get<T>(Player player, string endpoint, params object[] args) where T : class =>
+        public Task<T> Get<T>(Player player, string endpoint, params object[] args) =>
             Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
 
-        public Task<T> Get<T>(ISource client, string endpoint, params object[] args) where T : class =>
+        public Task<T> Get<T>(ISource client, string endpoint, params object[] args) =>
             Get<T>(client.Handle, endpoint, args);
 
-        public async Task<T> Get<T>(int target, string endpoint, params object[] args) where T : class
+        public async Task<T> Get<T>(int target, string endpoint, params object[] args)
         {
             return await GetInternal<T>(target, endpoint, args);
         }
