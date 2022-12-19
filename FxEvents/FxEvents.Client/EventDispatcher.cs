@@ -1,10 +1,8 @@
 ﻿global using CitizenFX.Core;
 global using CitizenFX.Core.Native;
 using FxEvents.EventSystem;
-using FxEvents.Shared.EventSubsystem;
 using Logger;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace FxEvents
@@ -14,7 +12,6 @@ namespace FxEvents
         internal static Log Logger;
         internal static EventDispatcher Instance { get; set; }
         internal static ClientGateway Events;
-        internal PlayerList GetPlayers => Players;
         internal static bool Debug { get; set; }
         public EventDispatcher() 
         {

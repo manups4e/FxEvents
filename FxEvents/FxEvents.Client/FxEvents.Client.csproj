@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+    <Configurations>Release RedM;Release FiveM;Debug RedM;Debug FiveM</Configurations>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 		<ProjectGuid>4f57e7a2-97b7-499b-8f9a-57f0af74c9ac</ProjectGuid>
@@ -14,7 +15,7 @@
 		<LangVersion>latest</LangVersion>
 		<BaseOutputPath>..\CompiledLibs\Client</BaseOutputPath>
 	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
 		<DebugType>embedded</DebugType>
 		<Optimize>false</Optimize>
@@ -22,7 +23,7 @@
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>4</WarningLevel>
 	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+	<PropertyGroup Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Release RedM'">
 		<DebugType>pdbonly</DebugType>
 		<Optimize>true</Optimize>
 		<DefineConstants>CLIENT</DefineConstants>
@@ -38,6 +39,15 @@
 		<Reference Include="System.Core" />
 		<Reference Include="System.Xml.Linq" />
 		<Reference Include="System.Data.DataSetExtensions" />
+    
+    <PackageReference Include="CitizenFX.Core.Client" Version="1.0.6136" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+
+    <Reference Include="CitizenFX.Core.Client" Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
+      <HintPath>..\dependancies\RedM\CitizenFX.Core.dll</HintPath>
+    </Reference>
+    
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
@@ -46,7 +56,6 @@
 		<Reference Include="System.Data" />
 		<Reference Include="System.Net.Http" />
 		<Reference Include="System.Xml" />
-		<PackageReference Include="CitizenFX.Core.Client" Version="1.0.5985" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="..\Shared\**\*.cs" />

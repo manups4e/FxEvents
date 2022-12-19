@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Ignored folders from New configuration
+[Rr]elease [Rr]ed[Mm]/
+[Rr]elease [Ff]ive[Mm]/
+[Dd]ebug [Rr]ed[Mm]/
+[Dd]ebug [Ff]ive[Mm]/
