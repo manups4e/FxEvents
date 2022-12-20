@@ -1,7 +1,6 @@
 ﻿global using CitizenFX.Core;
 global using CitizenFX.Core.Native;
 using FxEvents.EventSystem;
-using FxEvents.Shared;
 using FxEvents.Shared.EventSubsystem;
 using Logger;
 using System;
