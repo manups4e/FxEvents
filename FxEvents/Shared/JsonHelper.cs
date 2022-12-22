@@ -1,9 +1,9 @@
+using FxEvents.Shared.Snowflakes;
+using FxEvents.Shared.Snowflakes.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
-using FxEvents.Shared.Snowflakes;
-using FxEvents.Shared.Snowflakes.Serialization;
 
 namespace FxEvents.Shared
 {

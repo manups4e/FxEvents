@@ -1,7 +1,7 @@
-﻿using FxEvents.Shared.Snowflakes;
-using System.IO;
+﻿using FxEvents.Shared.EventSubsystem;
+using FxEvents.Shared.Snowflakes;
 using System;
-using FxEvents.Shared.EventSubsystem;
+using System.IO;
 
 namespace FxEvents.Shared.Message
 {

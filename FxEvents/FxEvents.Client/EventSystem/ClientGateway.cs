@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using CitizenFX.Core;
-using FxEvents.Shared;
-using FxEvents.Shared.Diagnostics;
+﻿using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.Snowflakes;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FxEvents.EventSystem
 {
@@ -49,7 +47,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            EventDispatcher.Instance.AddEventHandler(EventConstant.SignaturePipeline, new Action<string>(signature => _signature = signature ));
+            EventDispatcher.Instance.AddEventHandler(EventConstant.SignaturePipeline, new Action<string>(signature => _signature = signature));
             BaseScript.TriggerServerEvent(EventConstant.SignaturePipeline);
         }
 

@@ -1,5 +1,4 @@
-﻿using FxEvents.Shared.Attributes;
-using System.IO;
+﻿using System.IO;
 
 namespace FxEvents.Shared.Payload
 {

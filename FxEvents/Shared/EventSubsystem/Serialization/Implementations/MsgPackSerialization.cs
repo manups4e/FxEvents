@@ -1,15 +1,11 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.TypeExtensions;
 using Logger;
 using MsgPack.Serialization;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Text;
 
 namespace FxEvents.Shared.Serialization.Implementations
 {

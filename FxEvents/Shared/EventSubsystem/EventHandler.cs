@@ -1,5 +1,5 @@
-using System;
 using FxEvents.Shared.Snowflakes;
+using System;
 
 namespace FxEvents.Shared.EventSubsystem
 {

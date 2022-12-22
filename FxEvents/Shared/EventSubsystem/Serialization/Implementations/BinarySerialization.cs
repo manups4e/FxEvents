@@ -1,3 +1,4 @@
+using FxEvents.Shared.Exceptions;
 using Logger;
 using System;
 using System.Collections;
@@ -7,7 +8,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using FxEvents.Shared.Exceptions;
 
 namespace FxEvents.Shared.Serialization.Implementations
 {

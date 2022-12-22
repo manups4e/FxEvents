@@ -9,18 +9,28 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FxEvents.Server", "FxEvents
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug FiveM|Any CPU = Debug FiveM|Any CPU
+		Debug RedM|Any CPU = Debug RedM|Any CPU
+		Release FiveM|Any CPU = Release FiveM|Any CPU
+		Release RedM|Any CPU = Release RedM|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Debug|Any CPU.ActiveCfg = Release RedM|Any CPU
-		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Debug|Any CPU.Build.0 = Release RedM|Any CPU
-		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Debug FiveM|Any CPU.ActiveCfg = Debug FiveM|Any CPU
+		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Debug FiveM|Any CPU.Build.0 = Debug FiveM|Any CPU
+		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Debug RedM|Any CPU.ActiveCfg = Debug RedM|Any CPU
+		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Debug RedM|Any CPU.Build.0 = Debug RedM|Any CPU
+		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Release FiveM|Any CPU.ActiveCfg = Release FiveM|Any CPU
+		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Release FiveM|Any CPU.Build.0 = Release FiveM|Any CPU
+		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Release RedM|Any CPU.ActiveCfg = Release RedM|Any CPU
+		{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}.Release RedM|Any CPU.Build.0 = Release RedM|Any CPU
+		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Debug FiveM|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Debug FiveM|Any CPU.Build.0 = Debug|Any CPU
+		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Debug RedM|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Debug RedM|Any CPU.Build.0 = Debug|Any CPU
+		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Release FiveM|Any CPU.ActiveCfg = Release|Any CPU
+		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Release FiveM|Any CPU.Build.0 = Release|Any CPU
+		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Release RedM|Any CPU.ActiveCfg = Release|Any CPU
+		{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}.Release RedM|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
