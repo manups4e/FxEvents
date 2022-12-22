@@ -1,15 +1,13 @@
-﻿using System;
+﻿using FxEvents.Shared.Serialization;
+using FxEvents.Shared.Serialization.Implementations;
+using System;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using FxEvents.Shared.Serialization;
-using FxEvents.Shared.Serialization.Implementations;
 
 namespace FxEvents.Shared
 {
     public static class BinaryHelper
     {
-        private static BinarySerialization binarySerialization = new();
         private static MsgPackSerialization msgpackSerialization = new();
 
         public static byte[] ToBytes<T>(this T obj)
@@ -28,12 +26,12 @@ namespace FxEvents.Shared
         public static string BytesToString(this byte[] ba, bool separator = false, bool toLower = true)
         {
             string bytes;
-            if(separator)
+            if (separator)
                 bytes = BitConverter.ToString(ba);
             else
                 bytes = BitConverter.ToString(ba).Replace("-", "");
 
-            if(toLower)
+            if (toLower)
                 bytes = bytes.ToLower();
             return bytes;
         }

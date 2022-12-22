@@ -1,10 +1,10 @@
-﻿using System;
+﻿using FxEvents.Shared.EventSubsystem;
+using FxEvents.Shared.Payload;
+using FxEvents.Shared.Snowflakes;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using FxEvents.Shared.EventSubsystem;
-using FxEvents.Shared.Payload;
-using FxEvents.Shared.Snowflakes;
 
 namespace FxEvents.Shared.Message
 {

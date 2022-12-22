@@ -13,7 +13,7 @@ namespace FxEvents
         internal static EventDispatcher Instance { get; set; }
         internal static ClientGateway Events;
         internal static bool Debug { get; set; }
-        public EventDispatcher() 
+        public EventDispatcher()
         {
             Logger = new();
             Instance = this;

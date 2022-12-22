@@ -1,10 +1,8 @@
 ﻿using System;
-using FxEvents.Shared.Attributes;
 
 namespace FxEvents.Shared.Snowflakes
 {
 
-    [Serialization]
     public partial class SnowflakeGenerator
     {
         private readonly long _maskSequence;

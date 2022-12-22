@@ -1,6 +1,5 @@
-﻿using CitizenFX.Core.Native;
+﻿using FxEvents.Shared.Diagnostics.Impl;
 using System;
-using FxEvents.Shared.Diagnostics.Impl;
 
 namespace FxEvents.Shared.Diagnostics
 {
