@@ -25,7 +25,6 @@
 		<BaseOutputPath>..\CompiledLibs\Client</BaseOutputPath>
 		<Title>FxEvents.Client</Title>
     <PackageProjectUrl>https://github.com/manups4e/FxEvents</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/manups4e/FxEvents</RepositoryUrl>
 		<Copyright>Copyright Leonardo Emanuele</Copyright>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
     <DebugType>embedded</DebugType>
