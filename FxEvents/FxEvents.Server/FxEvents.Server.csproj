@@ -17,7 +17,8 @@
 		<BaseOutputPath>..\CompiledLibs\Server</BaseOutputPath>
     <Nullable>annotations</Nullable>
     <Configurations>Debug;Release</Configurations>
-    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
