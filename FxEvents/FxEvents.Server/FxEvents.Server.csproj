@@ -3,7 +3,7 @@
 	<PropertyGroup>
     <AssemblyTitle>FxEvents Server</AssemblyTitle>
     <Description>FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageLicenseFile>..\..\LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Title>FxEvents.Server</Title>
     <TargetName>FxEvents.Server</TargetName>
@@ -47,10 +47,6 @@
 		</Reference>
 	</ItemGroup>
   <ItemGroup>
-    <None Include="..\..\LICENSE.txt">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
     <None Include="..\..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
