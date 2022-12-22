@@ -33,6 +33,8 @@
     <Nullable>annotations</Nullable>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <AssemblyVersion></AssemblyVersion>
+    <FileVersion></FileVersion>
 	</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
