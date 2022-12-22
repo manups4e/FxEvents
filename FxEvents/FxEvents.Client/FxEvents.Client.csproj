@@ -5,7 +5,7 @@
     <AssemblyTitle Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents RedM Client</AssemblyTitle>
     <Description Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
     <Description Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents an advanced event subsystem for RedM C# Resources.</Description>
-    <PackageLicenseFile>..\..\LICENSE.txt</PackageLicenseFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug FiveM</Configuration>
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 		<ProjectGuid>4f57e7a2-97b7-499b-8f9a-57f0af74c9ac</ProjectGuid>
@@ -28,6 +28,7 @@
     <TargetName>FxEvents.Client</TargetName>
     <WarningsNotAsErrors>$(WarningsNotAsError);8632;8618;8600;8602;8625</WarningsNotAsErrors>
     <Nullable>annotations</Nullable>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
@@ -77,6 +78,10 @@
 		<Folder Include="Properties\" />
 	</ItemGroup>
 	<ItemGroup>
+	  <None Include="..\..\LICENSE.txt">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	  <None Include="..\..\README.md">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
