@@ -1,9 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+    <AssemblyTitle>FxEvents Server</AssemblyTitle>
+    <Description>FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
+    <PackageLicenseFile>..\..\LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Title>FxEvents.Server</Title>
+    <TargetName>FxEvents.Server</TargetName>
+    <PackageProjectUrl>https://github.com/manups4e/FxEvents</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/manups4e/FxEvents</RepositoryUrl>
+    <Copyright>Copyright Leonardo Emanuele</Copyright>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<AssemblyName>FxEvents.Server</AssemblyName>
+    <RootNamespace>FxEvents.Server</RootNamespace>
 		<BaseOutputPath>..\CompiledLibs\Server</BaseOutputPath>
 	</PropertyGroup>
 
@@ -33,4 +43,10 @@
 			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
 		</Reference>
 	</ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 </Project>

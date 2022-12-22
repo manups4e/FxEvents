@@ -1,7 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
     <Configurations>Release RedM;Release FiveM;Debug RedM;Debug FiveM</Configurations>
-		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <AssemblyTitle Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents FiveM Client</AssemblyTitle>
+    <AssemblyTitle Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents RedM Client</AssemblyTitle>
+    <Description Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
+    <Description Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents an advanced event subsystem for RedM C# Resources.</Description>
+    <PackageLicenseFile>..\..\LICENSE.txt</PackageLicenseFile>
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug FiveM</Configuration>
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 		<ProjectGuid>4f57e7a2-97b7-499b-8f9a-57f0af74c9ac</ProjectGuid>
 		<OutputType>Library</OutputType>
@@ -14,6 +19,13 @@
 		<TargetFramework>net452</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<BaseOutputPath>..\CompiledLibs\Client</BaseOutputPath>
+		<Title>FxEvents.Client</Title>
+    <PackageProjectUrl>https://github.com/manups4e/FxEvents</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/manups4e/FxEvents</RepositoryUrl>
+		<Copyright>Copyright Leonardo Emanuele</Copyright>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+    <DebugType>embedded</DebugType>
+    <TargetName>FxEvents.Client</TargetName>
 	</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
@@ -61,6 +73,12 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Properties\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="..\..\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
