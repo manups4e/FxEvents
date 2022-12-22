@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
 using System;
 using System.Text;
-using FxEvents.Shared.Diagnostics;
 
 namespace FxEvents.Shared.Serialization.Implementations
 {

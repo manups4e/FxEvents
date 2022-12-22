@@ -1,17 +1,14 @@
-﻿using CitizenFX.Core;
-using CitizenFX.Core.Native;
+﻿using FxEvents.Shared.EventSubsystem;
+using FxEvents.Shared.Message;
+using FxEvents.Shared.Serialization;
+using FxEvents.Shared.Serialization.Implementations;
+using FxEvents.Shared.Snowflakes;
+using FxEvents.Shared.TypeExtensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using FxEvents.Shared.Message;
-using FxEvents.Shared.Serialization;
-using FxEvents.Shared.Serialization.Implementations;
-using FxEvents.Shared.TypeExtensions;
-using FxEvents.Shared;
-using FxEvents.Shared.Snowflakes;
-using FxEvents.Shared.EventSubsystem;
 
 namespace FxEvents.EventSystem
 {
@@ -49,7 +46,7 @@ namespace FxEvents.EventSystem
 
                 if (_signatures.ContainsKey(client))
                 {
-                    Logger.Warning($"Client {API.GetPlayerName(""+client)}[{client}] tried acquiring event signature more than once.");
+                    Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
                     return;
                 }
 

@@ -26,6 +26,8 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
     <DebugType>embedded</DebugType>
     <TargetName>FxEvents.Client</TargetName>
+    <WarningsNotAsErrors>$(WarningsNotAsError);8632;8618;8600;8602;8625</WarningsNotAsErrors>
+    <Nullable>annotations</Nullable>
 	</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
@@ -80,5 +82,4 @@
 	    <PackagePath>\</PackagePath>
 	  </None>
 	</ItemGroup>
-	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

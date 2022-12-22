@@ -1,5 +1,5 @@
-using System;
 using FxEvents.Shared.Serialization;
+using System;
 
 namespace FxEvents.Shared.Exceptions
 {

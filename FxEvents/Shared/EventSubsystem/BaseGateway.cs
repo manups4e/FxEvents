@@ -1,19 +1,17 @@
-﻿using Logger;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using FxEvents.Shared.Diagnostics;
+﻿using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Models;
 using FxEvents.Shared.Payload;
 using FxEvents.Shared.Serialization;
-using CitizenFX.Core.Native;
-using CitizenFX.Core;
-using System.Reflection;
+using Logger;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FxEvents.Shared.EventSubsystem
 {
@@ -159,7 +157,7 @@ namespace FxEvents.Shared.EventSubsystem
                 }
                 else
                 {
-                    response.Data = new byte[] {};
+                    response.Data = new byte[] { };
                 }
 
                 if (PrepareDelegate != null)
@@ -239,17 +237,17 @@ namespace FxEvents.Shared.EventSubsystem
                 var data = context.GetData();
 
                 PushDelegate(EventConstant.InboundPipeline, source, data);
-                if (EventDispatcher.Debug) 
-                { 
+                if (EventDispatcher.Debug)
+                {
 
 #if CLIENT
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1?"Server":API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1?"Server":API.GetPlayerName(""+source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
                 }
 
-                    return message;
+                return message;
             }
         }
 
@@ -278,7 +276,7 @@ namespace FxEvents.Shared.EventSubsystem
 #if CLIENT
                 Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #elif SERVER
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1?"Server":API.GetPlayerName(""+source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName("" + source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #endif
             }
             return holder.Value;
@@ -293,7 +291,7 @@ namespace FxEvents.Shared.EventSubsystem
         public void Unmount(string endpoint)
         {
             if (_handlers.Any(x => x.Endpoint == endpoint))
-            _handlers.RemoveAll(x => x.Endpoint == endpoint);
+                _handlers.RemoveAll(x => x.Endpoint == endpoint);
         }
     }
 }

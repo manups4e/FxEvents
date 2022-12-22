@@ -15,6 +15,7 @@
 		<AssemblyName>FxEvents.Server</AssemblyName>
     <RootNamespace>FxEvents.Server</RootNamespace>
 		<BaseOutputPath>..\CompiledLibs\Server</BaseOutputPath>
+    <Nullable>annotations</Nullable>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
