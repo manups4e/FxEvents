@@ -51,9 +51,6 @@ namespace FxEvents.Shared.EventSubsystem
                 var @delegate = subscription.Delegate;
                 var method = @delegate.Method;
                 bool takesSource = method.GetParameters().Any(self => self.GetCustomAttribute<FromSourceAttribute>() != null);
-
-                int fromSourceCount = method.GetParameters().Where(self => self.GetCustomAttribute<FromSourceAttribute>() != null).Count();
-                if (fromSourceCount > 1) throw new Exception($"{message.Endpoint} cannot have more than 1 \"FromSource\" attribute applied to its parameters");
                 var startingIndex = takesSource && API.IsDuplicityVersion() ? 1 : 0;
 
                 object CallInternalDelegate()
@@ -64,6 +61,11 @@ namespace FxEvents.Shared.EventSubsystem
 #if SERVER
                 if (takesSource && API.IsDuplicityVersion())
                 {
+                    if (method.GetParameters().Where(self => self.GetCustomAttribute<FromSourceAttribute>() != null).Count() > 1)
+                        throw new Exception($"{message.Endpoint} cannot have more than 1 \"FromSource\" attribute applied to its parameters.");
+                    if (method.GetParameters().ToList().IndexOf(method.GetParameters().FirstOrDefault(self => self.GetCustomAttribute<FromSourceAttribute>() != null)) != 0)
+                        throw new Exception($"{message.Endpoint} \"FromSource\" attribute can ONLY be applied to first parameter.");
+
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
                                                                         typeof(Player).IsAssignableFrom(self.ParameterType) ||
                                                                         typeof(string).IsAssignableFrom(self.ParameterType) || typeof(int).IsAssignableFrom(self.ParameterType));
