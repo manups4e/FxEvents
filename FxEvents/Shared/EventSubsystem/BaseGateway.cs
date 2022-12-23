@@ -1,17 +1,19 @@
-﻿using FxEvents.Shared.Diagnostics;
+﻿using Logger;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Models;
 using FxEvents.Shared.Payload;
 using FxEvents.Shared.Serialization;
-using Logger;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
+using CitizenFX.Core.Native;
+using CitizenFX.Core;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace FxEvents.Shared.EventSubsystem
 {
@@ -48,7 +50,10 @@ namespace FxEvents.Shared.EventSubsystem
                 var parameters = new List<object>();
                 var @delegate = subscription.Delegate;
                 var method = @delegate.Method;
-                bool takesSource = method.GetParameters().Any(self => (typeof(ISource).IsAssignableFrom(self.ParameterType)));
+                bool takesSource = method.GetParameters().Any(self => self.GetCustomAttribute<FromSourceAttribute>() != null);
+
+                int fromSourceCount = method.GetParameters().Where(self => self.GetCustomAttribute<FromSourceAttribute>() != null).Count();
+                if (fromSourceCount > 1) throw new Exception($"{message.Endpoint} cannot have more than 1 \"FromSource\" attribute applied to its parameters");
                 var startingIndex = takesSource && API.IsDuplicityVersion() ? 1 : 0;
 
                 object CallInternalDelegate()
@@ -56,9 +61,12 @@ namespace FxEvents.Shared.EventSubsystem
                     return @delegate.DynamicInvoke(parameters.ToArray());
                 }
 
+#if SERVER
                 if (takesSource && API.IsDuplicityVersion())
                 {
-                    ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType));
+                    ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
+                                                                        typeof(Player).IsAssignableFrom(self.ParameterType) ||
+                                                                        typeof(string).IsAssignableFrom(self.ParameterType) || typeof(int).IsAssignableFrom(self.ParameterType));
                     var type = param.ParameterType;
                     if (typeof(ISource).IsAssignableFrom(type))
                     {
@@ -88,9 +96,24 @@ namespace FxEvents.Shared.EventSubsystem
                             parameters.Add(objectInstance);
                         }
                     }
+                    else if (typeof(Player).IsAssignableFrom(type))
+                    {
+                        parameters.Add(EventDispatcher.Instance.GetPlayers[source]);
+                    }
+                    else if (typeof(string).IsAssignableFrom(type))
+                    {
+                        parameters.Add(source.ToString());
+                    }
+                    else if (typeof(int).IsAssignableFrom(type))
+                    {
+                        parameters.Add(source);
+                    }
                 }
-
-                if (message.Parameters == null) return CallInternalDelegate();
+#endif
+                if (message.Parameters == null)
+                {
+                    return CallInternalDelegate();
+                }
 
                 var array = message.Parameters.ToArray();
                 var holder = new List<object>();
@@ -241,7 +264,7 @@ namespace FxEvents.Shared.EventSubsystem
                 {
 
 #if CLIENT
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1?"Server":API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
                     Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
