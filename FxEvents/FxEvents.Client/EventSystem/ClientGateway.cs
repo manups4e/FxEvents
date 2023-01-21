@@ -12,7 +12,6 @@ namespace FxEvents.EventSystem
 {
     public class ClientGateway : BaseGateway
     {
-        public List<NetworkMessage> Buffer { get; } = new List<NetworkMessage>();
         protected override ISerialization Serialization { get; }
         private string _signature;
 
