@@ -3,19 +3,8 @@ using System;
 
 namespace Logger
 {
-    public class Log
+    public class Log : ILogger
     {
-        // Colors
-        public const string LIGHT_RED = "^1";
-        public const string LIGHT_GREEN = "^2";
-        public const string YELLOW = "^3";
-        public const string DARK_BLUE = "^4";
-        public const string LIGHT_BLUE = "^5";
-        public const string PURPLE = "^6";
-        public const string WHITE = "^7";
-        public const string DARK_RED = "^8";
-        public const string PINK = "^9";
-
         public Log() { }
 
         /// <summary>
@@ -26,7 +15,7 @@ namespace Logger
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [INFO] -- ";
-            string color = LIGHT_GREEN;
+            string color = LoggerColors.LIGHT_GREEN;
             CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
@@ -39,7 +28,7 @@ namespace Logger
             if (!EventDispatcher.Debug) return;
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [DEBUG] -- ";
-            string color = LIGHT_BLUE;
+            string color = LoggerColors.LIGHT_BLUE;
             CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
@@ -51,7 +40,7 @@ namespace Logger
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [WARNING] --";
-            string color = YELLOW;
+            string color = LoggerColors.YELLOW;
             CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
@@ -63,7 +52,7 @@ namespace Logger
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [ERROR] -- ";
-            string color = LIGHT_RED;
+            string color = LoggerColors.LIGHT_RED;
             CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
@@ -75,7 +64,7 @@ namespace Logger
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [FATAL] -- ";
-            string color = DARK_RED;
+            string color = LoggerColors.DARK_RED;
             CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
     }
