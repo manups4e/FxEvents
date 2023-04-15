@@ -5,7 +5,6 @@ using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.Snowflakes;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace FxEvents.EventSystem
@@ -22,7 +21,11 @@ namespace FxEvents.EventSystem
             DelayDelegate = async delay => await BaseScript.Delay(delay);
             PrepareDelegate = PrepareAsync;
             PushDelegate = Push;
-            EventDispatcher.Instance.AddEventHandler(EventConstant.InboundPipeline, new Action<byte[]>(async serialized =>
+        }
+
+        internal void AddEvents()
+        {
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<byte[]>(async serialized =>
             {
                 try
                 {
@@ -34,7 +37,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            EventDispatcher.Instance.AddEventHandler(EventConstant.OutboundPipeline, new Action<byte[]>(serialized =>
+            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<byte[]>(serialized =>
             {
                 try
                 {
@@ -46,15 +49,15 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            EventDispatcher.Instance.AddEventHandler(EventConstant.SignaturePipeline, new Action<string>(signature => _signature = signature));
-            BaseScript.TriggerServerEvent(EventConstant.SignaturePipeline);
+            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<string>(signature => _signature = signature));
+            BaseScript.TriggerServerEvent(SignaturePipeline);
         }
 
         public async Task PrepareAsync(string pipeline, int source, IMessage message)
         {
             if (string.IsNullOrWhiteSpace(_signature))
             {
-                var stopwatch = StopwatchUtil.StartNew();
+                StopwatchUtil stopwatch = StopwatchUtil.StartNew();
                 while (_signature == null) await BaseScript.Delay(0);
                 if (EventDispatcher.Debug)
                 {

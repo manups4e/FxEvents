@@ -24,9 +24,13 @@ namespace FxEvents.EventSystem
             DelayDelegate = async delay => await BaseScript.Delay(delay);
             PushDelegate = Push;
             _signatures = new();
-            EventDispatcher.Instance.AddEventHandler(EventConstant.SignaturePipeline, new Action<string>(GetSignature));
-            EventDispatcher.Instance.AddEventHandler(EventConstant.InboundPipeline, new Action<string, byte[]>(Inbound));
-            EventDispatcher.Instance.AddEventHandler(EventConstant.OutboundPipeline, new Action<string, byte[]>(Outbound));
+        }
+
+        internal void AddEvents()
+        {
+            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<string>(GetSignature));
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<string, byte[]>(Inbound));
+            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<string, byte[]>(Outbound));
         }
 
         public void Push(string pipeline, int source, byte[] buffer)
@@ -42,7 +46,7 @@ namespace FxEvents.EventSystem
         {
             try
             {
-                var client = int.Parse(source.Replace("net:", string.Empty));
+                int client = int.Parse(source.Replace("net:", string.Empty));
 
                 if (_signatures.ContainsKey(client))
                 {
@@ -50,17 +54,17 @@ namespace FxEvents.EventSystem
                     return;
                 }
 
-                var holder = new byte[128];
+                byte[] holder = new byte[128];
 
-                using (var service = new RNGCryptoServiceProvider())
+                using (RNGCryptoServiceProvider service = new RNGCryptoServiceProvider())
                 {
                     service.GetBytes(holder);
                 }
 
-                var signature = BitConverter.ToString(holder).Replace("-", "").ToLower();
+                string signature = BitConverter.ToString(holder).Replace("-", "").ToLower();
 
                 _signatures.Add(client, signature);
-                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[client], EventConstant.SignaturePipeline, signature);
+                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[client], SignaturePipeline, signature);
             }
             catch (Exception ex)
             {
@@ -72,13 +76,13 @@ namespace FxEvents.EventSystem
         {
             try
             {
-                var client = int.Parse(source.Replace("net:", string.Empty));
+                int client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (!_signatures.TryGetValue(client, out var signature)) return;
+                if (!_signatures.TryGetValue(client, out string signature)) return;
 
-                using var context = new SerializationContext(EventConstant.InboundPipeline, null, Serialization, buffer);
+                using SerializationContext context = new SerializationContext(InboundPipeline, null, Serialization, buffer);
 
-                var message = context.Deserialize<EventMessage>();
+                EventMessage message = context.Deserialize<EventMessage>();
 
 
                 if (!VerifySignature(client, message, signature)) return;
@@ -113,13 +117,13 @@ namespace FxEvents.EventSystem
         {
             try
             {
-                var client = int.Parse(source.Replace("net:", string.Empty));
+                int client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (!_signatures.TryGetValue(client, out var signature)) return;
+                if (!_signatures.TryGetValue(client, out string signature)) return;
 
-                using var context = new SerializationContext(EventConstant.OutboundPipeline, null, Serialization, buffer);
+                using SerializationContext context = new SerializationContext(OutboundPipeline, null, Serialization, buffer);
 
-                var response = context.Deserialize<EventResponseMessage>();
+                EventResponseMessage response = context.Deserialize<EventResponseMessage>();
 
                 if (!VerifySignature(client, response, signature)) return;
 
@@ -138,7 +142,7 @@ namespace FxEvents.EventSystem
 
         public async void Send(List<int> targets, string endpoint, params object[] args)
         {
-            var i = 0;
+            int i = 0;
             while (i < targets.Count)
             {
                 await BaseScript.Delay(0);
