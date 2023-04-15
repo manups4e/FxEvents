@@ -9,7 +9,7 @@ Usage examples:
  
 ## To mount an event:
 ```c#
-EventDispatcher.Mount("eventName", new Action<ISource, type1, type2>((source, val1, val2) =>    
+EventDispatcher.Mount("eventName", new Action<ISource, type1, type2>(([FromSource] source, val1, val2) =>    
 {
   // code to be used inside the event.
   // ISource is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
@@ -33,7 +33,7 @@ EventDispatcher.Send(List<ISource>, "eventName", params);
 ## To trigger a callback
 ### Mounting it
 ```c#
-EventDispatcher.Mount("eventName", new Func<ISource, type1, type2, Task<returnType>>(async (source, val1, val2) =>    
+EventDispatcher.Mount("eventName", new Func<ISource, type1, type2, Task<returnType>>(async ([FromSource] source, val1, val2) =>    
 {
   // code to be used inside the event.
   // ISource is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
