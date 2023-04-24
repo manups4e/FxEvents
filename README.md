@@ -6,6 +6,19 @@ To work you only need to add `FXEvents.Client.dll` or `FXEvents.Server.dll` and 
 No need of any external library for MsgPack, the event system uses the internal MsgPack dll provided with fivem itself!!
 
 Usage examples:
+
+## Initialization
+```c#
+public class Main : BaseScript
+{
+ public Main()
+ {
+  // The Event Dispatcher can now be initialized with your own inbound, outbound, and signatures.
+  // This allows you to use FxEvents in more than one resource on the server without having signature collisions.
+  EventDispatcher.Initalize("inbound", "outbound", "signature");
+ }
+}
+```
  
 ## To mount an event:
 ```c#
