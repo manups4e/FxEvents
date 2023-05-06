@@ -53,6 +53,15 @@
 		<WarningLevel>4</WarningLevel>
 	</PropertyGroup>
 	<ItemGroup>
+		<Reference Include="CitizenFX.Core">
+		  <HintPath>L:\FiveM_gioco\FiveM.app\citizen\clr2\lib\mono\4.5\v2\CitizenFX.Core.dll</HintPath>
+		</Reference>
+		<Reference Include="CitizenFX.FiveM">
+		  <HintPath>L:\FiveM_gioco\FiveM.app\citizen\clr2\lib\mono\4.5\v2\CitizenFX.FiveM.dll</HintPath>
+		</Reference>
+		<Reference Include="CitizenFX.FiveM.Native">
+		  <HintPath>L:\FiveM_gioco\FiveM.app\citizen\clr2\lib\mono\4.5\v2\Native\CitizenFX.FiveM.Native.dll</HintPath>
+		</Reference>
 		<Reference Include="MsgPack">
 		  <HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
 		</Reference>
@@ -61,8 +70,6 @@
 		<Reference Include="System.Core" />
 		<Reference Include="System.Xml.Linq" />
 		<Reference Include="System.Data.DataSetExtensions" />
-    
-    <PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6136" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'" />
 
     <Reference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
       <HintPath>..\dependencies\RedM\CitizenFX.Core.dll</HintPath>

@@ -1,5 +1,5 @@
 ﻿global using CitizenFX.Core;
-global using CitizenFX.Core.Native;
+global using CitizenFX.Server.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using FxEvents.Shared.EventSubsystem;
@@ -7,7 +7,6 @@ using Logger;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace FxEvents
 {
@@ -15,17 +14,18 @@ namespace FxEvents
     {
         internal static Log Logger { get; set; }
         internal static EventDispatcher Instance { get; set; }
-        internal ExportDictionary GetExports => Exports;
-        internal PlayerList GetPlayers => Players;
+        internal Exports GetExports => Exports;
+        internal PlayerList GetPlayers { get; private set; }
         internal static ServerGateway Events { get; set; }
         internal static bool Debug { get; set; }
         internal static bool Initialized = false;
 
         public EventDispatcher()
         {
+            GetPlayers = new PlayerList();
             Logger = new Log();
             Instance = this;
-            string debugMode = API.GetResourceMetadata(API.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            string debugMode = Natives.GetResourceMetadata(Natives.GetCurrentResourceName(), "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || Convert.ToInt32(debugMode) > 0;
         }
 
@@ -83,8 +83,8 @@ namespace FxEvents
         /// <param name="action">Azione legata all'evento</param>
         internal async void AddEventHandler(string eventName, Delegate action)
         {
-            while (!Initialized) await BaseScript.Delay(0);
-            EventHandlers[eventName] += action;
+            while (!Initialized) await Delay(0);
+            EventHandlers[eventName].Add(Func.Create(action));
         }
 
         public static void Send(Player player, string endpoint, params object[] args)
@@ -123,7 +123,7 @@ namespace FxEvents
             }
             Events.Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
         }
-        public static Task<T> Get<T>(Player player, string endpoint, params object[] args)
+        public static Coroutine<T> Get<T>(Player player, string endpoint, params object[] args)
         {
             if (!Initialized)
             {
@@ -132,7 +132,7 @@ namespace FxEvents
             }
             return Events.Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
         }
-        public static Task<T> Get<T>(ISource client, string endpoint, params object[] args)
+        public static Coroutine<T> Get<T>(ISource client, string endpoint, params object[] args)
         {
             if (!Initialized)
             {

@@ -1,11 +1,12 @@
 ﻿using FxEvents.Shared.Diagnostics.Impl;
 using System;
+using Natives = CitizenFX.Shared.Native.Natives;
 
 namespace FxEvents.Shared.Diagnostics
 {
     public abstract class StopwatchUtil
     {
-        private static bool IsServer = API.IsDuplicityVersion();
+        private static readonly bool IsServer = Natives.IsDuplicityVersion();
 
         public abstract TimeSpan Elapsed { get; }
         public abstract void Stop();

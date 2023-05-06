@@ -1,10 +1,9 @@
 ﻿global using CitizenFX.Core;
-global using CitizenFX.Core.Native;
+using CitizenFX.FiveM.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using Logger;
 using System;
-using System.Threading.Tasks;
 
 namespace FxEvents
 {
@@ -20,7 +19,7 @@ namespace FxEvents
         {
             Logger = new Log();
             Instance = this;
-            string debugMode = API.GetResourceMetadata(API.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            string debugMode = Natives.GetResourceMetadata(Natives.GetCurrentResourceName(), "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || Convert.ToInt32(debugMode) > 0;
         }
 
@@ -79,7 +78,7 @@ namespace FxEvents
         internal async void AddEventHandler(string eventName, Delegate action)
         {
             while (!Initialized) await BaseScript.Delay(0);
-            EventHandlers[eventName] += action;
+            EventHandlers[eventName].Add(Func.Create(action));
         }
 
         public static void Send(string endpoint, params object[] args)
@@ -91,7 +90,7 @@ namespace FxEvents
             }
             Events.Send(endpoint, args);
         }
-        public static async Task<T> Get<T>(string endpoint, params object[] args)
+        public static async Coroutine<T> Get<T>(string endpoint, params object[] args)
         {
             if (!Initialized)
             {

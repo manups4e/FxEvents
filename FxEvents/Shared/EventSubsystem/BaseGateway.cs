@@ -12,12 +12,18 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+#if SERVER
+using CitizenFX.Server.Native;
+using CitizenFX.Server;
+#elif CLIENT
+using CitizenFX.FiveM.Native;
+#endif
 
 namespace FxEvents.Shared.EventSubsystem
 {
     // TODO: Concurrency, block a request simliar to a already processed one unless tagged with the [Concurrent] method attribute to combat force spamming events to achieve some kind of bug.
-    public delegate Task EventDelayMethod(int ms = 0);
-    public delegate Task EventMessagePreparation(string pipeline, int source, IMessage message);
+    public delegate Coroutine EventDelayMethod(uint ms = 0);
+    public delegate Coroutine EventMessagePreparation(string pipeline, int source, IMessage message);
     public delegate void EventMessagePush(string pipeline, int source, byte[] buffer);
     public delegate ISource ConstructorCustomActivator<T>(int handle);
     public abstract class BaseGateway
@@ -36,7 +42,7 @@ namespace FxEvents.Shared.EventSubsystem
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
 
-        public async Task ProcessInboundAsync(int source, byte[] serialized)
+        public async Coroutine ProcessInboundAsync(int source, byte[] serialized)
         {
             using SerializationContext context = new SerializationContext(InboundPipeline, "(Process) In", Serialization, serialized);
             EventMessage message = context.Deserialize<EventMessage>();
@@ -44,15 +50,19 @@ namespace FxEvents.Shared.EventSubsystem
             await ProcessInboundAsync(message, source);
         }
 
-        public async Task ProcessInboundAsync(EventMessage message, int source)
+        public async Coroutine ProcessInboundAsync(EventMessage message, int source)
         {
             object InvokeDelegate(EventHandler subscription)
             {
                 List<object> parameters = new List<object>();
                 Delegate @delegate = subscription.Delegate;
                 MethodInfo method = @delegate.Method;
-                bool takesSource = method.GetParameters().Any(self => self.GetCustomAttribute<FromSourceAttribute>() != null);
-                int startingIndex = takesSource && API.IsDuplicityVersion() ? 1 : 0;
+                bool takesSource = method.GetParameters().FirstOrDefault(self => self.GetType() == typeof(Remote) ||
+#if SERVER
+                                                                        self.GetType() == typeof(Player) ||
+#endif
+                                                                        self.GetType() == typeof(ISource)) != null;
+                int startingIndex = takesSource && Natives.IsDuplicityVersion() ? 1 : 0;
 
                 object CallInternalDelegate()
                 {
@@ -60,47 +70,48 @@ namespace FxEvents.Shared.EventSubsystem
                 }
 
 #if SERVER
-                if (takesSource && API.IsDuplicityVersion())
+                if (takesSource && Natives.IsDuplicityVersion())
                 {
-                    if (method.GetParameters().Where(self => self.GetCustomAttribute<FromSourceAttribute>() != null).Count() > 1)
-                        throw new Exception($"{message.Endpoint} cannot have more than 1 \"FromSource\" attribute applied to its parameters.");
-                    if (method.GetParameters().ToList().IndexOf(method.GetParameters().FirstOrDefault(self => self.GetCustomAttribute<FromSourceAttribute>() != null)) != 0)
+                    if (method.GetParameters().Where(self => self.GetType() == typeof(Remote)).Count() > 1)
+                        throw new Exception($"{message.Endpoint} cannot have more than 1 \"Remote\" parameter.");
+                    if (method.GetParameters().ToList().IndexOf(method.GetParameters().FirstOrDefault(self => self.GetType() == typeof(Remote))) != 0)
                         throw new Exception($"{message.Endpoint} \"FromSource\" attribute can ONLY be applied to first parameter.");
 
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
-                                                                        typeof(Player).IsAssignableFrom(self.ParameterType) ||
-                                                                        typeof(string).IsAssignableFrom(self.ParameterType) || typeof(int).IsAssignableFrom(self.ParameterType));
-                    var type = param.ParameterType;
+                                                                                        typeof(Remote).IsAssignableFrom(self.ParameterType) ||
+                                                                                        typeof(Player).IsAssignableFrom(self.ParameterType));
+                    Type type = param.ParameterType;
                     if (typeof(ISource).IsAssignableFrom(type))
                     {
-                        var constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)));
+                        ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)));
                         if (constructor == null)
                         {
                             throw new Exception("no constructor to initialize the ISource class");
                         }
 
-                        var parameter = Expression.Parameter(typeof(int), "handle");
-                        var expression = Expression.New(constructor, parameter);
+                        ParameterExpression parameter = Expression.Parameter(typeof(int), "handle");
+                        NewExpression expression = Expression.New(constructor, parameter);
                         if (typeof(ISource) == typeof(object))
                         {
-                            var generic = typeof(ConstructorCustomActivator<>).MakeGenericType(type);
-                            var activator = Expression.Lambda(generic, expression, parameter).Compile();
+                            Type generic = typeof(ConstructorCustomActivator<>).MakeGenericType(type);
+                            Delegate activator = Expression.Lambda(generic, expression, parameter).Compile();
 
-                            var objectInstance = (ISource)activator.DynamicInvoke(source);
+                            ISource objectInstance = (ISource)activator.DynamicInvoke(source);
                             parameters.Add(objectInstance);
                         }
                         else
                         {
 
-                            var activator = (ConstructorCustomActivator<ISource>)Expression
+                            ConstructorCustomActivator<ISource> activator = (ConstructorCustomActivator<ISource>)Expression
                                 .Lambda(typeof(ConstructorCustomActivator<ISource>), expression, parameter).Compile();
 
-                            var objectInstance = activator.Invoke(source);
+                            ISource objectInstance = activator.Invoke(source);
                             parameters.Add(objectInstance);
                         }
                     }
                     else if (typeof(Player).IsAssignableFrom(type))
                     {
+
                         parameters.Add(EventDispatcher.Instance.GetPlayers[source]);
                     }
                     else if (typeof(string).IsAssignableFrom(type))
@@ -149,19 +160,15 @@ namespace FxEvents.Shared.EventSubsystem
                 {
                     using CancellationTokenSource token = new CancellationTokenSource();
 
-                    Task task = (Task)result;
-                    Task timeout = DelayDelegate!(10000);
-                    Task completed = await Task.WhenAny(task, timeout);
+                    Coroutine task = (Coroutine)result;
+                    Coroutine timeout = DelayDelegate!(10000);
+                    bool completed = task.IsCompleted;
 
-                    if (completed == task)
+                    if (completed)
                     {
                         token.Cancel();
 
-#if CLIENT
                         await task;
-#elif SERVER
-                        await task.ConfigureAwait(false);
-#endif
 
                         result = ((dynamic)task).Result;
                     }
@@ -267,9 +274,9 @@ namespace FxEvents.Shared.EventSubsystem
                 {
 
 #if CLIENT
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : Natives.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : Natives.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
                 }
 
@@ -300,9 +307,9 @@ namespace FxEvents.Shared.EventSubsystem
             if (EventDispatcher.Debug)
             {
 #if CLIENT
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : Natives.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #elif SERVER
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName("" + source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : Natives.GetPlayerName("" + source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #endif
             }
             return holder.Value;

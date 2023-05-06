@@ -50,10 +50,10 @@ namespace FxEvents.EventSystem
             }));
 
             EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<string>(signature => _signature = signature));
-            BaseScript.TriggerServerEvent(SignaturePipeline);
+            Events.TriggerServerEvent(SignaturePipeline);
         }
 
-        public async Task PrepareAsync(string pipeline, int source, IMessage message)
+        public async Coroutine PrepareAsync(string pipeline, int source, IMessage message)
         {
             if (string.IsNullOrWhiteSpace(_signature))
             {
@@ -71,7 +71,7 @@ namespace FxEvents.EventSystem
         public void Push(string pipeline, int source, byte[] buffer)
         {
             if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-            BaseScript.TriggerServerEvent(pipeline, buffer);
+            Events.TriggerServerEvent(pipeline, buffer);
         }
 
         public async void Send(string endpoint, params object[] args)

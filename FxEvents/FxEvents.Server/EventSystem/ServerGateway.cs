@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 
 namespace FxEvents.EventSystem
 {
@@ -28,29 +27,29 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<string>(GetSignature));
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<string, byte[]>(Inbound));
-            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<string, byte[]>(Outbound));
+            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<Remote>(GetSignature));
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<Remote, byte[]>(Inbound));
+            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<Remote, byte[]>(Outbound));
         }
 
         public void Push(string pipeline, int source, byte[] buffer)
         {
             if (source != new ServerId().Handle)
-                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[source], pipeline, buffer);
+                Events.TriggerClientEvent(pipeline, EventDispatcher.Instance.GetPlayers[source], buffer);
             else
-                BaseScript.TriggerClientEvent(pipeline, buffer);
+                Events.TriggerAllClientsEvent(pipeline, buffer);
         }
 
 
-        private void GetSignature([FromSource] string source)
+        private void GetSignature(Remote source)
         {
             try
             {
-                int client = int.Parse(source.Replace("net:", string.Empty));
+                int client = int.Parse(source.ToString().Substring(7, source.ToString().Length - 1));
 
                 if (_signatures.ContainsKey(client))
                 {
-                    Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
+                    Logger.Warning($"Client {(string)Natives.GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
                     return;
                 }
 
@@ -64,7 +63,7 @@ namespace FxEvents.EventSystem
                 string signature = BitConverter.ToString(holder).Replace("-", "").ToLower();
 
                 _signatures.Add(client, signature);
-                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[client], SignaturePipeline, signature);
+                Events.TriggerClientEvent(SignaturePipeline, EventDispatcher.Instance.GetPlayers[client], signature);
             }
             catch (Exception ex)
             {
@@ -72,11 +71,11 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private async void Inbound([FromSource] string source, byte[] buffer)
+        private async void Inbound(Remote source, byte[] buffer)
         {
             try
             {
-                int client = int.Parse(source.Replace("net:", string.Empty));
+                int client = int.Parse(source.ToString().Substring(7, source.ToString().Length - 1));
 
                 if (!_signatures.TryGetValue(client, out string signature)) return;
 
@@ -93,7 +92,7 @@ namespace FxEvents.EventSystem
                 }
                 catch (TimeoutException)
                 {
-                    API.DropPlayer(client.ToString(), $"Operation timed out: {message.Endpoint.ToBase64()}");
+                    Natives.DropPlayer(client.ToString(), $"Operation timed out: {message.Endpoint.ToBase64()}");
                 }
             }
             catch (Exception ex)
@@ -113,11 +112,11 @@ namespace FxEvents.EventSystem
             return false;
         }
 
-        private void Outbound([FromSource] string source, byte[] buffer)
+        private void Outbound(Remote source, byte[] buffer)
         {
             try
             {
-                int client = int.Parse(source.Replace("net:", string.Empty));
+                int client = int.Parse(source.ToString().Substring(7, source.ToString().Length - 1));
 
                 if (!_signatures.TryGetValue(client, out string signature)) return;
 
@@ -156,13 +155,13 @@ namespace FxEvents.EventSystem
             await SendInternal(EventFlowType.Straight, target, endpoint, args);
         }
 
-        public Task<T> Get<T>(Player player, string endpoint, params object[] args) =>
+        public Coroutine<T> Get<T>(Player player, string endpoint, params object[] args) =>
             Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
 
-        public Task<T> Get<T>(ISource client, string endpoint, params object[] args) =>
+        public Coroutine<T> Get<T>(ISource client, string endpoint, params object[] args) =>
             Get<T>(client.Handle, endpoint, args);
 
-        public async Task<T> Get<T>(int target, string endpoint, params object[] args)
+        public async Coroutine<T> Get<T>(int target, string endpoint, params object[] args)
         {
             return await GetInternal<T>(target, endpoint, args);
         }
