@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
     <AssemblyTitle>FxEvents Server</AssemblyTitle>
-    <Description>FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
+    <Description>FxEvents an advanced event subsystem for CFX C# Resources.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Title>FxEvents.Server</Title>
@@ -19,7 +19,7 @@
     <Configurations>Debug;Release</Configurations>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <Version>1.0.2</Version>
+    <Version>2.0.0-beta1-monov2</Version>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
