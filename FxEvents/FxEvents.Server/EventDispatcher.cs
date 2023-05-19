@@ -77,14 +77,14 @@ namespace FxEvents
         }
 
         /// <summary>
-        /// registra un evento (TriggerEvent)
+        /// Register an Event (TriggerEvent)
         /// </summary>
-        /// <param name="name">Nome evento</param>
-        /// <param name="action">Azione legata all'evento</param>
+        /// <param name="name">Event Name</param>
+        /// <param name="action">Event-related action</param>
         internal async void AddEventHandler(string eventName, Delegate action)
         {
             while (!Initialized) await Delay(0);
-            EventHandlers[eventName].Add(Func.Create(action));
+            EventHandlers[eventName].Add(Func.Create(action), Binding.All);
         }
 
         public static void Send(Player player, string endpoint, params object[] args)
