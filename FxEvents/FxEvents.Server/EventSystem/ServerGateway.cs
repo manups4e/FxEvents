@@ -40,12 +40,16 @@ namespace FxEvents.EventSystem
                 Events.TriggerAllClientsEvent(pipeline, buffer);
         }
 
+        private int GetSource(Remote source)
+        {
+            return int.Parse(source.ToString().Substring(7, 1));
+        }
 
-        private void GetSignature(Remote source)
+        private void GetSignature([Source] Remote source)
         {
             try
             {
-                int client = int.Parse(source.ToString().Substring(7, source.ToString().Length - 1));
+                int client = GetSource(source);
 
                 if (_signatures.ContainsKey(client))
                 {
@@ -71,11 +75,11 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private async void Inbound(Remote source, byte[] buffer)
+        private async void Inbound([Source] Remote source, byte[] buffer)
         {
             try
             {
-                int client = int.Parse(source.ToString().Substring(7, source.ToString().Length - 1));
+                int client = GetSource(source);
 
                 if (!_signatures.TryGetValue(client, out string signature)) return;
 
@@ -112,11 +116,11 @@ namespace FxEvents.EventSystem
             return false;
         }
 
-        private void Outbound(Remote source, byte[] buffer)
+        private void Outbound([Source] Remote source, byte[] buffer)
         {
             try
             {
-                int client = int.Parse(source.ToString().Substring(7, source.ToString().Length - 1));
+                int client = GetSource(source);
 
                 if (!_signatures.TryGetValue(client, out string signature)) return;
 
