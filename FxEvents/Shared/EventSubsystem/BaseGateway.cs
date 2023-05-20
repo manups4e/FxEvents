@@ -66,7 +66,7 @@ namespace FxEvents.Shared.EventSubsystem
 
                 object CallInternalDelegate()
                 {
-                    return @delegate(source, parameters.ToArray());
+                    return @delegate.DynamicInvoke(source, parameters.ToArray());
                 }
 
 #if SERVER
