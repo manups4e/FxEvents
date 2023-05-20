@@ -27,9 +27,9 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<Remote>(GetSignature));
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<Remote, byte[]>(Inbound));
-            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<Remote, byte[]>(Outbound));
+            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, Func.Create<Player>(GetSignature));
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<Player, byte[]>(Inbound));
+            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, Func.Create<Player, byte[]>(Outbound));
         }
 
         public void Push(string pipeline, int source, byte[] buffer)
@@ -40,16 +40,11 @@ namespace FxEvents.EventSystem
                 Events.TriggerAllClientsEvent(pipeline, buffer);
         }
 
-        private int GetSource(Remote source)
-        {
-            return int.Parse(source.ToString().Substring(7, 1));
-        }
-
-        private void GetSignature([Source] Remote source)
+        private void GetSignature([Source] Player source)
         {
             try
             {
-                int client = GetSource(source);
+                int client = source.Handle;
 
                 if (_signatures.ContainsKey(client))
                 {
@@ -67,7 +62,7 @@ namespace FxEvents.EventSystem
                 string signature = BitConverter.ToString(holder).Replace("-", "").ToLower();
 
                 _signatures.Add(client, signature);
-                Events.TriggerClientEvent(SignaturePipeline, EventDispatcher.Instance.GetPlayers[client], signature);
+                Events.TriggerClientEvent(SignaturePipeline, source, signature);
             }
             catch (Exception ex)
             {
@@ -75,13 +70,17 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private async void Inbound([Source] Remote source, byte[] buffer)
+        private async void Inbound([Source] Player source, byte[] buffer)
         {
             try
             {
-                int client = GetSource(source);
+                int client = source.Handle;
 
-                if (!_signatures.TryGetValue(client, out string signature)) return;
+                if (!_signatures.TryGetValue(client, out string signature))
+                {
+                    Logger.Error($"Client {(string)Natives.GetPlayerName("" + client)}[{client}] tried sending an event without a signature.");
+                    return;
+                }
 
                 using SerializationContext context = new SerializationContext(InboundPipeline, null, Serialization, buffer);
 
@@ -116,11 +115,11 @@ namespace FxEvents.EventSystem
             return false;
         }
 
-        private void Outbound([Source] Remote source, byte[] buffer)
+        private void Outbound([Source] Player source, byte[] buffer)
         {
             try
             {
-                int client = GetSource(source);
+                int client = source.Handle;
 
                 if (!_signatures.TryGetValue(client, out string signature)) return;
 

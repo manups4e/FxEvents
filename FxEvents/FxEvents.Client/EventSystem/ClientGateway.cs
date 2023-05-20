@@ -25,7 +25,7 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<byte[]>(async serialized =>
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<byte[]>(async serialized =>
             {
                 try
                 {
@@ -37,7 +37,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<byte[]>(serialized =>
+            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, Func.Create<byte[]>(serialized =>
             {
                 try
                 {
@@ -49,7 +49,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<string>(signature => _signature = signature));
+            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, Func.Create<string>(signature => _signature = signature));
             Events.TriggerServerEvent(SignaturePipeline);
         }
 
@@ -58,7 +58,7 @@ namespace FxEvents.EventSystem
             if (string.IsNullOrWhiteSpace(_signature))
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                while (_signature == null) await BaseScript.Delay(0);
+                while (_signature == null) await BaseScript.Yield();
                 if (EventDispatcher.Debug)
                 {
                     Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");

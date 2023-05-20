@@ -81,10 +81,10 @@ namespace FxEvents
         /// </summary>
         /// <param name="name">Event Name</param>
         /// <param name="action">Event-related action</param>
-        internal async void AddEventHandler(string eventName, Delegate action)
+        internal async void AddEventHandler(string eventName, DynFunc action)
         {
             while (!Initialized) await Delay(0);
-            EventHandlers[eventName].Add(Func.Create(action), Binding.All);
+            EventHandlers[eventName].Add(action, Binding.All);
         }
 
         public static void Send(Player player, string endpoint, params object[] args)

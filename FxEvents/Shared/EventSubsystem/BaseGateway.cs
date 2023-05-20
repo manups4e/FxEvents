@@ -75,7 +75,7 @@ namespace FxEvents.Shared.EventSubsystem
                     if (method.GetParameters().Where(self => self.GetType() == typeof(Remote)).Count() > 1)
                         throw new Exception($"{message.Endpoint} cannot have more than 1 \"Remote\" parameter.");
                     if (method.GetParameters().ToList().IndexOf(method.GetParameters().FirstOrDefault(self => self.GetType() == typeof(Remote))) != 0)
-                        throw new Exception($"{message.Endpoint} \"FromSource\" attribute can ONLY be applied to first parameter.");
+                        throw new Exception($"{message.Endpoint} \"Source\" attribute can ONLY be applied to first parameter.");
 
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
                                                                                         typeof(Remote).IsAssignableFrom(self.ParameterType) ||
@@ -124,7 +124,7 @@ namespace FxEvents.Shared.EventSubsystem
                     }
                 }
 #endif
-                if (message.Parameters == null)
+                if (message.Parameters == null || message.Parameters.Count() == 0)
                 {
                     return CallInternalDelegate();
                 }
@@ -234,6 +234,10 @@ namespace FxEvents.Shared.EventSubsystem
             EventObservable waiting = _queue.SingleOrDefault(self => self.Message.Id == response.Id) ?? throw new Exception($"No request matching {response.Id} was found.");
 
             _queue.Remove(waiting);
+
+            if (EventDispatcher.Debug)
+                Logger.Debug($"[{response.Endpoint}] Received response from {waiting.Message} with {response.Data.Length} byte(s)");
+
             waiting.Callback.Invoke(response.Data);
         }
 
