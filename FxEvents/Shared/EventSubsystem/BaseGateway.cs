@@ -55,7 +55,7 @@ namespace FxEvents.Shared.EventSubsystem
             object InvokeDelegate(EventHandler subscription)
             {
                 List<object> parameters = new List<object>();
-                Delegate @delegate = subscription.Delegate;
+                DynFunc @delegate = subscription.Delegate;
                 MethodInfo method = @delegate.Method;
                 bool takesSource = method.GetParameters().FirstOrDefault(self => self.GetType() == typeof(Remote) ||
 #if SERVER
@@ -66,7 +66,7 @@ namespace FxEvents.Shared.EventSubsystem
 
                 object CallInternalDelegate()
                 {
-                    return @delegate.DynamicInvoke(parameters.ToArray());
+                    return @delegate(source, parameters.ToArray());
                 }
 
 #if SERVER
@@ -146,7 +146,7 @@ namespace FxEvents.Shared.EventSubsystem
 
                 parameters.AddRange(holder.ToArray());
 
-                return @delegate.DynamicInvoke(parameters.ToArray());
+                return @delegate.DynamicInvoke(source, parameters.ToArray());
             }
 
             if (message.Flow == EventFlowType.Circular)
@@ -319,7 +319,7 @@ namespace FxEvents.Shared.EventSubsystem
             return holder.Value;
         }
 
-        public void Mount(string endpoint, Delegate @delegate)
+        public void Mount(string endpoint, DynFunc @delegate)
         {
             if (EventDispatcher.Debug)
                 Logger.Debug($"Mounted: {endpoint}");

@@ -141,7 +141,7 @@ namespace FxEvents
             }
             return Events.Get<T>(client.Handle, endpoint, args);
         }
-        public static void Mount(string endpoint, Delegate @delegate)
+        public static void Mount(string endpoint, DynFunc @delegate)
         {
             if (!Initialized)
             {
