@@ -41,10 +41,10 @@
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="CitizenFX.Core">
-		  <HintPath>..\..\_dependancies\FiveM\Server\CitizenFX.Core.dll</HintPath>
+		  <HintPath>..\dependencies\FiveM\Server\CitizenFX.Core.dll</HintPath>
 		</Reference>
 		<Reference Include="CitizenFX.Server">
-		  <HintPath>..\..\_dependancies\FiveM\Server\CitizenFX.Server.dll</HintPath>
+		  <HintPath>..\dependencies\FiveM\Server\CitizenFX.Server.dll</HintPath>
 		</Reference>
 		<Reference Include="MsgPack">
 			<HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
