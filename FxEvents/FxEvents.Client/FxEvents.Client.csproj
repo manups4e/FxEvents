@@ -54,9 +54,11 @@
 	<ItemGroup>
 		<Reference Include="CitizenFX.Core">
 		  <HintPath>..\dependencies\FiveM\Client\CitizenFX.Core.dll</HintPath>
+		  <Private>False</Private>
 		</Reference>
 		<Reference Include="CitizenFX.FiveM">
 		  <HintPath>..\dependencies\FiveM\Client\CitizenFX.FiveM.dll</HintPath>
+		  <Private>False</Private>
 		</Reference>
 		<Reference Include="CitizenFX.FiveM.Native">
 		  <HintPath>..\dependencies\FiveM\Client\CitizenFX.FiveM.Native.dll</HintPath>
