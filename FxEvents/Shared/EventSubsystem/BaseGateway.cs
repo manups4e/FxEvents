@@ -42,7 +42,7 @@ namespace FxEvents.Shared.EventSubsystem
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
 
-        public async Coroutine ProcessInboundAsync(int source, byte[] serialized)
+        public async Coroutine ProcessInboundAsync(int serverHandle, Remote source, byte[] serialized)
         {
             using SerializationContext context = new SerializationContext(InboundPipeline, "(Process) In", Serialization, serialized);
             EventMessage message = context.Deserialize<EventMessage>();
@@ -50,7 +50,7 @@ namespace FxEvents.Shared.EventSubsystem
             await ProcessInboundAsync(message, source);
         }
 
-        public async Coroutine ProcessInboundAsync(EventMessage message, int source)
+        public async Coroutine ProcessInboundAsync(EventMessage message, Remote source)
         {
             object InvokeDelegate(EventHandler subscription)
             {
@@ -66,7 +66,8 @@ namespace FxEvents.Shared.EventSubsystem
 
                 object CallInternalDelegate()
                 {
-                    return @delegate.DynamicInvoke(source, parameters.ToArray());
+                    object[] objectArray = new object[parameters.Count];
+                    return @delegate.DynamicInvoke(source, objectArray);
                 }
 
 #if SERVER
@@ -105,14 +106,14 @@ namespace FxEvents.Shared.EventSubsystem
                             ConstructorCustomActivator<ISource> activator = (ConstructorCustomActivator<ISource>)Expression
                                 .Lambda(typeof(ConstructorCustomActivator<ISource>), expression, parameter).Compile();
 
-                            ISource objectInstance = activator.Invoke(source);
+                            ISource objectInstance = activator.Invoke(((Player)source).Handle);
                             parameters.Add(objectInstance);
                         }
                     }
                     else if (typeof(Player).IsAssignableFrom(type))
                     {
 
-                        parameters.Add(EventDispatcher.Instance.GetPlayers[source]);
+                        parameters.Add((Player)source);
                     }
                     else if (typeof(string).IsAssignableFrom(type))
                     {
@@ -124,7 +125,7 @@ namespace FxEvents.Shared.EventSubsystem
                     }
                 }
 #endif
-                if (message.Parameters == null || message.Parameters.Count() == 0)
+                if (message.Parameters == null)
                 {
                     return CallInternalDelegate();
                 }
@@ -146,17 +147,41 @@ namespace FxEvents.Shared.EventSubsystem
 
                 parameters.AddRange(holder.ToArray());
 
-                return @delegate.DynamicInvoke(source, parameters.ToArray());
+                foreach (var p in holder)
+                {
+                    Logger.Info($"Parameter: {p}");
+                    Logger.Info($"Parameter: {p.GetType()}");
+                }
+
+                if (holder.Count == 0)
+                    return CallInternalDelegate();
+
+                return @delegate.DynamicInvoke(source, holder.ToArray());
             }
 
             if (message.Flow == EventFlowType.Circular)
             {
+                if (EventDispatcher.Debug)
+                    Logger.Info($"Circular event {message.Endpoint} received");
+
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
                 EventHandler subscription = _handlers.SingleOrDefault(self => self.Endpoint == message.Endpoint) ??
                                    throw new Exception($"Could not find a handler for endpoint '{message.Endpoint}'");
-                object result = InvokeDelegate(subscription);
+                object result = null;
+                try
+                {
+                    result = InvokeDelegate(subscription);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Silent Exception");
+                    Logger.Error($"{ex}");
+                }
 
-                if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
+                if (EventDispatcher.Debug)
+                    Logger.Info($"GetGenericTypeDefinition: {result.GetType().GetGenericTypeDefinition()}");
+
+                if (result.GetType().GetGenericTypeDefinition() == typeof(Coroutine<>))
                 {
                     using CancellationTokenSource token = new CancellationTokenSource();
 
@@ -197,7 +222,12 @@ namespace FxEvents.Shared.EventSubsystem
                 {
                     stopwatch.Stop();
 
-                    await PrepareDelegate(response.Endpoint, source, response);
+#if SERVER
+                    await PrepareDelegate(response.Endpoint, ((Player)source).Handle, response);
+#else
+                    await PrepareDelegate(response.Endpoint, -1, response);
+#endif
+
                     stopwatch.Start();
                 }
 
@@ -207,7 +237,12 @@ namespace FxEvents.Shared.EventSubsystem
 
                     byte[] data = context.GetData();
 
-                    PushDelegate(OutboundPipeline, source, data);
+#if SERVER
+                    PushDelegate(OutboundPipeline, ((Player)source).Handle, data);
+#else
+                    PushDelegate(OutboundPipeline, -1, data);
+#endif
+
                     if (EventDispatcher.Debug)
                         Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
                 }

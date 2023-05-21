@@ -25,17 +25,7 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<byte[]>(async serialized =>
-            {
-                try
-                {
-                    await ProcessInboundAsync(new ServerId().Handle, serialized);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("InboundPipeline:" + ex.ToString());
-                }
-            }));
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<Remote, byte[], Coroutine<byte[]>>(OnInboundPipelineHandler));
 
             EventDispatcher.Instance.AddEventHandler(OutboundPipeline, Func.Create<byte[]>(serialized =>
             {
@@ -51,6 +41,19 @@ namespace FxEvents.EventSystem
 
             EventDispatcher.Instance.AddEventHandler(SignaturePipeline, Func.Create<string>(signature => _signature = signature));
             Events.TriggerServerEvent(SignaturePipeline);
+        }
+
+        private async Coroutine<byte[]> OnInboundPipelineHandler(Remote remote, byte[] serialized)
+        {
+            try
+            {
+                await ProcessInboundAsync(new ServerId().Handle, remote, serialized);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("InboundPipeline:" + ex.ToString());
+            }
+            return null;
         }
 
         public async Coroutine PrepareAsync(string pipeline, int source, IMessage message)

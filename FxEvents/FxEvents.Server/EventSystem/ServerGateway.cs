@@ -28,7 +28,7 @@ namespace FxEvents.EventSystem
         internal void AddEvents()
         {
             EventDispatcher.Instance.AddEventHandler(SignaturePipeline, Func.Create<Player>(GetSignature));
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<Player, byte[]>(Inbound));
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<Remote, byte[]>(Inbound));
             EventDispatcher.Instance.AddEventHandler(OutboundPipeline, Func.Create<Player, byte[]>(Outbound));
         }
 
@@ -70,11 +70,11 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private async void Inbound([Source] Player source, byte[] buffer)
+        private async void Inbound([Source] Remote source, byte[] buffer)
         {
             try
             {
-                int client = source.Handle;
+                int client = ((Player)source).Handle;
 
                 if (!_signatures.TryGetValue(client, out string signature))
                 {
@@ -91,7 +91,7 @@ namespace FxEvents.EventSystem
 
                 try
                 {
-                    await ProcessInboundAsync(message, client);
+                    await ProcessInboundAsync(message, source);
                 }
                 catch (TimeoutException)
                 {
