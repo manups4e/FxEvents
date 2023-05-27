@@ -67,7 +67,11 @@ namespace FxEvents.Shared.EventSubsystem
                 object CallInternalDelegate()
                 {
                     object[] objectArray = new object[parameters.Count];
+#if SERVER
                     return @delegate.DynamicInvoke(source, objectArray);
+#elif CLIENT
+                    return @delegate.DynamicInvoke(objectArray);
+#endif
                 }
 
 #if SERVER
@@ -157,7 +161,12 @@ namespace FxEvents.Shared.EventSubsystem
                 if (holder.Count == 0)
                     return CallInternalDelegate();
 
+
+#if SERVER
                 return @delegate.DynamicInvoke(source, holder.ToArray());
+#elif CLIENT
+                return @delegate.DynamicInvoke(holder.ToArray());
+#endif
             }
 
             if (message.Flow == EventFlowType.Circular)
