@@ -42,7 +42,7 @@ namespace FxEvents.Shared.EventSubsystem
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
 
-        public async Coroutine ProcessInboundAsync(int serverHandle, Remote source, byte[] serialized)
+        public async Coroutine ProcessInboundAsync(int serverHandle, Remote? source, byte[] serialized)
         {
             using SerializationContext context = new SerializationContext(InboundPipeline, "(Process) In", Serialization, serialized);
             EventMessage message = context.Deserialize<EventMessage>();
@@ -50,7 +50,7 @@ namespace FxEvents.Shared.EventSubsystem
             await ProcessInboundAsync(message, source);
         }
 
-        public async Coroutine ProcessInboundAsync(EventMessage message, Remote source)
+        public async Coroutine ProcessInboundAsync(EventMessage message, Remote? source)
         {
             object InvokeDelegate(EventHandler subscription)
             {
@@ -220,7 +220,7 @@ namespace FxEvents.Shared.EventSubsystem
 #if SERVER
                     await PrepareDelegate(response.Endpoint, ((Player)source).Handle, response);
 #else
-                    await PrepareDelegate(response.Endpoint, -1, response);
+                    await PrepareDelegate(response.Endpoint, new ServerId().Handle, response);
 #endif
 
                     stopwatch.Start();
@@ -235,7 +235,7 @@ namespace FxEvents.Shared.EventSubsystem
 #if SERVER
                     PushDelegate(OutboundPipeline, ((Player)source).Handle, data);
 #else
-                    PushDelegate(OutboundPipeline, -1, data);
+                    PushDelegate(OutboundPipeline, new ServerId().Handle, data);
 #endif
 
                     if (EventDispatcher.Debug)
