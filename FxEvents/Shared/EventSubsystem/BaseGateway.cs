@@ -162,9 +162,6 @@ namespace FxEvents.Shared.EventSubsystem
 
             if (message.Flow == EventFlowType.Circular)
             {
-                if (EventDispatcher.Debug)
-                    Logger.Info($"Circular event {message.Endpoint} received");
-
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
                 EventHandler subscription = _handlers.SingleOrDefault(self => self.Endpoint == message.Endpoint) ??
                                    throw new Exception($"Could not find a handler for endpoint '{message.Endpoint}'");
@@ -207,9 +204,6 @@ namespace FxEvents.Shared.EventSubsystem
 
                 if (result != null)
                 {
-                    if (EventDispatcher.Debug)
-                        Logger.Info($"Circular event {message.Endpoint} result: {result}");
-
                     using SerializationContext context = new SerializationContext(message.Endpoint, "(Process) Result", Serialization);
                     context.Serialize(resultType, result);
                     response.Data = context.GetData();
@@ -221,9 +215,6 @@ namespace FxEvents.Shared.EventSubsystem
 
                 if (PrepareDelegate != null)
                 {
-                    if (EventDispatcher.Debug)
-                        Logger.Info($"Circular event {message.Endpoint} preparing response");
-
                     stopwatch.Stop();
 
 #if SERVER
@@ -240,9 +231,6 @@ namespace FxEvents.Shared.EventSubsystem
                     context.Serialize(response);
 
                     byte[] data = context.GetData();
-
-                    if (EventDispatcher.Debug)
-                        Logger.Info($"Circular event {message.Endpoint} sending response");
 
 #if SERVER
                     PushDelegate(OutboundPipeline, ((Player)source).Handle, data);
