@@ -56,7 +56,7 @@ namespace FxEvents.Shared.EventSubsystem
             {
                 List<object> parameters = new List<object>();
                 DynFunc @delegate = subscription.Delegate;
-                MethodInfo method = @delegate.Method;
+                MethodInfo method = @delegate.GetMethodInfo();
                 bool takesSource = method.GetParameters().FirstOrDefault(self => self.GetType() == typeof(Remote) ||
 #if SERVER
                                                                         self.GetType() == typeof(Player) ||
@@ -125,6 +125,7 @@ namespace FxEvents.Shared.EventSubsystem
                     }
                 }
 #endif
+
                 if (message.Parameters == null)
                 {
                     return CallInternalDelegate();
@@ -174,12 +175,8 @@ namespace FxEvents.Shared.EventSubsystem
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"Silent Exception");
-                    Logger.Error($"{ex}");
+                    Logger.Error($"InvokeDelegate Exception:\n{ex}");
                 }
-
-                if (EventDispatcher.Debug)
-                    Logger.Info($"GetGenericTypeDefinition: {result.GetType().GetGenericTypeDefinition()}");
 
                 if (result.GetType().GetGenericTypeDefinition() == typeof(Coroutine<>))
                 {
@@ -187,13 +184,14 @@ namespace FxEvents.Shared.EventSubsystem
 
                     Coroutine task = (Coroutine)result;
                     Coroutine timeout = DelayDelegate!(10000);
+
+                    await task; // await the Coroutine task, once its completed then we can use IsCompleted to check if it was cancelled or not
+
                     bool completed = task.IsCompleted;
 
                     if (completed)
                     {
                         token.Cancel();
-
-                        await task;
 
                         result = ((dynamic)task).Result;
                     }
@@ -209,6 +207,9 @@ namespace FxEvents.Shared.EventSubsystem
 
                 if (result != null)
                 {
+                    if (EventDispatcher.Debug)
+                        Logger.Info($"Circular event {message.Endpoint} result: {result}");
+
                     using SerializationContext context = new SerializationContext(message.Endpoint, "(Process) Result", Serialization);
                     context.Serialize(resultType, result);
                     response.Data = context.GetData();
@@ -220,6 +221,9 @@ namespace FxEvents.Shared.EventSubsystem
 
                 if (PrepareDelegate != null)
                 {
+                    if (EventDispatcher.Debug)
+                        Logger.Info($"Circular event {message.Endpoint} preparing response");
+
                     stopwatch.Stop();
 
 #if SERVER
@@ -236,6 +240,9 @@ namespace FxEvents.Shared.EventSubsystem
                     context.Serialize(response);
 
                     byte[] data = context.GetData();
+
+                    if (EventDispatcher.Debug)
+                        Logger.Info($"Circular event {message.Endpoint} sending response");
 
 #if SERVER
                     PushDelegate(OutboundPipeline, ((Player)source).Handle, data);
