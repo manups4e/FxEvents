@@ -1,5 +1,5 @@
 ﻿global using CitizenFX.Core;
-using CitizenFX.FiveM.Native;
+using CitizenFX.Shared.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using Logger;

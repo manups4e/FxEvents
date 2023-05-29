@@ -1,6 +1,3 @@
-using FxEvents;
-using System;
-
 namespace Logger
 {
     public static class LoggerColors

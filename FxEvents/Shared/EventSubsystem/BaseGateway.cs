@@ -13,10 +13,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 #if SERVER
-using CitizenFX.Server.Native;
-using CitizenFX.Server;
+using Player = CitizenFX.Core.Player;
 #elif CLIENT
-using CitizenFX.FiveM.Native;
+using CitizenFX.Shared.Native;
+using Player = CitizenFX.Shared.Player;
 #endif
 
 namespace FxEvents.Shared.EventSubsystem
@@ -309,7 +309,7 @@ namespace FxEvents.Shared.EventSubsystem
                 {
 
 #if CLIENT
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : Natives.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : ((Player)source).Name)} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
                     Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : Natives.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
@@ -342,7 +342,7 @@ namespace FxEvents.Shared.EventSubsystem
             if (EventDispatcher.Debug)
             {
 #if CLIENT
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : Natives.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : ((Player)source).Name)} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #elif SERVER
                 Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : Natives.GetPlayerName("" + source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #endif

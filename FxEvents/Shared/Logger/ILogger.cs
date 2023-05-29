@@ -1,6 +1,3 @@
-using FxEvents;
-using System;
-
 namespace Logger
 {
     public interface ILogger
