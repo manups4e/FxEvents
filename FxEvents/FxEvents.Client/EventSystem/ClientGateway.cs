@@ -25,7 +25,7 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<byte[]>(OnInboundPipelineHandler));
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<Remote, byte[]>(OnInboundPipelineHandler));
 
             EventDispatcher.Instance.AddEventHandler(OutboundPipeline, Func.Create<byte[]>(serialized =>
             {
@@ -43,11 +43,11 @@ namespace FxEvents.EventSystem
             Events.TriggerServerEvent(SignaturePipeline);
         }
 
-        private async void OnInboundPipelineHandler(byte[] serialized)
+        private async void OnInboundPipelineHandler([Source] Remote remote, byte[] serialized)
         {
             try
             {
-                await ProcessInboundAsync(new ServerId().Handle, null, serialized);
+                await ProcessInboundAsync(remote, serialized);
             }
             catch (Exception ex)
             {

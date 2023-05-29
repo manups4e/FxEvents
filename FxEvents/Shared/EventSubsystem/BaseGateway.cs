@@ -42,7 +42,7 @@ namespace FxEvents.Shared.EventSubsystem
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
 
-        public async Coroutine ProcessInboundAsync(int serverHandle, Remote? source, byte[] serialized)
+        public async Coroutine ProcessInboundAsync(Remote? source, byte[] serialized)
         {
             using SerializationContext context = new SerializationContext(InboundPipeline, "(Process) In", Serialization, serialized);
             EventMessage message = context.Deserialize<EventMessage>();
@@ -67,11 +67,7 @@ namespace FxEvents.Shared.EventSubsystem
                 object CallInternalDelegate()
                 {
                     object[] objectArray = new object[parameters.Count];
-#if SERVER
                     return @delegate.DynamicInvoke(source, objectArray);
-#elif CLIENT
-                    return @delegate.DynamicInvoke(objectArray);
-#endif
                 }
 
 #if SERVER
@@ -162,11 +158,7 @@ namespace FxEvents.Shared.EventSubsystem
                     return CallInternalDelegate();
 
 
-#if SERVER
                 return @delegate.DynamicInvoke(source, holder.ToArray());
-#elif CLIENT
-                return @delegate.DynamicInvoke(holder.ToArray());
-#endif
             }
 
             if (message.Flow == EventFlowType.Circular)
