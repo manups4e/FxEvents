@@ -56,7 +56,7 @@ namespace FxEvents.Shared.EventSubsystem
             {
                 List<object> parameters = new List<object>();
                 DynFunc @delegate = subscription.Delegate;
-                MethodInfo method = @delegate.GetMethodInfo();
+                MethodInfo method = @delegate.Method;
                 bool takesSource = method.GetParameters().FirstOrDefault(self => self.GetType() == typeof(Remote) ||
 #if SERVER
                                                                         self.GetType() == typeof(Player) ||
