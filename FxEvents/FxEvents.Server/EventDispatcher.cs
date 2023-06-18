@@ -1,5 +1,6 @@
 ﻿global using CitizenFX.Core;
 global using CitizenFX.Server.Native;
+using CitizenFX.Server;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using FxEvents.Shared.EventSubsystem;
@@ -25,7 +26,7 @@ namespace FxEvents
             GetPlayers = new PlayerList();
             Logger = new Log();
             Instance = this;
-            string debugMode = Natives.GetResourceMetadata(Natives.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            string debugMode = Natives.GetResourceMetadata($"{Natives.GetCurrentResourceName()}", "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || Convert.ToInt32(debugMode) > 0;
         }
 

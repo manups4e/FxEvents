@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using Player = CitizenFX.Server.Player;
 
 namespace FxEvents.EventSystem
 {

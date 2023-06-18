@@ -13,7 +13,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 #if SERVER
-using Player = CitizenFX.Core.Player;
+using Player = CitizenFX.Server.Player;
 #elif CLIENT
 using CitizenFX.Shared.Native;
 using Player = CitizenFX.Shared.Player;
