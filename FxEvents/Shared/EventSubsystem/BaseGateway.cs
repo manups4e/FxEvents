@@ -13,10 +13,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 #if SERVER
-using CitizenFX.Server.Native;
-using CitizenFX.Server;
+using Player = CitizenFX.Server.Player;
 #elif CLIENT
-using CitizenFX.FiveM.Native;
+using CitizenFX.Shared.Native;
+using Player = CitizenFX.Shared.Player;
 #endif
 
 namespace FxEvents.Shared.EventSubsystem
@@ -42,7 +42,7 @@ namespace FxEvents.Shared.EventSubsystem
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
 
-        public async Coroutine ProcessInboundAsync(int source, byte[] serialized)
+        public async Coroutine ProcessInboundAsync(Remote? source, byte[] serialized)
         {
             using SerializationContext context = new SerializationContext(InboundPipeline, "(Process) In", Serialization, serialized);
             EventMessage message = context.Deserialize<EventMessage>();
@@ -50,12 +50,12 @@ namespace FxEvents.Shared.EventSubsystem
             await ProcessInboundAsync(message, source);
         }
 
-        public async Coroutine ProcessInboundAsync(EventMessage message, int source)
+        public async Coroutine ProcessInboundAsync(EventMessage message, Remote? source)
         {
             object InvokeDelegate(EventHandler subscription)
             {
                 List<object> parameters = new List<object>();
-                Delegate @delegate = subscription.Delegate;
+                DynFunc @delegate = subscription.Delegate;
                 MethodInfo method = @delegate.Method;
                 bool takesSource = method.GetParameters().FirstOrDefault(self => self.GetType() == typeof(Remote) ||
 #if SERVER
@@ -66,7 +66,8 @@ namespace FxEvents.Shared.EventSubsystem
 
                 object CallInternalDelegate()
                 {
-                    return @delegate.DynamicInvoke(parameters.ToArray());
+                    object[] objectArray = new object[parameters.Count];
+                    return @delegate.DynamicInvoke(source, objectArray);
                 }
 
 #if SERVER
@@ -75,7 +76,7 @@ namespace FxEvents.Shared.EventSubsystem
                     if (method.GetParameters().Where(self => self.GetType() == typeof(Remote)).Count() > 1)
                         throw new Exception($"{message.Endpoint} cannot have more than 1 \"Remote\" parameter.");
                     if (method.GetParameters().ToList().IndexOf(method.GetParameters().FirstOrDefault(self => self.GetType() == typeof(Remote))) != 0)
-                        throw new Exception($"{message.Endpoint} \"FromSource\" attribute can ONLY be applied to first parameter.");
+                        throw new Exception($"{message.Endpoint} \"Source\" attribute can ONLY be applied to first parameter.");
 
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
                                                                                         typeof(Remote).IsAssignableFrom(self.ParameterType) ||
@@ -105,14 +106,14 @@ namespace FxEvents.Shared.EventSubsystem
                             ConstructorCustomActivator<ISource> activator = (ConstructorCustomActivator<ISource>)Expression
                                 .Lambda(typeof(ConstructorCustomActivator<ISource>), expression, parameter).Compile();
 
-                            ISource objectInstance = activator.Invoke(source);
+                            ISource objectInstance = activator.Invoke(((Player)source).Handle);
                             parameters.Add(objectInstance);
                         }
                     }
                     else if (typeof(Player).IsAssignableFrom(type))
                     {
 
-                        parameters.Add(EventDispatcher.Instance.GetPlayers[source]);
+                        parameters.Add((Player)source);
                     }
                     else if (typeof(string).IsAssignableFrom(type))
                     {
@@ -124,6 +125,7 @@ namespace FxEvents.Shared.EventSubsystem
                     }
                 }
 #endif
+
                 if (message.Parameters == null)
                 {
                     return CallInternalDelegate();
@@ -146,7 +148,17 @@ namespace FxEvents.Shared.EventSubsystem
 
                 parameters.AddRange(holder.ToArray());
 
-                return @delegate.DynamicInvoke(parameters.ToArray());
+                foreach (var p in holder)
+                {
+                    Logger.Info($"Parameter: {p}");
+                    Logger.Info($"Parameter: {p.GetType()}");
+                }
+
+                if (holder.Count == 0)
+                    return CallInternalDelegate();
+
+
+                return @delegate.DynamicInvoke(source, holder.ToArray());
             }
 
             if (message.Flow == EventFlowType.Circular)
@@ -154,21 +166,30 @@ namespace FxEvents.Shared.EventSubsystem
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
                 EventHandler subscription = _handlers.SingleOrDefault(self => self.Endpoint == message.Endpoint) ??
                                    throw new Exception($"Could not find a handler for endpoint '{message.Endpoint}'");
-                object result = InvokeDelegate(subscription);
+                object result = null;
+                try
+                {
+                    result = InvokeDelegate(subscription);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"InvokeDelegate Exception:\n{ex}");
+                }
 
-                if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
+                if (result.GetType().GetGenericTypeDefinition() == typeof(Coroutine<>))
                 {
                     using CancellationTokenSource token = new CancellationTokenSource();
 
                     Coroutine task = (Coroutine)result;
                     Coroutine timeout = DelayDelegate!(10000);
+
+                    await task; // await the Coroutine task, once its completed then we can use IsCompleted to check if it was cancelled or not
+
                     bool completed = task.IsCompleted;
 
                     if (completed)
                     {
                         token.Cancel();
-
-                        await task;
 
                         result = ((dynamic)task).Result;
                     }
@@ -197,7 +218,12 @@ namespace FxEvents.Shared.EventSubsystem
                 {
                     stopwatch.Stop();
 
-                    await PrepareDelegate(response.Endpoint, source, response);
+#if SERVER
+                    await PrepareDelegate(response.Endpoint, ((Player)source).Handle, response);
+#else
+                    await PrepareDelegate(response.Endpoint, new ServerId().Handle, response);
+#endif
+
                     stopwatch.Start();
                 }
 
@@ -207,7 +233,12 @@ namespace FxEvents.Shared.EventSubsystem
 
                     byte[] data = context.GetData();
 
-                    PushDelegate(OutboundPipeline, source, data);
+#if SERVER
+                    PushDelegate(OutboundPipeline, ((Player)source).Handle, data);
+#else
+                    PushDelegate(OutboundPipeline, new ServerId().Handle, data);
+#endif
+
                     if (EventDispatcher.Debug)
                         Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
                 }
@@ -234,6 +265,10 @@ namespace FxEvents.Shared.EventSubsystem
             EventObservable waiting = _queue.SingleOrDefault(self => self.Message.Id == response.Id) ?? throw new Exception($"No request matching {response.Id} was found.");
 
             _queue.Remove(waiting);
+
+            if (EventDispatcher.Debug)
+                Logger.Debug($"[{response.Endpoint}] Received response from {waiting.Message} with {response.Data.Length} byte(s)");
+
             waiting.Callback.Invoke(response.Data);
         }
 
@@ -274,7 +309,7 @@ namespace FxEvents.Shared.EventSubsystem
                 {
 
 #if CLIENT
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : Natives.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : ((Player)source).Name)} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
                     Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : Natives.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
@@ -307,7 +342,7 @@ namespace FxEvents.Shared.EventSubsystem
             if (EventDispatcher.Debug)
             {
 #if CLIENT
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : Natives.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : ((Player)source).Name)} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #elif SERVER
                 Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : Natives.GetPlayerName("" + source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
 #endif
@@ -315,7 +350,7 @@ namespace FxEvents.Shared.EventSubsystem
             return holder.Value;
         }
 
-        public void Mount(string endpoint, Delegate @delegate)
+        public void Mount(string endpoint, DynFunc @delegate)
         {
             if (EventDispatcher.Debug)
                 Logger.Debug($"Mounted: {endpoint}");

@@ -25,19 +25,9 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<byte[]>(async serialized =>
-            {
-                try
-                {
-                    await ProcessInboundAsync(new ServerId().Handle, serialized);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("InboundPipeline:" + ex.ToString());
-                }
-            }));
+            EventDispatcher.Instance.AddEventHandler(InboundPipeline, Func.Create<Remote, byte[]>(OnInboundPipelineHandler));
 
-            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<byte[]>(serialized =>
+            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, Func.Create<byte[]>(serialized =>
             {
                 try
                 {
@@ -49,8 +39,20 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<string>(signature => _signature = signature));
+            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, Func.Create<string>(signature => _signature = signature));
             Events.TriggerServerEvent(SignaturePipeline);
+        }
+
+        private async void OnInboundPipelineHandler([Source] Remote remote, byte[] serialized)
+        {
+            try
+            {
+                await ProcessInboundAsync(remote, serialized);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("InboundPipeline:" + ex.ToString());
+            }
         }
 
         public async Coroutine PrepareAsync(string pipeline, int source, IMessage message)
@@ -58,7 +60,7 @@ namespace FxEvents.EventSystem
             if (string.IsNullOrWhiteSpace(_signature))
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                while (_signature == null) await BaseScript.Delay(0);
+                while (_signature == null) await BaseScript.Yield();
                 if (EventDispatcher.Debug)
                 {
                     Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");

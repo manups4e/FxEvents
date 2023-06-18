@@ -1,5 +1,5 @@
 ﻿global using CitizenFX.Core;
-using CitizenFX.FiveM.Native;
+using CitizenFX.Shared.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using Logger;
@@ -19,7 +19,7 @@ namespace FxEvents
         {
             Logger = new Log();
             Instance = this;
-            string debugMode = Natives.GetResourceMetadata(Natives.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            string debugMode = Natives.GetResourceMetadata((CString)Natives.GetCurrentResourceName(), "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || Convert.ToInt32(debugMode) > 0;
         }
 
@@ -71,14 +71,14 @@ namespace FxEvents
         }
 
         /// <summary>
-        /// registra un evento client (TriggerEvent)
+        /// Register an Event (TriggerEvent)
         /// </summary>
-        /// <param name="eventName">Nome evento</param>
-        /// <param name="action">Azione legata all'evento</param>
-        internal async void AddEventHandler(string eventName, Delegate action)
+        /// <param name="name">Event Name</param>
+        /// <param name="action">Event-related action</param>
+        internal async void AddEventHandler(string eventName, DynFunc action)
         {
             while (!Initialized) await BaseScript.Delay(0);
-            EventHandlers[eventName].Add(Func.Create(action));
+            EventHandlers[eventName].Add(action, Binding.All);
         }
 
         public static void Send(string endpoint, params object[] args)
@@ -99,7 +99,7 @@ namespace FxEvents
             }
             return await Events.Get<T>(endpoint, args);
         }
-        public static void Mount(string endpoint, Delegate @delegate)
+        public static void Mount(string endpoint, DynFunc @delegate)
         {
             if (!Initialized)
             {

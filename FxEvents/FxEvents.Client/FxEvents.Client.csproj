@@ -17,10 +17,9 @@
 		<AppDesignerFolder>Properties</AppDesignerFolder>
 		<RootNamespace>FxEvents.Client</RootNamespace>
 		<AssemblyName>FxEvents.Client</AssemblyName>
-		<TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
 		<FileAlignment>512</FileAlignment>
 		<Deterministic>true</Deterministic>
-		<TargetFramework>net452</TargetFramework>
+		<TargetFrameworks>net462;net472;net48</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<BaseOutputPath>..\CompiledLibs\Client</BaseOutputPath>
 		<Title>FxEvents.Client</Title>
@@ -35,7 +34,7 @@
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <AssemblyVersion></AssemblyVersion>
     <FileVersion></FileVersion>
-    <Version>1.0.2</Version>
+    <Version>2.0.0-beta3-monov2</Version>
 	</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
@@ -54,13 +53,8 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="CitizenFX.Core">
-		  <HintPath>L:\FiveM_gioco\FiveM.app\citizen\clr2\lib\mono\4.5\v2\CitizenFX.Core.dll</HintPath>
-		</Reference>
-		<Reference Include="CitizenFX.FiveM">
-		  <HintPath>L:\FiveM_gioco\FiveM.app\citizen\clr2\lib\mono\4.5\v2\CitizenFX.FiveM.dll</HintPath>
-		</Reference>
-		<Reference Include="CitizenFX.FiveM.Native">
-		  <HintPath>L:\FiveM_gioco\FiveM.app\citizen\clr2\lib\mono\4.5\v2\Native\CitizenFX.FiveM.Native.dll</HintPath>
+		  <HintPath>..\dependencies\FiveM\Client\CitizenFX.Core.dll</HintPath>
+		  <Private>False</Private>
 		</Reference>
 		<Reference Include="MsgPack">
 		  <HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>

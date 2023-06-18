@@ -1,5 +1,6 @@
 ﻿global using CitizenFX.Core;
 global using CitizenFX.Server.Native;
+using CitizenFX.Server;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using FxEvents.Shared.EventSubsystem;
@@ -25,7 +26,7 @@ namespace FxEvents
             GetPlayers = new PlayerList();
             Logger = new Log();
             Instance = this;
-            string debugMode = Natives.GetResourceMetadata(Natives.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            string debugMode = Natives.GetResourceMetadata((CString)Natives.GetCurrentResourceName(), "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || Convert.ToInt32(debugMode) > 0;
         }
 
@@ -77,14 +78,14 @@ namespace FxEvents
         }
 
         /// <summary>
-        /// registra un evento (TriggerEvent)
+        /// Register an Event (TriggerEvent)
         /// </summary>
-        /// <param name="name">Nome evento</param>
-        /// <param name="action">Azione legata all'evento</param>
-        internal async void AddEventHandler(string eventName, Delegate action)
+        /// <param name="name">Event Name</param>
+        /// <param name="action">Event-related action</param>
+        internal async void AddEventHandler(string eventName, DynFunc action)
         {
             while (!Initialized) await Delay(0);
-            EventHandlers[eventName].Add(Func.Create(action));
+            EventHandlers[eventName].Add(action, Binding.All);
         }
 
         public static void Send(Player player, string endpoint, params object[] args)
@@ -141,7 +142,7 @@ namespace FxEvents
             }
             return Events.Get<T>(client.Handle, endpoint, args);
         }
-        public static void Mount(string endpoint, Delegate @delegate)
+        public static void Mount(string endpoint, DynFunc @delegate)
         {
             if (!Initialized)
             {

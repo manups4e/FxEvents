@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
     <AssemblyTitle>FxEvents Server</AssemblyTitle>
-    <Description>FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
+    <Description>FxEvents an advanced event subsystem for CFX C# Resources.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Title>FxEvents.Server</Title>
@@ -19,7 +19,7 @@
     <Configurations>Debug;Release</Configurations>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <Version>1.0.2</Version>
+    <Version>2.0.0-beta3-monov2</Version>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -41,10 +41,12 @@
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="CitizenFX.Core">
-		  <HintPath>L:\FiveM\ManuGamemode\citizen\clr2\lib\mono\4.5\v2\CitizenFX.Core.dll</HintPath>
+		  <HintPath>..\dependencies\FiveM\Server\CitizenFX.Core.dll</HintPath>
+		  <Private>False</Private>
 		</Reference>
 		<Reference Include="CitizenFX.Server">
-		  <HintPath>L:\FiveM\ManuGamemode\citizen\clr2\lib\mono\4.5\v2\CitizenFX.Server.dll</HintPath>
+		  <HintPath>..\dependencies\FiveM\Server\CitizenFX.Server.dll</HintPath>
+		  <Private>False</Private>
 		</Reference>
 		<Reference Include="MsgPack">
 			<HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
