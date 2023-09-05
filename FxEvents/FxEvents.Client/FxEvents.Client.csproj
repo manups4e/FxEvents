@@ -62,7 +62,7 @@
 		<Reference Include="System.Xml.Linq" />
 		<Reference Include="System.Data.DataSetExtensions" />
     
-    <PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6136" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'" />
+    <PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6370" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'" />
 
     <Reference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
       <HintPath>..\dependencies\RedM\CitizenFX.Core.dll</HintPath>
