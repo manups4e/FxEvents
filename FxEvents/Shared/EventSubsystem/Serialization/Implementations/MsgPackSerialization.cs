@@ -5,6 +5,7 @@ using MsgPack.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace FxEvents.Shared.Serialization.Implementations
@@ -20,227 +21,6 @@ namespace FxEvents.Shared.Serialization.Implementations
         }
 
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
-        public void Serialize(Type type, object value, SerializationContext context)
-        {
-            string typeIdentifier = GetTypeIdentifier(type);
-            if (EventDispatcher.Debug)
-            {
-                logger.Debug("SERIALIZE - typeIdentifier: " + typeIdentifier);
-            }
-            if (typeIdentifier == "System.Collections.Generic.KeyValuePair`2")
-            {
-                Type[] generics = type.GetGenericArguments();
-                System.Reflection.MethodInfo method = GetType().GetMethod("Serialize",
-                    new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
-                ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
-                ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
-                ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
-                ParameterExpression pairParam = Expression.Parameter(type, "pair");
-                ParameterExpression valueParam = Expression.Parameter(typeof(object), "value");
-                MethodCallExpression call = Expression.Call(instanceParam, method!, typeParam, valueParam, contextParam);
-
-                void CallSerialization(Type genericType, string property)
-                {
-                    Action action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
-                    {
-                        instanceParam,
-                        typeParam,
-                        contextParam,
-                        pairParam,
-                        valueParam
-                    },
-                    Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
-                    Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
-                    Expression.Assign(typeParam, Expression.Constant(genericType, typeof(Type))),
-                    Expression.Assign(pairParam, Expression.Constant(value, type)),
-                    Expression.Assign(valueParam, Expression.Convert(Expression.Property(pairParam, property), typeof(object))), call)).Compile();
-
-                    action.Invoke();
-                }
-
-                CallSerialization(generics[0], "Key");
-                CallSerialization(generics[1], "Value");
-            }
-            else if (typeIdentifier.StartsWith("System.Tuple`"))
-            {
-                Type[] generics = type.GetGenericArguments();
-                System.Reflection.MethodInfo method = GetType().GetMethod("Serialize",
-                    new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
-                ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
-                ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
-                ParameterExpression valueParam = Expression.Parameter(type, "value");
-                ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
-
-                for (int idx = 0; idx < generics.Length; idx++)
-                {
-                    Type generic = generics[idx];
-                    MethodCallExpression call = Expression.Call(instanceParam, method!, typeParam,
-                        Expression.Convert(Expression.Property(valueParam, $"Item{idx + 1}"), typeof(object)),
-                        contextParam);
-                    Action action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
-                    {
-                        instanceParam,
-                        typeParam,
-                        contextParam,
-                        valueParam
-                    },
-                    Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
-                    Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
-                    Expression.Assign(typeParam, Expression.Constant(generic, typeof(Type))),
-                    Expression.Assign(valueParam, Expression.Constant(value, type)), call)).Compile();
-                    action.Invoke();
-                }
-            }
-            else if (typeIdentifier.StartsWith("CitizenFX.Core.Vector"))
-            {
-                IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(typeof(float[]), _context);
-                if (typeIdentifier.EndsWith("2"))
-                    ser.Pack(context.Writer.BaseStream, ((Vector2)value).ToArray());
-                else if (typeIdentifier.EndsWith("3"))
-                    ser.Pack(context.Writer.BaseStream, ((Vector3)value).ToArray());
-                else if (typeIdentifier.EndsWith("4"))
-                    ser.Pack(context.Writer.BaseStream, ((Vector4)value).ToArray());
-            }
-            else if (typeIdentifier == "CitizenFX.Core.Quaternion")
-            {
-                IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(typeof(float[]), _context);
-                ser.Pack(context.Writer.BaseStream, ((Quaternion)value).ToArray());
-            }
-            else
-            {
-                IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(type, _context);
-                ser.Pack(context.Writer.BaseStream, value);
-            }
-        }
-
-        public void Serialize<T>(T value, SerializationContext context)
-        {
-            Serialize(typeof(T), value, context);
-        }
-
-        public object Deserialize(Type type, SerializationContext context)
-        {
-            IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(type, _context);
-            object @return = ser.Unpack(context.Reader.BaseStream);
-            return @return;
-        }
-
-        public T Deserialize<T>(SerializationContext context) => Deserialize<T>(typeof(T), context);
-
-        public T Deserialize<T>(Type type, SerializationContext context)
-        {
-            bool canInstance = CanCreateInstanceUsingDefaultConstructor(type);
-            string typeIdentifier = GetTypeIdentifier(type);
-            if (EventDispatcher.Debug)
-            {
-                logger.Debug("DESERIALIZE - typeIdentifier: " + typeIdentifier);
-            }
-
-            if (TypeCache<T>.IsSimpleType)
-            {
-                object primitive = Deserialize(type, context);
-                if (primitive != null) return (T)primitive;
-            }
-            if (typeIdentifier == "System.Collections.Generic.KeyValuePair`2")
-            {
-                Type[] generics = type.GetGenericArguments();
-                System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ??
-                                  throw new SerializationException(context, type,
-                                      $"Could not find suitable constructor for type: {type.Name}");
-
-                object key = DeserializeAnonymously(generics[0], context);
-                object value = DeserializeAnonymously(generics[1], context);
-                ParameterExpression keyParam = Expression.Parameter(generics[0], "key");
-                ParameterExpression valueParam = Expression.Parameter(generics[1], "value");
-                BlockExpression block = Expression.Block(
-                    new[] { keyParam, valueParam },
-                    Expression.Assign(keyParam, Expression.Constant(key, generics[0])),
-                    Expression.Assign(valueParam, Expression.Constant(value, generics[1])),
-                    Expression.New(constructor, keyParam, valueParam)
-                );
-
-                if (typeof(T) == typeof(object))
-                {
-                    Type generic = typeof(ObjectActivator<>).MakeGenericType(type);
-                    Delegate activator = Expression.Lambda(generic, block).Compile();
-
-                    return (T)activator.DynamicInvoke();
-                }
-                else
-                {
-                    ObjectActivator<T> activator =
-                        (ObjectActivator<T>)Expression.Lambda(typeof(ObjectActivator<T>), block).Compile();
-
-                    return activator.Invoke();
-                }
-            }
-            else if (typeIdentifier.StartsWith("System.Tuple`"))
-            {
-                Type[] generics = type.GetGenericArguments();
-                System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ??
-                                  throw new SerializationException(context, type,
-                                      $"Could not find suitable constructor for type: {type.Name}");
-                List<Expression> parameters = new List<Expression>();
-
-                foreach (Type generic in generics)
-                {
-                    object entry = Deserialize(generic, context);
-
-                    parameters.Add(Expression.Constant(entry, generic));
-                }
-
-                NewExpression expression = Expression.New(constructor, parameters);
-
-                if (typeof(T) == typeof(object))
-                {
-                    Type generic = typeof(ObjectActivator<>).MakeGenericType(type);
-                    Delegate activator = Expression.Lambda(generic, expression).Compile();
-
-                    return (T)activator.DynamicInvoke();
-                }
-                else
-                {
-                    ObjectActivator<T> activator =
-                        (ObjectActivator<T>)Expression.Lambda(typeof(ObjectActivator<T>), expression).Compile();
-
-                    return activator.Invoke();
-                }
-            }
-            else if (typeIdentifier.StartsWith("CitizenFX.Core.Vector"))
-            {
-                MessagePackSerializer<float[]> ser = MessagePackSerializer.Get<float[]>(_context);
-                float[] @return = ser.Unpack(context.Reader.BaseStream);
-                object vec = null;
-                if (typeIdentifier.EndsWith("2"))
-                    vec = new Vector2(@return);
-                else if (typeIdentifier.EndsWith("3"))
-                    vec = new Vector3(@return);
-                else if (typeIdentifier.EndsWith("4"))
-                    vec = new Vector4(@return);
-                return (T)vec;
-            }
-            else if (typeIdentifier == "CitizenFX.Core.Quaternion")
-            {
-                MessagePackSerializer<float[]> ser = MessagePackSerializer.Get<float[]>(_context);
-                float[] @return = ser.Unpack(context.Reader.BaseStream);
-                object quat = new Quaternion(@return);
-                return (T)quat;
-            }
-            else
-            {
-                if (!canInstance)
-                {
-                    throw new SerializationException(context, type, $"Type {type.Name} is missing its emtpy constructor");
-                }
-                MessagePackSerializer<T> ser = MessagePackSerializer.Get<T>(_context);
-                T @return = ser.Unpack(context.Reader.BaseStream);
-                return @return;
-            }
-        }
-
-        public object DeserializeAnonymously(Type type, SerializationContext context) =>
-            Deserialize<object>(type, context);
-
         private static string GetTypeIdentifier(Type type)
         {
             StringBuilder builder = new StringBuilder();
@@ -260,5 +40,232 @@ namespace FxEvents.Shared.Serialization.Implementations
 
             return builder.ToString();
         }
+
+
+        #region Serialization
+        public void Serialize(Type type, object value, SerializationContext context)
+        {
+            string typeIdentifier = GetTypeIdentifier(type);
+            if (EventDispatcher.Debug)
+            {
+                logger.Debug("SERIALIZE - typeIdentifier: " + typeIdentifier);
+            }
+
+            if (typeIdentifier.StartsWith("System.Collections.Generic.KeyValuePair`2"))
+                SerializeKeyValuePair(type, value, context);
+            else if (typeIdentifier.StartsWith("System.Tuple`"))
+                SerializeTuple(type, value, context);
+            else if (typeIdentifier.StartsWith("CitizenFX.Core.Vector"))
+                SerializeVector(type, value, context);
+            else if (typeIdentifier == "CitizenFX.Core.Quaternion")
+                SerializeQuaternion(value, context);
+            else
+                SerializeObject(type, value, context);
+        }
+
+        private void SerializeKeyValuePair(Type type, object value, SerializationContext context)
+        {
+            Type[] generics = type.GetGenericArguments();
+            MethodInfo method = GetType().GetMethod("Serialize", new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
+
+            ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
+            ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
+            ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
+            ParameterExpression pairParam = Expression.Parameter(type, "pair");
+            ParameterExpression valueParam = Expression.Parameter(typeof(object), "value");
+
+            MethodCallExpression call = Expression.Call(instanceParam, method, typeParam, valueParam, contextParam);
+
+            void CallSerialization(Type genericType, string property)
+            {
+                Action action = Expression.Lambda<Action>(
+                    Expression.Block(
+                        new[] { instanceParam, typeParam, contextParam, pairParam, valueParam },
+                        Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
+                        Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
+                        Expression.Assign(typeParam, Expression.Constant(genericType, typeof(Type))),
+                        Expression.Assign(pairParam, Expression.Constant(value, type)),
+                        Expression.Assign(valueParam, Expression.Convert(Expression.Property(pairParam, property), typeof(object))),
+                        call
+                    )
+                ).Compile();
+
+                action.Invoke();
+            }
+
+            CallSerialization(generics[0], "Key");
+            CallSerialization(generics[1], "Value");
+        }
+
+        private void SerializeTuple(Type type, object value, SerializationContext context)
+        {
+            Type[] generics = type.GetGenericArguments();
+            MethodInfo method = GetType().GetMethod("Serialize", new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
+
+            ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
+            ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
+            ParameterExpression valueParam = Expression.Parameter(type, "value");
+            ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
+
+            for (int idx = 0; idx < generics.Length; idx++)
+            {
+                Type generic = generics[idx];
+                MethodCallExpression call = Expression.Call(instanceParam, method, typeParam,
+                    Expression.Convert(Expression.Property(valueParam, $"Item{idx + 1}"), typeof(object)),
+                    contextParam);
+
+                Action action = Expression.Lambda<Action>(
+                    Expression.Block(
+                        new[] { instanceParam, typeParam, contextParam, valueParam },
+                        Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
+                        Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
+                        Expression.Assign(typeParam, Expression.Constant(generic, typeof(Type))),
+                        Expression.Assign(valueParam, Expression.Constant(value, type)),
+                        call
+                    )
+                ).Compile();
+
+                action.Invoke();
+            }
+        }
+
+        private void SerializeVector(Type type, object value, SerializationContext context)
+        {
+            IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(typeof(float[]), context);
+            float[] vectorData;
+
+            if (type == typeof(Vector2))
+                vectorData = ((Vector2)value).ToArray();
+            else if (type == typeof(Vector3))
+                vectorData = ((Vector3)value).ToArray();
+            else
+                vectorData = ((Vector4)value).ToArray();
+
+            ser.Pack(context.Writer.BaseStream, vectorData);
+        }
+
+        private void SerializeQuaternion(object value, SerializationContext context)
+        {
+            IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(typeof(float[]), context);
+            float[] quaternionData = ((CitizenFX.Core.Quaternion)value).ToArray();
+        }
+
+        private void SerializeObject(Type type, object value, SerializationContext context)
+        {
+            IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(type, _context);
+            ser.Pack(context.Writer.BaseStream, value);
+        }
+
+        public void Serialize<T>(T value, SerializationContext context)
+        {
+            Serialize(typeof(T), value, context);
+        }
+        #endregion
+
+        #region Deserialization
+        public object Deserialize(Type type, SerializationContext context)
+        {
+            IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(type, _context);
+            object @return = ser.Unpack(context.Reader.BaseStream);
+            return @return;
+        }
+
+        public T Deserialize<T>(SerializationContext context) => Deserialize<T>(typeof(T), context);
+
+        public T Deserialize<T>(Type type, SerializationContext context)
+        {
+            string typeIdentifier = GetTypeIdentifier(type);
+            if (EventDispatcher.Debug)
+            {
+                logger.Debug("DESERIALIZE - typeIdentifier: " + typeIdentifier);
+            }
+
+            if (TypeCache<T>.IsSimpleType)
+            {
+                object primitive = Deserialize(type, context);
+                if (primitive != null) return (T)primitive;
+            }
+
+            if (typeIdentifier.StartsWith("System.Collections.Generic.KeyValuePair`2"))
+                return DeserializeKeyValuePair<T>(type, context);
+            else if (typeIdentifier.StartsWith("System.Tuple`"))
+                return DeserializeTuple<T>(type, context);
+            else if (typeIdentifier == "CitizenFX.Core.Vector2" || typeIdentifier == "CitizenFX.Core.Vector3" || typeIdentifier == "CitizenFX.Core.Vector4")
+                return DeserializeVector<T>(type, context);
+            else if (typeIdentifier == "CitizenFX.Core.Quaternion")
+                return DeserializeQuaternion<T>(context);
+            else
+                return DeserializeObject<T>(type, context);
+        }
+
+        private T DeserializeKeyValuePair<T>(Type type, SerializationContext context)
+        {
+            Type[] generics = type.GetGenericArguments();
+            System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ?? throw new SerializationException(context, type, $"Could not find suitable constructor for type: {type.Name}");
+
+
+            object key = DeserializeAnonymously(generics[0], context);
+            object value = DeserializeAnonymously(generics[1], context);
+
+            object kpv = Activator.CreateInstance(type, key, value);
+
+            return (T)kpv;
+        }
+
+        private T DeserializeTuple<T>(Type type, SerializationContext context)
+        {
+            Type[] generics = type.GetGenericArguments();
+            System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ??
+                              throw new SerializationException(context, type,
+                                  $"Could not find suitable constructor for type: {type.Name}");
+            List<object> parameters = new List<object>();
+
+            foreach (Type generic in generics)
+            {
+                object entry = Deserialize(generic, context);
+                parameters.Add(entry);
+            }
+
+            object tuple = Activator.CreateInstance(type, parameters.ToArray());
+            return (T)tuple;
+        }
+
+        private T DeserializeVector<T>(Type type, SerializationContext context)
+        {
+            MessagePackSerializer<float[]> ser = MessagePackSerializer.Get<float[]>(_context);
+            float[] @return = ser.Unpack(context.Reader.BaseStream);
+            object vec;
+            if (type == typeof(Vector2))
+                vec = new Vector2(@return);
+            else if (type == typeof(Vector3))
+                vec = new Vector3(@return);
+            else
+                vec = new Vector4(@return);
+            return (T)vec;
+        }
+
+        private T DeserializeQuaternion<T>(SerializationContext context)
+        {
+            MessagePackSerializer<float[]> ser = MessagePackSerializer.Get<float[]>(_context);
+            float[] @return = ser.Unpack(context.Reader.BaseStream);
+            object quat = new Quaternion(@return);
+            return (T)quat;
+        }
+
+        private T DeserializeObject<T>(Type type, SerializationContext context)
+        {
+            bool canInstance = CanCreateInstanceUsingDefaultConstructor(type);
+            if (!canInstance)
+            {
+                throw new SerializationException(context, type, $"Type {type.Name} is missing its emtpy constructor");
+            }
+            MessagePackSerializer<T> ser = MessagePackSerializer.Get<T>(_context);
+            T @return = ser.Unpack(context.Reader.BaseStream);
+            return @return;
+        }
+
+        public object DeserializeAnonymously(Type type, SerializationContext context) =>
+            Deserialize<object>(type, context);
+        #endregion
     }
 }
