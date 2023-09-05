@@ -7,19 +7,19 @@ namespace FxEvents.Shared.TypeExtensions
     {
         public static void Clone(this object source, object destination, bool defaults = true)
         {
-            var type = destination.GetType();
-            var properties = source.GetType().GetProperties();
+            Type type = destination.GetType();
+            System.Reflection.PropertyInfo[] properties = source.GetType().GetProperties();
 
-            foreach (var property in properties)
+            foreach (System.Reflection.PropertyInfo property in properties)
             {
                 if (!property.CanRead) continue;
 
-                var target = type.GetProperty(property.Name);
+                System.Reflection.PropertyInfo target = type.GetProperty(property.Name);
 
                 if ((target?.CanWrite ?? false) && target.PropertyType.IsAssignableFrom(property.PropertyType))
                 {
-                    var primitive = property.PropertyType.IsPrimitive;
-                    var value = property.GetValue(source, null);
+                    bool primitive = property.PropertyType.IsPrimitive;
+                    object value = property.GetValue(source, null);
 
                     if (!primitive)
                     {
@@ -35,7 +35,7 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static object Clone(this object source, bool defaults = true)
         {
-            var holder = Activator.CreateInstance(source.GetType());
+            object holder = Activator.CreateInstance(source.GetType());
 
             Clone(source, holder, defaults);
 

@@ -70,32 +70,32 @@ namespace FxEvents.Shared.EventSubsystem
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
                                                                         typeof(Player).IsAssignableFrom(self.ParameterType) ||
                                                                         typeof(string).IsAssignableFrom(self.ParameterType) || typeof(int).IsAssignableFrom(self.ParameterType));
-                    var type = param.ParameterType;
+                    Type type = param.ParameterType;
                     if (typeof(ISource).IsAssignableFrom(type))
                     {
-                        var constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)));
+                        ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)));
                         if (constructor == null)
                         {
                             throw new Exception("no constructor to initialize the ISource class");
                         }
 
-                        var parameter = Expression.Parameter(typeof(int), "handle");
-                        var expression = Expression.New(constructor, parameter);
+                        ParameterExpression parameter = Expression.Parameter(typeof(int), "handle");
+                        NewExpression expression = Expression.New(constructor, parameter);
                         if (typeof(ISource) == typeof(object))
                         {
-                            var generic = typeof(ConstructorCustomActivator<>).MakeGenericType(type);
-                            var activator = Expression.Lambda(generic, expression, parameter).Compile();
+                            Type generic = typeof(ConstructorCustomActivator<>).MakeGenericType(type);
+                            Delegate activator = Expression.Lambda(generic, expression, parameter).Compile();
 
-                            var objectInstance = (ISource)activator.DynamicInvoke(source);
+                            ISource objectInstance = (ISource)activator.DynamicInvoke(source);
                             parameters.Add(objectInstance);
                         }
                         else
                         {
 
-                            var activator = (ConstructorCustomActivator<ISource>)Expression
+                            ConstructorCustomActivator<ISource> activator = (ConstructorCustomActivator<ISource>)Expression
                                 .Lambda(typeof(ConstructorCustomActivator<ISource>), expression, parameter).Compile();
 
-                            var objectInstance = activator.Invoke(source);
+                            ISource objectInstance = activator.Invoke(source);
                             parameters.Add(objectInstance);
                         }
                     }

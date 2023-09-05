@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace FxEvents.Shared.Payload
+﻿namespace FxEvents.Shared.Payload
 {
     public class EventParameter
     {

@@ -47,7 +47,7 @@ namespace FxEvents.Shared.Serialization.Implementations
                     throw new SerializationException(context, type, "Cannot serialize values of 'System.Object' type");
                 }
 
-                var nullableUnderlying = Nullable.GetUnderlyingType(type);
+                Type nullableUnderlying = Nullable.GetUnderlyingType(type);
 
                 if (nullableUnderlying != null)
                 {
@@ -61,27 +61,27 @@ namespace FxEvents.Shared.Serialization.Implementations
                     return;
                 }
 
-                var primitive = SerializePrimitive(type, value, context);
+                bool primitive = SerializePrimitive(type, value, context);
 
                 if (primitive) return;
 
-                var typeIdentifier = GetTypeIdentifier(type);
+                string typeIdentifier = GetTypeIdentifier(type);
 
                 if (value is IEnumerable enumerable)
                 {
-                    var generics = type.GetGenericArguments();
+                    Type[] generics = type.GetGenericArguments();
 
                     if (generics.Length == 0)
                     {
                         throw new SerializationException(context, type, "Cannot serialize non-generic IEnumerables");
                     }
 
-                    var generic = value is IDictionary
+                    Type generic = value is IDictionary
                         ? typeof(KeyValuePair<,>)
                             .MakeGenericType(generics[0], generics[1])
                         : generics[0];
 
-                    var count = value switch
+                    int count = value switch
                     {
                         Array array => array.Length,
                         IDictionary dictionary => dictionary.Count,
@@ -93,28 +93,28 @@ namespace FxEvents.Shared.Serialization.Implementations
 
                     writer.Write(count);
 
-                    foreach (var entry in enumerable)
+                    foreach (object entry in enumerable)
                     {
                         Serialize(generic, entry, context);
                     }
                 }
                 else if (typeIdentifier.StartsWith("System.Tuple`"))
                 {
-                    var generics = type.GetGenericArguments();
-                    var method = GetType().GetMethod("Serialize",
+                    Type[] generics = type.GetGenericArguments();
+                    MethodInfo method = GetType().GetMethod("Serialize",
                         new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
-                    var instanceParam = Expression.Parameter(typeof(BinarySerialization), "instance");
-                    var typeParam = Expression.Parameter(typeof(Type), "type");
-                    var valueParam = Expression.Parameter(type, "value");
-                    var contextParam = Expression.Parameter(typeof(SerializationContext), "context");
+                    ParameterExpression instanceParam = Expression.Parameter(typeof(BinarySerialization), "instance");
+                    ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
+                    ParameterExpression valueParam = Expression.Parameter(type, "value");
+                    ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
 
-                    for (var idx = 0; idx < generics.Length; idx++)
+                    for (int idx = 0; idx < generics.Length; idx++)
                     {
-                        var generic = generics[idx];
-                        var call = Expression.Call(instanceParam, method!, typeParam,
+                        Type generic = generics[idx];
+                        MethodCallExpression call = Expression.Call(instanceParam, method!, typeParam,
                             Expression.Convert(Expression.Property(valueParam, $"Item{idx + 1}"), typeof(object)),
                             contextParam);
-                        var action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
+                        Action action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
                         {
                             instanceParam,
                             typeParam,
@@ -133,19 +133,19 @@ namespace FxEvents.Shared.Serialization.Implementations
                 }
                 else if (typeIdentifier == "System.Collections.Generic.KeyValuePair`2")
                 {
-                    var generics = type.GetGenericArguments();
-                    var method = GetType().GetMethod("Serialize",
+                    Type[] generics = type.GetGenericArguments();
+                    MethodInfo method = GetType().GetMethod("Serialize",
                         new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
-                    var instanceParam = Expression.Parameter(typeof(BinarySerialization), "instance");
-                    var typeParam = Expression.Parameter(typeof(Type), "type");
-                    var contextParam = Expression.Parameter(typeof(SerializationContext), "context");
-                    var pairParam = Expression.Parameter(type, "pair");
-                    var valueParam = Expression.Parameter(typeof(object), "value");
-                    var call = Expression.Call(instanceParam, method!, typeParam, valueParam, contextParam);
+                    ParameterExpression instanceParam = Expression.Parameter(typeof(BinarySerialization), "instance");
+                    ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
+                    ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
+                    ParameterExpression pairParam = Expression.Parameter(type, "pair");
+                    ParameterExpression valueParam = Expression.Parameter(typeof(object), "value");
+                    MethodCallExpression call = Expression.Call(instanceParam, method!, typeParam, valueParam, contextParam);
 
                     void CallSerialization(Type genericType, string property)
                     {
-                        var action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
+                        Action action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
                             {
                                 instanceParam,
                                 typeParam,
@@ -181,13 +181,13 @@ namespace FxEvents.Shared.Serialization.Implementations
                             break;
                         default:
                             {
-                                var method = type.GetMethod(PackMethod, BindingFlags.Public | BindingFlags.Instance, null, CallingConventions.HasThis, new[] { typeof(BinaryWriter) }, null);
+                                MethodInfo method = type.GetMethod(PackMethod, BindingFlags.Public | BindingFlags.Instance, null, CallingConventions.HasThis, new[] { typeof(BinaryWriter) }, null);
                                 if (method is null)
                                     throw new SerializationException(context, type, $"Failed to find \"{PackMethod}\" method; are you sure you have annotated the type with [Serialization] and the partial keyword?");
 
-                                var parameter = Expression.Parameter(typeof(BinaryWriter), "writer");
-                                var expression = Expression.Call(Expression.Constant(value, type), method, parameter);
-                                var activator = (SerializationObjectActivator)Expression.Lambda(
+                                ParameterExpression parameter = Expression.Parameter(typeof(BinaryWriter), "writer");
+                                MethodCallExpression expression = Expression.Call(Expression.Constant(value, type), method, parameter);
+                                SerializationObjectActivator activator = (SerializationObjectActivator)Expression.Lambda(
                                     typeof(SerializationObjectActivator), expression,
                                     parameter).Compile();
 
@@ -215,13 +215,13 @@ namespace FxEvents.Shared.Serialization.Implementations
         {
             try
             {
-                var exists = context.Reader!.ReadBoolean();
+                bool exists = context.Reader!.ReadBoolean();
 
                 if (!exists)
                 {
                     return default;
                 }
-                var nullableUnderlying = Nullable.GetUnderlyingType(type);
+                Type nullableUnderlying = Nullable.GetUnderlyingType(type);
 
                 if (nullableUnderlying != null)
                 {
@@ -229,40 +229,40 @@ namespace FxEvents.Shared.Serialization.Implementations
                 }
                 if (type.IsEnum)
                 {
-                    var handle = DeserializePrimitive(typeof(int), context);
-                    var expression = Expression.Convert(Expression.Constant(handle, typeof(int)), type);
-                    var conversion = Expression.Lambda(expression).Compile();
-                    var result = conversion.DynamicInvoke();
+                    object handle = DeserializePrimitive(typeof(int), context);
+                    UnaryExpression expression = Expression.Convert(Expression.Constant(handle, typeof(int)), type);
+                    Delegate conversion = Expression.Lambda(expression).Compile();
+                    object result = conversion.DynamicInvoke();
 
                     return (T)result;
                 }
-                var primitive = DeserializePrimitive(type, context);
+                object primitive = DeserializePrimitive(type, context);
 
                 if (primitive != null) return (T)primitive;
 
                 if (typeof(IEnumerable).IsAssignableFrom(type))
                 {
-                    var generics = type.GetGenericArguments();
-                    var generic = typeof(IDictionary).IsAssignableFrom(type)
+                    Type[] generics = type.GetGenericArguments();
+                    Type generic = typeof(IDictionary).IsAssignableFrom(type)
                         ? typeof(KeyValuePair<,>)
                             .MakeGenericType(generics[0], generics[1])
                         : generics[0];
 
-                    var count = context.Reader.ReadInt32();
-                    var countParam = Expression.Parameter(typeof(int), "count");
-                    var lambda = (Func<object>)Expression.Lambda(
+                    int count = context.Reader.ReadInt32();
+                    ParameterExpression countParam = Expression.Parameter(typeof(int), "count");
+                    Func<object> lambda = (Func<object>)Expression.Lambda(
                         Expression.Block(new[] { countParam },
                             Expression.Assign(countParam, Expression.Constant(count, typeof(int))),
                             Expression.NewArrayBounds(generic, countParam)
                         )).Compile();
-                    var arrayType = generic.MakeArrayType();
-                    var array = lambda.Invoke();
-                    var pointer = Expression.Constant(array, arrayType);
-                    var method = GetType()
+                    Type arrayType = generic.MakeArrayType();
+                    object array = lambda.Invoke();
+                    ConstantExpression pointer = Expression.Constant(array, arrayType);
+                    MethodInfo method = GetType()
                         .GetMethod("DeserializeAnonymously", new[] { typeof(Type), typeof(SerializationContext) });
-                    var instanceParam = Expression.Parameter(typeof(BinarySerialization), "instance");
-                    var genericParam = Expression.Parameter(typeof(Type), "generic");
-                    var contextParam = Expression.Parameter(typeof(SerializationContext), "context");
+                    ParameterExpression instanceParam = Expression.Parameter(typeof(BinarySerialization), "instance");
+                    ParameterExpression genericParam = Expression.Parameter(typeof(Type), "generic");
+                    ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
 
                     BlockExpression GetBlock(params Expression[] expressions)
                     {
@@ -277,10 +277,10 @@ namespace FxEvents.Shared.Serialization.Implementations
                         }.Concat(expressions));
                     }
 
-                    for (var idx = 0; idx < count; idx++)
+                    for (int idx = 0; idx < count; idx++)
                     {
-                        var call = Expression.Call(instanceParam, method!, genericParam, contextParam);
-                        var idxAssign =
+                        MethodCallExpression call = Expression.Call(instanceParam, method!, genericParam, contextParam);
+                        BinaryExpression idxAssign =
                             Expression.Assign(Expression.ArrayAccess(pointer, Expression.Constant(idx, typeof(int))),
                                 Expression.Convert(call, generic));
 
@@ -292,27 +292,27 @@ namespace FxEvents.Shared.Serialization.Implementations
                         return (T)array;
                     }
 
-                    var activator =
+                    ObjectActivator<T> activator =
                         (ObjectActivator<T>)Expression.Lambda(typeof(ObjectActivator<T>), Expression.New(type))
                             .Compile();
-                    var enumerable = activator.Invoke();
+                    T enumerable = activator.Invoke();
 
                     switch (enumerable)
                     {
                         case IDictionary _:
                             {
-                                foreach (var pair in (Array)array)
+                                foreach (object pair in (Array)array)
                                 {
-                                    var instance = Expression.Constant(enumerable, type);
-                                    var pairParam = Expression.Constant(pair, generic);
-                                    var keyParam = Expression.Parameter(generics[0], "key");
-                                    var valueParam = Expression.Parameter(generics[1], "value");
-                                    var call = Expression.Call(instance, type.GetMethod("Add",
+                                    ConstantExpression instance = Expression.Constant(enumerable, type);
+                                    ConstantExpression pairParam = Expression.Constant(pair, generic);
+                                    ParameterExpression keyParam = Expression.Parameter(generics[0], "key");
+                                    ParameterExpression valueParam = Expression.Parameter(generics[1], "value");
+                                    MethodCallExpression call = Expression.Call(instance, type.GetMethod("Add",
                                         new[] { generics[0], generics[1] })!,
                                         keyParam,
                                         valueParam);
 
-                                    var block = Expression.Block(new[]
+                                    BlockExpression block = Expression.Block(new[]
                                         {
                                         keyParam,
                                         valueParam
@@ -322,7 +322,7 @@ namespace FxEvents.Shared.Serialization.Implementations
                                         call
                                     );
 
-                                    var action = (Action)Expression.Lambda(typeof(Action), block).Compile();
+                                    Action action = (Action)Expression.Lambda(typeof(Action), block).Compile();
 
                                     action.Invoke();
                                 }
@@ -331,7 +331,7 @@ namespace FxEvents.Shared.Serialization.Implementations
                             }
                         case IList list:
                             {
-                                foreach (var entry in (Array)array)
+                                foreach (object entry in (Array)array)
                                 {
                                     list.Add(entry);
                                 }
@@ -343,34 +343,34 @@ namespace FxEvents.Shared.Serialization.Implementations
                     return enumerable;
                 }
 
-                var typeIdentifier = GetTypeIdentifier(type);
+                string typeIdentifier = GetTypeIdentifier(type);
                 if (typeIdentifier.StartsWith("System.Tuple`"))
                 {
-                    var generics = type.GetGenericArguments();
-                    var constructor = type.GetConstructor(generics) ??
+                    Type[] generics = type.GetGenericArguments();
+                    ConstructorInfo constructor = type.GetConstructor(generics) ??
                                       throw new SerializationException(context, type,
                                           $"Could not find suitable constructor for type: {type.Name}");
-                    var parameters = new List<Expression>();
+                    List<Expression> parameters = new List<Expression>();
 
-                    foreach (var generic in generics)
+                    foreach (Type generic in generics)
                     {
-                        var entry = Deserialize(generic, context);
+                        object entry = Deserialize(generic, context);
 
                         parameters.Add(Expression.Constant(entry, generic));
                     }
 
-                    var expression = Expression.New(constructor, parameters);
+                    NewExpression expression = Expression.New(constructor, parameters);
 
                     if (typeof(T) == typeof(object))
                     {
-                        var generic = typeof(ObjectActivator<>).MakeGenericType(type);
-                        var activator = Expression.Lambda(generic, expression).Compile();
+                        Type generic = typeof(ObjectActivator<>).MakeGenericType(type);
+                        Delegate activator = Expression.Lambda(generic, expression).Compile();
 
                         return (T)activator.DynamicInvoke();
                     }
                     else
                     {
-                        var activator =
+                        ObjectActivator<T> activator =
                             (ObjectActivator<T>)Expression.Lambda(typeof(ObjectActivator<T>), expression).Compile();
 
                         return activator.Invoke();
@@ -379,16 +379,16 @@ namespace FxEvents.Shared.Serialization.Implementations
 
                 if (typeIdentifier == "System.Collections.Generic.KeyValuePair`2")
                 {
-                    var generics = type.GetGenericArguments();
-                    var constructor = type.GetConstructor(generics) ??
+                    Type[] generics = type.GetGenericArguments();
+                    ConstructorInfo constructor = type.GetConstructor(generics) ??
                                       throw new SerializationException(context, type,
                                           $"Could not find suitable constructor for type: {type.Name}");
 
-                    var key = DeserializeAnonymously(generics[0], context);
-                    var value = DeserializeAnonymously(generics[1], context);
-                    var keyParam = Expression.Parameter(generics[0], "key");
-                    var valueParam = Expression.Parameter(generics[1], "value");
-                    var block = Expression.Block(
+                    object key = DeserializeAnonymously(generics[0], context);
+                    object value = DeserializeAnonymously(generics[1], context);
+                    ParameterExpression keyParam = Expression.Parameter(generics[0], "key");
+                    ParameterExpression valueParam = Expression.Parameter(generics[1], "value");
+                    BlockExpression block = Expression.Block(
                         new[] { keyParam, valueParam },
                         Expression.Assign(keyParam, Expression.Constant(key, generics[0])),
                         Expression.Assign(valueParam, Expression.Constant(value, generics[1])),
@@ -397,14 +397,14 @@ namespace FxEvents.Shared.Serialization.Implementations
 
                     if (typeof(T) == typeof(object))
                     {
-                        var generic = typeof(ObjectActivator<>).MakeGenericType(type);
-                        var activator = Expression.Lambda(generic, block).Compile();
+                        Type generic = typeof(ObjectActivator<>).MakeGenericType(type);
+                        Delegate activator = Expression.Lambda(generic, block).Compile();
 
                         return (T)activator.DynamicInvoke();
                     }
                     else
                     {
-                        var activator =
+                        ObjectActivator<T> activator =
                             (ObjectActivator<T>)Expression.Lambda(typeof(ObjectActivator<T>), block).Compile();
 
                         return activator.Invoke();
@@ -422,7 +422,7 @@ namespace FxEvents.Shared.Serialization.Implementations
                 }
 
                 {
-                    var constructor = type.GetConstructors().FirstOrDefault(self =>
+                    ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(self =>
                         self.GetParameters().FirstOrDefault()?.ParameterType == typeof(BinaryReader));
 
                     if (constructor == null)
@@ -431,19 +431,19 @@ namespace FxEvents.Shared.Serialization.Implementations
                             $"Could not find suitable constructor for type: {type.Name}");
                     }
 
-                    var parameter = Expression.Parameter(typeof(BinaryReader), "reader");
-                    var expression = Expression.New(constructor, parameter);
+                    ParameterExpression parameter = Expression.Parameter(typeof(BinaryReader), "reader");
+                    NewExpression expression = Expression.New(constructor, parameter);
                     if (typeof(T) == typeof(object))
                     {
-                        var generic = typeof(DeserializationObjectActivator<>).MakeGenericType(type);
-                        var activator = Expression.Lambda(generic, expression, parameter).Compile();
+                        Type generic = typeof(DeserializationObjectActivator<>).MakeGenericType(type);
+                        Delegate activator = Expression.Lambda(generic, expression, parameter).Compile();
 
                         return (T)activator.DynamicInvoke(context.Reader);
                     }
                     else
                     {
 
-                        var activator = (DeserializationObjectActivator<T>)Expression
+                        DeserializationObjectActivator<T> activator = (DeserializationObjectActivator<T>)Expression
                             .Lambda(typeof(DeserializationObjectActivator<T>), expression, parameter).Compile();
 
                         return activator.Invoke(context.Reader);
@@ -578,13 +578,13 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         private static string GetTypeIdentifier(Type type)
         {
-            var builder = new StringBuilder();
-            var declaring = type;
+            StringBuilder builder = new StringBuilder();
+            Type declaring = type;
 
             builder.Append(type.Namespace);
             builder.Append(".");
 
-            var idx = builder.Length;
+            int idx = builder.Length;
 
             while ((declaring = declaring.DeclaringType) != null)
             {

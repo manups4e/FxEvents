@@ -11,8 +11,8 @@ namespace FxEvents.Shared.TypeExtensions
     {
         public static Delegate CreateDelegate(this MethodInfo method, object target)
         {
-            var action = method.ReturnType == typeof(void);
-            var types = method.GetParameters().Select(self => self.ParameterType);
+            bool action = method.ReturnType == typeof(void);
+            System.Collections.Generic.IEnumerable<Type> types = method.GetParameters().Select(self => self.ParameterType);
 
             Func<Type[], Type> functionType;
 

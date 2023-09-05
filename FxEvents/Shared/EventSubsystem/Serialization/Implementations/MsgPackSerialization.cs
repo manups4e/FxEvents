@@ -22,22 +22,22 @@ namespace FxEvents.Shared.Serialization.Implementations
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
         public void Serialize(Type type, object value, SerializationContext context)
         {
-            var typeIdentifier = GetTypeIdentifier(type);
+            string typeIdentifier = GetTypeIdentifier(type);
             if (typeIdentifier == "System.Collections.Generic.KeyValuePair`2")
             {
-                var generics = type.GetGenericArguments();
-                var method = GetType().GetMethod("Serialize",
+                Type[] generics = type.GetGenericArguments();
+                System.Reflection.MethodInfo method = GetType().GetMethod("Serialize",
                     new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
-                var instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
-                var typeParam = Expression.Parameter(typeof(Type), "type");
-                var contextParam = Expression.Parameter(typeof(SerializationContext), "context");
-                var pairParam = Expression.Parameter(type, "pair");
-                var valueParam = Expression.Parameter(typeof(object), "value");
-                var call = Expression.Call(instanceParam, method!, typeParam, valueParam, contextParam);
+                ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
+                ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
+                ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
+                ParameterExpression pairParam = Expression.Parameter(type, "pair");
+                ParameterExpression valueParam = Expression.Parameter(typeof(object), "value");
+                MethodCallExpression call = Expression.Call(instanceParam, method!, typeParam, valueParam, contextParam);
 
                 void CallSerialization(Type genericType, string property)
                 {
-                    var action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
+                    Action action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
                         {
                                 instanceParam,
                                 typeParam,
@@ -62,21 +62,21 @@ namespace FxEvents.Shared.Serialization.Implementations
             }
             else if (typeIdentifier.StartsWith("System.Tuple`"))
             {
-                var generics = type.GetGenericArguments();
-                var method = GetType().GetMethod("Serialize",
+                Type[] generics = type.GetGenericArguments();
+                System.Reflection.MethodInfo method = GetType().GetMethod("Serialize",
                     new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
-                var instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
-                var typeParam = Expression.Parameter(typeof(Type), "type");
-                var valueParam = Expression.Parameter(type, "value");
-                var contextParam = Expression.Parameter(typeof(SerializationContext), "context");
+                ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
+                ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
+                ParameterExpression valueParam = Expression.Parameter(type, "value");
+                ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
 
-                for (var idx = 0; idx < generics.Length; idx++)
+                for (int idx = 0; idx < generics.Length; idx++)
                 {
-                    var generic = generics[idx];
-                    var call = Expression.Call(instanceParam, method!, typeParam,
+                    Type generic = generics[idx];
+                    MethodCallExpression call = Expression.Call(instanceParam, method!, typeParam,
                         Expression.Convert(Expression.Property(valueParam, $"Item{idx + 1}"), typeof(object)),
                         contextParam);
-                    var action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
+                    Action action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
                     {
                         instanceParam,
                         typeParam,
@@ -95,7 +95,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             }
             else
             {
-                var ser = MessagePackSerializer.Get(type, _context);
+                IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(type, _context);
                 ser.Pack(context.Writer.BaseStream, value);
             }
         }
@@ -107,8 +107,8 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         public object Deserialize(Type type, SerializationContext context)
         {
-            var ser = MessagePackSerializer.Get(type, _context);
-            var @return = ser.Unpack(context.Reader.BaseStream);
+            IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(type, _context);
+            object @return = ser.Unpack(context.Reader.BaseStream);
             return @return;
         }
 
@@ -116,26 +116,26 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         public T Deserialize<T>(Type type, SerializationContext context)
         {
-            var canInstance = CanCreateInstanceUsingDefaultConstructor(type);
-            var typeIdentifier = GetTypeIdentifier(type);
+            bool canInstance = CanCreateInstanceUsingDefaultConstructor(type);
+            string typeIdentifier = GetTypeIdentifier(type);
 
             if (TypeCache<T>.IsSimpleType)
             {
-                var primitive = Deserialize(type, context);
+                object primitive = Deserialize(type, context);
                 if (primitive != null) return (T)primitive;
             }
             if (typeIdentifier == "System.Collections.Generic.KeyValuePair`2")
             {
-                var generics = type.GetGenericArguments();
-                var constructor = type.GetConstructor(generics) ??
+                Type[] generics = type.GetGenericArguments();
+                System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ??
                                   throw new SerializationException(context, type,
                                       $"Could not find suitable constructor for type: {type.Name}");
 
-                var key = DeserializeAnonymously(generics[0], context);
-                var value = DeserializeAnonymously(generics[1], context);
-                var keyParam = Expression.Parameter(generics[0], "key");
-                var valueParam = Expression.Parameter(generics[1], "value");
-                var block = Expression.Block(
+                object key = DeserializeAnonymously(generics[0], context);
+                object value = DeserializeAnonymously(generics[1], context);
+                ParameterExpression keyParam = Expression.Parameter(generics[0], "key");
+                ParameterExpression valueParam = Expression.Parameter(generics[1], "value");
+                BlockExpression block = Expression.Block(
                     new[] { keyParam, valueParam },
                     Expression.Assign(keyParam, Expression.Constant(key, generics[0])),
                     Expression.Assign(valueParam, Expression.Constant(value, generics[1])),
@@ -144,14 +144,14 @@ namespace FxEvents.Shared.Serialization.Implementations
 
                 if (typeof(T) == typeof(object))
                 {
-                    var generic = typeof(ObjectActivator<>).MakeGenericType(type);
-                    var activator = Expression.Lambda(generic, block).Compile();
+                    Type generic = typeof(ObjectActivator<>).MakeGenericType(type);
+                    Delegate activator = Expression.Lambda(generic, block).Compile();
 
                     return (T)activator.DynamicInvoke();
                 }
                 else
                 {
-                    var activator =
+                    ObjectActivator<T> activator =
                         (ObjectActivator<T>)Expression.Lambda(typeof(ObjectActivator<T>), block).Compile();
 
                     return activator.Invoke();
@@ -159,31 +159,31 @@ namespace FxEvents.Shared.Serialization.Implementations
             }
             else if (typeIdentifier.StartsWith("System.Tuple`"))
             {
-                var generics = type.GetGenericArguments();
-                var constructor = type.GetConstructor(generics) ??
+                Type[] generics = type.GetGenericArguments();
+                System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ??
                                   throw new SerializationException(context, type,
                                       $"Could not find suitable constructor for type: {type.Name}");
-                var parameters = new List<Expression>();
+                List<Expression> parameters = new List<Expression>();
 
-                foreach (var generic in generics)
+                foreach (Type generic in generics)
                 {
-                    var entry = Deserialize(generic, context);
+                    object entry = Deserialize(generic, context);
 
                     parameters.Add(Expression.Constant(entry, generic));
                 }
 
-                var expression = Expression.New(constructor, parameters);
+                NewExpression expression = Expression.New(constructor, parameters);
 
                 if (typeof(T) == typeof(object))
                 {
-                    var generic = typeof(ObjectActivator<>).MakeGenericType(type);
-                    var activator = Expression.Lambda(generic, expression).Compile();
+                    Type generic = typeof(ObjectActivator<>).MakeGenericType(type);
+                    Delegate activator = Expression.Lambda(generic, expression).Compile();
 
                     return (T)activator.DynamicInvoke();
                 }
                 else
                 {
-                    var activator =
+                    ObjectActivator<T> activator =
                         (ObjectActivator<T>)Expression.Lambda(typeof(ObjectActivator<T>), expression).Compile();
 
                     return activator.Invoke();
@@ -195,8 +195,8 @@ namespace FxEvents.Shared.Serialization.Implementations
                 {
                     throw new SerializationException(context, type, $"Type {type.Name} is missing its emtpy constructor");
                 }
-                var ser = MessagePackSerializer.Get<T>(_context);
-                var @return = ser.Unpack(context.Reader.BaseStream);
+                MessagePackSerializer<T> ser = MessagePackSerializer.Get<T>(_context);
+                T @return = ser.Unpack(context.Reader.BaseStream);
                 return @return;
             }
         }
@@ -206,13 +206,13 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         private static string GetTypeIdentifier(Type type)
         {
-            var builder = new StringBuilder();
-            var declaring = type;
+            StringBuilder builder = new StringBuilder();
+            Type declaring = type;
 
             builder.Append(type.Namespace);
             builder.Append(".");
 
-            var idx = builder.Length;
+            int idx = builder.Length;
 
             while ((declaring = declaring.DeclaringType) != null)
             {

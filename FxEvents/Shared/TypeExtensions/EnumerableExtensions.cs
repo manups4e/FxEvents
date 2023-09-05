@@ -15,7 +15,7 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action)
         {
-            foreach (var value in enumerable)
+            foreach (T value in enumerable)
             {
                 action?.Invoke(value);
             }
@@ -23,7 +23,7 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static IEnumerable<T> Aggregate<T>(this IEnumerable<T> enumerable, Action<T> aggregator)
         {
-            var aggregate = enumerable.ToList();
+            List<T> aggregate = enumerable.ToList();
 
             aggregate.ForEach(self => aggregator?.Invoke(self));
 
@@ -32,10 +32,10 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static IEnumerable<Tuple<T, int>> WithIndex<T>(this IEnumerable<T> enumerable)
         {
-            var collection = new List<Tuple<T, int>>();
-            var index = -1;
+            List<Tuple<T, int>> collection = new List<Tuple<T, int>>();
+            int index = -1;
 
-            foreach (var entry in enumerable)
+            foreach (T entry in enumerable)
             {
                 index++;
                 collection.Add(Tuple.Create(entry, index));
@@ -46,9 +46,9 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static IEnumerable<T> Replace<T>(this IEnumerable<T> enumerable, Func<T, bool> filter, T replacement)
         {
-            foreach (var value in enumerable)
+            foreach (T value in enumerable)
             {
-                var condition = filter.Invoke(value);
+                bool condition = filter.Invoke(value);
 
                 yield return condition ? replacement : value;
             }
@@ -56,11 +56,11 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static void Replace<T>(this List<T> list, Func<T, bool> filter, T replacement)
         {
-            var index = -1;
+            int index = -1;
 
-            for (var i = 0; i < list.Count; i++)
+            for (int i = 0; i < list.Count; i++)
             {
-                var entry = list[i];
+                T entry = list[i];
 
                 if (filter.Invoke(entry))
                 {
@@ -79,7 +79,7 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static void AddOrUpdate<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue def, Func<TValue, TValue> mutation)
         {
-            if (dictionary.TryGetValue(key, out var value))
+            if (dictionary.TryGetValue(key, out TValue? value))
             {
                 dictionary[key] = mutation.Invoke(value);
             }

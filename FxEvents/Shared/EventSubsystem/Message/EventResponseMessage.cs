@@ -61,7 +61,7 @@ namespace FxEvents.Shared.Message
             }
             if (reader.ReadBoolean())
             {
-                var dataLength = reader.ReadInt32();
+                int dataLength = reader.ReadInt32();
                 Data = reader.ReadBytes(dataLength);
             }
         }

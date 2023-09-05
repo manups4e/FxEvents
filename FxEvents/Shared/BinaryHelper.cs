@@ -18,7 +18,7 @@ namespace FxEvents.Shared
         }
         public static byte[] StringToBytes(this string str)
         {
-            var arr = str.ToCharArray();
+            char[] arr = str.ToCharArray();
             if (arr[2] != '-' && arr[5] != '-') return default;
             return str.Split('-').Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray();
         }

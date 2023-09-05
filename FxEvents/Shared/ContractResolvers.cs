@@ -7,11 +7,11 @@ namespace FxEvents.Shared
     {
         protected override JsonContract CreateContract(Type objectType)
         {
-            var contract = base.CreateContract(objectType);
+            JsonContract contract = base.CreateContract(objectType);
 
             if (objectType.IsAbstract || objectType.IsInterface)
             {
-                var substitute = JsonHelper.Substitutes.TryGetValue(objectType, out var result) ? result : null;
+                Type substitute = JsonHelper.Substitutes.TryGetValue(objectType, out Type result) ? result : null;
 
                 if (substitute != null)
                 {

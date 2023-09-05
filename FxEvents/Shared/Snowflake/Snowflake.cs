@@ -28,7 +28,7 @@ namespace FxEvents.Shared.Snowflakes
 
         public SnowflakeFragments Deconstruct()
         {
-            var instance = SnowflakeGenerator.Instance;
+            SnowflakeGenerator instance = SnowflakeGenerator.Instance;
 
             return instance.Deconstruct((long)_value);
         }

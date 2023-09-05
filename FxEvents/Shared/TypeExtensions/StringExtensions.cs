@@ -33,7 +33,7 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static bool ToBool(this string source)
         {
-            if (int.TryParse(source, out var number))
+            if (int.TryParse(source, out int number))
             {
                 return number >= 1;
             }

@@ -18,7 +18,7 @@ namespace FxEvents.Shared.Snowflakes
 
         public static SnowflakeGenerator Create(short instance)
         {
-            var value = new SnowflakeGenerator(instance, new SnowflakeConfiguration());
+            SnowflakeGenerator value = new SnowflakeGenerator(instance, new SnowflakeConfiguration());
 
             _singletonInstance = value;
 
@@ -40,7 +40,7 @@ namespace FxEvents.Shared.Snowflakes
         {
             lock (_lock)
             {
-                var timestamp = time & _maskTime;
+                long timestamp = time & _maskTime;
 
                 if (_lastTimeslot == timestamp)
                 {
@@ -67,7 +67,7 @@ namespace FxEvents.Shared.Snowflakes
 
         public SnowflakeFragments Deconstruct(long value)
         {
-            var fragments = new SnowflakeFragments
+            SnowflakeFragments fragments = new SnowflakeFragments
             {
                 Sequence = value & _maskSequence,
                 Instance = (value >> _shiftInstance) & _maskInstance,

@@ -54,7 +54,7 @@ namespace FxEvents.Shared
         public static T FromJson<T>(this string serialized, out bool result, SnowflakeRepresentation representation = SnowflakeRepresentation.String,
             JsonSerializerSettings settings = null)
         {
-            var value = FromJsonInternal(serialized, typeof(T), out var transient, representation, settings);
+            object value = FromJsonInternal(serialized, typeof(T), out bool transient, representation, settings);
 
             result = transient;
             return (T)value;
@@ -65,7 +65,7 @@ namespace FxEvents.Shared
         {
             try
             {
-                var deserialized = InvokeWithRepresentation(() => JsonConvert.DeserializeObject(serialized, type, settings ?? Empty),
+                object deserialized = InvokeWithRepresentation(() => JsonConvert.DeserializeObject(serialized, type, settings ?? Empty),
                     representation, false);
 
                 result = true;
@@ -82,7 +82,7 @@ namespace FxEvents.Shared
 
         private static object InvokeWithRepresentation(Func<object> func, SnowflakeRepresentation representation, bool suppressErrors = true)
         {
-            var transient = _snowflakeConverter.Representation;
+            SnowflakeRepresentation transient = _snowflakeConverter.Representation;
 
             _snowflakeConverter.Representation = representation;
 
