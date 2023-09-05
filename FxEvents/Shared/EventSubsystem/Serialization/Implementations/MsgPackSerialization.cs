@@ -23,6 +23,7 @@ namespace FxEvents.Shared.Serialization.Implementations
         public void Serialize(Type type, object value, SerializationContext context)
         {
             string typeIdentifier = GetTypeIdentifier(type);
+            logger.Debug("SERIALIZE - typeIdentifier: " + typeIdentifier);
             if (typeIdentifier == "System.Collections.Generic.KeyValuePair`2")
             {
                 Type[] generics = type.GetGenericArguments();
@@ -38,21 +39,18 @@ namespace FxEvents.Shared.Serialization.Implementations
                 void CallSerialization(Type genericType, string property)
                 {
                     Action action = (Action)Expression.Lambda(typeof(Action), Expression.Block(new[]
-                        {
-                                instanceParam,
-                                typeParam,
-                                contextParam,
-                                pairParam,
-                                valueParam
-                            },
-                        Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
-                        Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
-                        Expression.Assign(typeParam, Expression.Constant(genericType, typeof(Type))),
-                        Expression.Assign(pairParam, Expression.Constant(value, type)),
-                        Expression.Assign(valueParam,
-                            Expression.Convert(Expression.Property(pairParam, property), typeof(object))),
-                        call
-                    )).Compile();
+                    {
+                        instanceParam,
+                        typeParam,
+                        contextParam,
+                        pairParam,
+                        valueParam
+                    },
+                    Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
+                    Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
+                    Expression.Assign(typeParam, Expression.Constant(genericType, typeof(Type))),
+                    Expression.Assign(pairParam, Expression.Constant(value, type)),
+                    Expression.Assign(valueParam, Expression.Convert(Expression.Property(pairParam, property), typeof(object))), call)).Compile();
 
                     action.Invoke();
                 }
@@ -86,12 +84,24 @@ namespace FxEvents.Shared.Serialization.Implementations
                     Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
                     Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
                     Expression.Assign(typeParam, Expression.Constant(generic, typeof(Type))),
-                    Expression.Assign(valueParam, Expression.Constant(value, type)),
-                    call
-                    )).Compile();
-
+                    Expression.Assign(valueParam, Expression.Constant(value, type)), call)).Compile();
                     action.Invoke();
                 }
+            }
+            else if (typeIdentifier.StartsWith("CitizenFX.Core.Vector"))
+            {
+                IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(typeof(float[]), _context);
+                if (typeIdentifier.EndsWith("2"))
+                    ser.Pack(context.Writer.BaseStream, ((Vector2)value).ToArray());
+                else if (typeIdentifier.EndsWith("3"))
+                    ser.Pack(context.Writer.BaseStream, ((Vector3)value).ToArray());
+                else if (typeIdentifier.EndsWith("4"))
+                    ser.Pack(context.Writer.BaseStream, ((Vector4)value).ToArray());
+            }
+            else if (typeIdentifier == "CitizenFX.Core.Quaternion")
+            {
+                IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(typeof(float[]), _context);
+                ser.Pack(context.Writer.BaseStream, ((Quaternion)value).ToArray());
             }
             else
             {
@@ -118,6 +128,7 @@ namespace FxEvents.Shared.Serialization.Implementations
         {
             bool canInstance = CanCreateInstanceUsingDefaultConstructor(type);
             string typeIdentifier = GetTypeIdentifier(type);
+            logger.Debug("DESERIALIZE - typeIdentifier: " + typeIdentifier);
 
             if (TypeCache<T>.IsSimpleType)
             {
@@ -188,6 +199,26 @@ namespace FxEvents.Shared.Serialization.Implementations
 
                     return activator.Invoke();
                 }
+            }
+            else if (typeIdentifier.StartsWith("CitizenFX.Core.Vector"))
+            {
+                MessagePackSerializer<float[]> ser = MessagePackSerializer.Get<float[]>(_context);
+                float[] @return = ser.Unpack(context.Reader.BaseStream);
+                object vec = null;
+                if (typeIdentifier.EndsWith("2"))
+                    vec = new Vector2(@return);
+                else if (typeIdentifier.EndsWith("3"))
+                    vec = new Vector3(@return);
+                else if (typeIdentifier.EndsWith("4"))
+                    vec = new Vector4(@return);
+                return (T)vec;
+            }
+            else if (typeIdentifier == "CitizenFX.Core.Quaternion")
+            {
+                MessagePackSerializer<float[]> ser = MessagePackSerializer.Get<float[]>(_context);
+                float[] @return = ser.Unpack(context.Reader.BaseStream);
+                object quat = new Quaternion(@return);
+                return (T)quat;
             }
             else
             {
