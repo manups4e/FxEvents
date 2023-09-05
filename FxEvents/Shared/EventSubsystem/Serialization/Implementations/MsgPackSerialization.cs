@@ -23,7 +23,10 @@ namespace FxEvents.Shared.Serialization.Implementations
         public void Serialize(Type type, object value, SerializationContext context)
         {
             string typeIdentifier = GetTypeIdentifier(type);
-            logger.Debug("SERIALIZE - typeIdentifier: " + typeIdentifier);
+            if (EventDispatcher.Debug)
+            {
+                logger.Debug("SERIALIZE - typeIdentifier: " + typeIdentifier);
+            }
             if (typeIdentifier == "System.Collections.Generic.KeyValuePair`2")
             {
                 Type[] generics = type.GetGenericArguments();
@@ -128,7 +131,10 @@ namespace FxEvents.Shared.Serialization.Implementations
         {
             bool canInstance = CanCreateInstanceUsingDefaultConstructor(type);
             string typeIdentifier = GetTypeIdentifier(type);
-            logger.Debug("DESERIALIZE - typeIdentifier: " + typeIdentifier);
+            if (EventDispatcher.Debug)
+            {
+                logger.Debug("DESERIALIZE - typeIdentifier: " + typeIdentifier);
+            }
 
             if (TypeCache<T>.IsSimpleType)
             {
