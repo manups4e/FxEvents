@@ -5,7 +5,22 @@ Signatures are encrypted per each client and using the proviced MsgPack binary s
 To work you only need to add `FXEvents.Client.dll` or `FXEvents.Server.dll` and `Newtonsoft.Json.dll` (In case of json serialization) to your resource.
 No need of any external library for MsgPack, the event system uses the internal MsgPack dll provided with fivem itself!!
 
+[![Discord Server Invite](https://invite.caspertheghost.me?inviteCode=KKN7kRT2vM)](https://discord.gg/KKN7kRT2vM)
+
 Usage examples:
+
+## Initialization
+```c#
+public class Main : BaseScript
+{
+ public Main()
+ {
+  // The Event Dispatcher can now be initialized with your own inbound, outbound, and signatures.
+  // This allows you to use FxEvents in more than one resource on the server without having signature collisions.
+  EventDispatcher.Initalize("inbound", "outbound", "signature");
+ }
+}
+```
  
 ## To mount an event:
 ```c#
