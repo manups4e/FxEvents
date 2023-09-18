@@ -21,7 +21,7 @@ namespace FxEvents
             Logger = new Log();
             Instance = this;
             string debugMode = API.GetResourceMetadata(API.GetCurrentResourceName(), "fxevents_debug_mode", 0);
-            Debug = debugMode == "yes" || debugMode == "true" || Convert.ToInt32(debugMode) > 0;
+            Debug = debugMode == "yes" || debugMode == "true" || int.TryParse(debugMode, out int num) && num > 0;
         }
 
         private static string SetSignaturePipelineString(string signatureString)
