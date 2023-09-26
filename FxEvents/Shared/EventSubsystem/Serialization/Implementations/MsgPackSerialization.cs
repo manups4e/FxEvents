@@ -1,6 +1,8 @@
 using FxEvents.Shared.Exceptions;
+using FxEvents.Shared.Snowflakes;
 using FxEvents.Shared.TypeExtensions;
 using Logger;
+using MsgPack;
 using MsgPack.Serialization;
 using System;
 using System.Collections.Generic;
@@ -99,34 +101,21 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         private void SerializeTuple(Type type, object value, SerializationContext context)
         {
-            Type[] generics = type.GetGenericArguments();
-            MethodInfo method = GetType().GetMethod("Serialize", new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
-
-            ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
-            ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
-            ParameterExpression valueParam = Expression.Parameter(type, "value");
-            ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
-
-            for (int idx = 0; idx < generics.Length; idx++)
+            PropertyInfo[] props = type.GetProperties();
+            List<byte[]> list = new();
+            for (int idx = 0; idx < props.Length; idx++)
             {
-                Type generic = generics[idx];
-                MethodCallExpression call = Expression.Call(instanceParam, method, typeParam,
-                    Expression.Convert(Expression.Property(valueParam, $"Item{idx + 1}"), typeof(object)),
-                    contextParam);
-
-                Action action = Expression.Lambda<Action>(
-                    Expression.Block(
-                        new[] { instanceParam, typeParam, contextParam, valueParam },
-                        Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
-                        Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
-                        Expression.Assign(typeParam, Expression.Constant(generic, typeof(Type))),
-                        Expression.Assign(valueParam, Expression.Constant(value, type)),
-                        call
-                    )
-                ).Compile();
-
-                action.Invoke();
+                PropertyInfo generic = props[idx];
+                if (generic.PropertyType == typeof(Snowflake))
+                {
+                    Snowflake val = (Snowflake)generic.GetValue(value);
+                    val.PackSerializedBytes(context.Writer);
+                }
+                else
+                    list.Add(generic.GetValue(value).ToBytes());
             }
+            IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(typeof(List<byte[]>), context);
+            ser.Pack(context.Writer.BaseStream, list);
         }
 
         private void SerializeVector(Type type, object value, SerializationContext context)
