@@ -57,10 +57,10 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Server\.editorconfig" />
+    <None Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
     <EditorConfigFiles
-			Remove="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Server\.editorconfig" />
+			Remove=".editorconfig" />
   </ItemGroup>
 </Project>

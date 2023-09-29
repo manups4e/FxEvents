@@ -1,35 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Configurations>Release RedM;Release FiveM;Debug RedM;Debug FiveM</Configurations>
-    <AssemblyTitle Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">
-      FxEvents
-      FiveM Client
-    </AssemblyTitle>
-    <AssemblyTitle Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">
-      FxEvents RedM
-      Client
-    </AssemblyTitle>
-    <Description Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">
-      FxEvents an
-      advanced event subsystem for FiveM C# Resources.
-    </Description>
-    <Description Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">
-      FxEvents an
-      advanced event subsystem for RedM C# Resources.
-    </Description>
-    <PackageTags Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">
-      FiveM FxEvents
-    </PackageTags>
-    <PackageTags Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">
-      RedM FxEvents
-    </PackageTags>
+    <AssemblyTitle Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents FiveM Client</AssemblyTitle>
+    <AssemblyTitle Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents RedM Client</AssemblyTitle>
+    <Description Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
+    <Description Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents an advanced event subsystem for RedM C# Resources.</Description>
+    <PackageTags Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FiveM FxEvents</PackageTags>
+    <PackageTags Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">RedM FxEvents</PackageTags>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <PackageId Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">
-      FxEvents.FiveM.Client
-    </PackageId>
-    <PackageId Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">
-      FxEvents.RedM.Client
-    </PackageId>
+    <PackageId Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents.FiveM.Client</PackageId>
+    <PackageId Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents.RedM.Client</PackageId>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug FiveM</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>4f57e7a2-97b7-499b-8f9a-57f0af74c9ac</ProjectGuid>
@@ -82,11 +62,9 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
 
-    <PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6370"
-			Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'" />
+    <PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6370" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'" />
 
-    <Reference Include="CitizenFX.Core.Client" ExcludeAssets="runtime"
-			Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
+    <Reference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
       <HintPath>..\dependencies\RedM\CitizenFX.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
@@ -118,7 +96,6 @@
     <None Include="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
   </ItemGroup>
   <ItemGroup>
-    <EditorConfigFiles
-			Remove="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
+    <EditorConfigFiles Remove="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
   </ItemGroup>
 </Project>
