@@ -11,6 +11,7 @@ namespace FxEvents
     public class EventDispatcher : BaseScript
     {
         internal static Log Logger;
+        internal PlayerList GetPlayers => Players;
         internal static EventDispatcher Instance { get; set; }
         internal static ClientGateway Events;
         internal static bool Debug { get; set; }

@@ -49,18 +49,18 @@ namespace FxEvents.Shared.EventSubsystem
             object InvokeDelegate(EventHandler subscription)
             {
                 List<object> parameters = new List<object>();
+                bool isServer = API.IsDuplicityVersion();
                 Delegate @delegate = subscription.Delegate;
                 MethodInfo method = @delegate.Method;
                 bool takesSource = method.GetParameters().Any(self => self.GetCustomAttribute<FromSourceAttribute>() != null);
-                int startingIndex = takesSource && API.IsDuplicityVersion() ? 1 : 0;
+                int startingIndex = takesSource && isServer ? 1 : 0;
 
                 object CallInternalDelegate()
                 {
                     return @delegate.DynamicInvoke(parameters.ToArray());
                 }
 
-#if SERVER
-                if (takesSource && API.IsDuplicityVersion())
+                if (isServer && takesSource)
                 {
                     if (method.GetParameters().Where(self => self.GetCustomAttribute<FromSourceAttribute>() != null).Count() > 1)
                         throw new Exception($"{message.Endpoint} cannot have more than 1 \"FromSource\" attribute applied to its parameters.");
@@ -112,7 +112,7 @@ namespace FxEvents.Shared.EventSubsystem
                         parameters.Add(source);
                     }
                 }
-#endif
+
                 if (message.Parameters == null)
                 {
                     return CallInternalDelegate();

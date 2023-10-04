@@ -29,4 +29,13 @@ namespace FxEvents.Shared.TypeExtensions
         public static Type Type { get; }
         // ReSharper restore StaticMemberInGenericType
     }
+
+    public static class TypeCache
+    {
+        public static bool IsSimpleType(this Type type) => Type.GetTypeCode(type) switch
+        {
+            TypeCode.Object or TypeCode.DBNull or TypeCode.Empty or TypeCode.DateTime => false,
+            _ => true,
+        };
+    }
 }
