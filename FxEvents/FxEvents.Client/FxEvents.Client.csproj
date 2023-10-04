@@ -1,44 +1,43 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <Configurations>Release RedM;Release FiveM;Debug RedM;Debug FiveM</Configurations>
-    <AssemblyTitle Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents FiveM Client</AssemblyTitle>
-    <AssemblyTitle Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents RedM Client</AssemblyTitle>
-    <Description Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
-    <Description Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents an advanced event subsystem for RedM C# Resources.</Description>
-    <PackageTags Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FiveM FxEvents</PackageTags>
-    <PackageTags Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">RedM FxEvents</PackageTags>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <PackageId Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents.FiveM.Client</PackageId>
-    <PackageId Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents.RedM.Client</PackageId>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug FiveM</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>4f57e7a2-97b7-499b-8f9a-57f0af74c9ac</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FxEvents.Client</RootNamespace>
-    <AssemblyName>FxEvents.Client</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-    <TargetFramework>net452</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <BaseOutputPath>..\CompiledLibs\Client</BaseOutputPath>
-    <Title>FxEvents.Client</Title>
-    <PackageProjectUrl>https://github.com/manups4e/FxEvents</PackageProjectUrl>
-    <Copyright>Copyright Leonardo Emanuele</Copyright>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <DebugType>embedded</DebugType>
-    <TargetName>FxEvents.Client</TargetName>
-    <WarningsNotAsErrors>$(WarningsNotAsError);8632;8618;8600;8602;8625</WarningsNotAsErrors>
-    <Nullable>annotations</Nullable>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <AssemblyVersion></AssemblyVersion>
-    <FileVersion></FileVersion>
-    <Version>2.5.0</Version>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
-<<<<<<< HEAD
+﻿﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Configurations>Release RedM;Release FiveM;Debug RedM;Debug FiveM</Configurations>
+		<AssemblyTitle Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents FiveM Client</AssemblyTitle>
+		<AssemblyTitle Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents RedM Client</AssemblyTitle>
+		<Description Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
+		<Description Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents an advanced event subsystem for RedM C# Resources.</Description>
+		<PackageTags Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FiveM FxEvents</PackageTags>
+		<PackageTags Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">RedM FxEvents</PackageTags>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<PackageId Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents.FiveM.Client</PackageId>
+		<PackageId Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents.RedM.Client</PackageId>
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug FiveM</Configuration>
+		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+		<ProjectGuid>4f57e7a2-97b7-499b-8f9a-57f0af74c9ac</ProjectGuid>
+		<OutputType>Library</OutputType>
+		<AppDesignerFolder>Properties</AppDesignerFolder>
+		<RootNamespace>FxEvents.Client</RootNamespace>
+		<AssemblyName>FxEvents.Client</AssemblyName>
+		<TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+		<FileAlignment>512</FileAlignment>
+		<Deterministic>true</Deterministic>
+		<TargetFramework>net452</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<BaseOutputPath>..\CompiledLibs\Client</BaseOutputPath>
+		<Title>FxEvents.Client</Title>
+		<PackageProjectUrl>https://github.com/manups4e/FxEvents</PackageProjectUrl>
+		<Copyright>Copyright Leonardo Emanuele</Copyright>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<DebugType>embedded</DebugType>
+		<TargetName>FxEvents.Client</TargetName>
+		<WarningsNotAsErrors>$(WarningsNotAsError);8632;8618;8600;8602;8625</WarningsNotAsErrors>
+		<Nullable>annotations</Nullable>
+		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<AssemblyVersion></AssemblyVersion>
+		<FileVersion></FileVersion>
+		<Version>2.5.0</Version>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
 		<DebugType>embedded</DebugType>
 		<Optimize>false</Optimize>
@@ -55,48 +54,24 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="MsgPack">
-		  <HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
-		  <Private>False</Private>
+			<HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
 		</Reference>
 		<Reference Include="System" />
-=======
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>embedded</DebugType>
-    <Optimize>false</Optimize>
-    <DefineConstants>CLIENT</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Release RedM'">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <DefineConstants>CLIENT</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="MsgPack">
-      <HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
 
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
->>>>>>> 283dcfa42b8c2c8d105f42c2a25a3e77f846508a
+		<Reference Include="System.Core" />
+		<Reference Include="System.Xml.Linq" />
+		<Reference Include="System.Data.DataSetExtensions" />
 
-    <PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6370" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'" />
+		<PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6370" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'" />
 
-    <Reference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
-      <HintPath>..\dependencies\RedM\CitizenFX.Core.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-<<<<<<< HEAD
-    
+		<Reference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
+			<HintPath>..\dependencies\RedM\CitizenFX.Core.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
-			<Private>False</Private>
 		</Reference>
 		<Reference Include="Microsoft.CSharp" />
 		<Reference Include="System.Data" />
@@ -110,49 +85,17 @@
 		<Folder Include="Properties\" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Include="..\..\LICENSE.txt">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
-	  <None Include="..\..\README.md">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
-	  <None Include="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
+		<None Include="..\..\LICENSE.txt">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EditorConfigFiles Remove="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
+		<EditorConfigFiles Remove="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
 	</ItemGroup>
-=======
-
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\Shared\**\*.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\LICENSE.txt">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
-  </ItemGroup>
-  <ItemGroup>
-    <EditorConfigFiles Remove="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
-  </ItemGroup>
->>>>>>> 283dcfa42b8c2c8d105f42c2a25a3e77f846508a
 </Project>
