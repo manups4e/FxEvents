@@ -1,4 +1,4 @@
-﻿﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<AssemblyTitle>FxEvents Server</AssemblyTitle>
@@ -43,9 +43,11 @@
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="MsgPack">
 			<HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
+			<Private>False</Private>
 		</Reference>
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
+			<Private>False</Private>
 		</Reference>
 	</ItemGroup>
 	<ItemGroup>
@@ -60,7 +62,6 @@
 		<None Include=".editorconfig" />
 	</ItemGroup>
 	<ItemGroup>
-		<EditorConfigFiles
-				Remove=".editorconfig" />
+		<EditorConfigFiles Remove=".editorconfig" />
 	</ItemGroup>
 </Project>

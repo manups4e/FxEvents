@@ -1,4 +1,4 @@
-﻿﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Configurations>Release RedM;Release FiveM;Debug RedM;Debug FiveM</Configurations>
 		<AssemblyTitle Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents FiveM Client</AssemblyTitle>
@@ -12,7 +12,7 @@
 		<PackageId Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents.RedM.Client</PackageId>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug FiveM</Configuration>
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-		<ProjectGuid>4f57e7a2-97b7-499b-8f9a-57f0af74c9ac</ProjectGuid>
+		<ProjectGuid>{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}</ProjectGuid>
 		<OutputType>Library</OutputType>
 		<AppDesignerFolder>Properties</AppDesignerFolder>
 		<RootNamespace>FxEvents.Client</RootNamespace>
@@ -55,6 +55,7 @@
 	<ItemGroup>
 		<Reference Include="MsgPack">
 			<HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
+			<Private>False</Private>
 		</Reference>
 		<Reference Include="System" />
 
@@ -62,7 +63,9 @@
 		<Reference Include="System.Xml.Linq" />
 		<Reference Include="System.Data.DataSetExtensions" />
 
-		<PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6370" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'" />
+		<PackageReference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Version="1.0.6370" Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Debug FiveM'">
+		  <GeneratePathProperty>False</GeneratePathProperty>
+		</PackageReference>
 
 		<Reference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
 			<HintPath>..\dependencies\RedM\CitizenFX.Core.dll</HintPath>
@@ -72,6 +75,7 @@
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
+			<Private>False</Private>
 		</Reference>
 		<Reference Include="Microsoft.CSharp" />
 		<Reference Include="System.Data" />
