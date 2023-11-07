@@ -1,7 +1,7 @@
 # FxEvents an advanced event subsystem for FiveM
 
 With FxEvents you can send and get values between client and server using an advanced event handling process. 
-Signatures are encrypted per each client and using the proviced MsgPack binary serialization you can hide contents from malicious clients!
+Signatures are encrypted per each client and using the provided MsgPack binary serialization you can hide contents from malicious clients!
 To work you only need to add `FXEvents.Client.dll` or `FXEvents.Server.dll` and `Newtonsoft.Json.dll` (In case of json serialization) to your resource.
 No need of any external library for MsgPack, the event system uses the internal MsgPack dll provided with fivem itself!!
 
