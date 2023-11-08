@@ -10,17 +10,29 @@ namespace FxEvents
 {
     public class EventDispatcher : BaseScript
     {
+        private static readonly object _padlock = new();
+        private static EventDispatcher _instance;
+
         internal static Log Logger;
         internal PlayerList GetPlayers => Players;
-        internal static EventDispatcher Instance { get; set; }
         internal static ClientGateway Events;
         internal static bool Debug { get; set; }
         internal static bool Initialized = false;
 
-        public EventDispatcher()
+        internal static EventDispatcher Instance
+        {
+            get
+            {
+                lock (_padlock)
+                {
+                    return _instance ??= new EventDispatcher();
+                }
+            }
+        }
+
+        private EventDispatcher()
         {
             Logger = new Log();
-            Instance = this;
             string debugMode = API.GetResourceMetadata(API.GetCurrentResourceName(), "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || int.TryParse(debugMode, out int num) && num > 0;
         }
