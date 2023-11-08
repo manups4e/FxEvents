@@ -17,6 +17,8 @@ namespace FxEvents.EventSystem
         protected override ISerialization Serialization { get; }
         private Dictionary<int, string> _signatures;
 
+        private EventDispatcher _eventDispatcher => EventDispatcher.Instance;
+
         public ServerGateway()
         {
             SnowflakeGenerator.Create((short)new Random().Next(200, 399));
@@ -28,15 +30,15 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<string>(GetSignature));
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<string, byte[]>(Inbound));
-            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<string, byte[]>(Outbound));
+            _eventDispatcher.AddEventHandler(SignaturePipeline, new Action<string>(GetSignature));
+            _eventDispatcher.AddEventHandler(InboundPipeline, new Action<string, byte[]>(Inbound));
+            _eventDispatcher.AddEventHandler(OutboundPipeline, new Action<string, byte[]>(Outbound));
         }
 
         public void Push(string pipeline, int source, byte[] buffer)
         {
             if (source != new ServerId().Handle)
-                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[source], pipeline, buffer);
+                BaseScript.TriggerClientEvent(_eventDispatcher.GetPlayers[source], pipeline, buffer);
             else
                 BaseScript.TriggerClientEvent(pipeline, buffer);
         }
@@ -64,7 +66,7 @@ namespace FxEvents.EventSystem
                 string signature = BitConverter.ToString(holder).Replace("-", "").ToLower();
 
                 _signatures.Add(client, signature);
-                BaseScript.TriggerClientEvent(EventDispatcher.Instance.GetPlayers[client], SignaturePipeline, signature);
+                BaseScript.TriggerClientEvent(_eventDispatcher.GetPlayers[client], SignaturePipeline, signature);
             }
             catch (Exception ex)
             {
