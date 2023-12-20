@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FxEvents.Client", "FxEvents
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FxEvents.Server", "FxEvents\FxEvents.Server\FxEvents.Server.csproj", "{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "FxEvents.Shared", "FxEvents\FxEvents.Shared\FxEvents.Shared.shproj", "{7D81B737-B66A-4961-BFA0-6A69347EED78}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug FiveM|Any CPU = Debug FiveM|Any CPU
@@ -37,5 +39,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {46F9C3B8-35E3-4A06-8775-EF96C3B56EA8}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		FxEvents\FxEvents.Shared\FxEvents.Shared.projitems*{7d81b737-b66a-4961-bfa0-6a69347eed78}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>7d81b737-b66a-4961-bfa0-6a69347eed78</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>FxEvents.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)BinaryHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClientId.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ContractResolvers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Encryption.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ConcurrentAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ForceAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\SerializationAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\BaseGateway.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\IEventLogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ClientStopwatch.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ServerStopwatch.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\StopwatchUtil.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\EventHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Exceptions\EventException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\ISerializable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\ISource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventFlowType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventMessage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventParameter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventResponseMessage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventObservable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventValueHolder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\BinarySerialization.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\JsonSerialization.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\KeyValuePairResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\QuaternionResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\SnowflakeResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\TupleResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\VectorResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackSerialization.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\ISerialization.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\SerializationContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\SerializationException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\ServerId.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JsonHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Logger\ILogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Logger\Logger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Logger\LoggerColors.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\Clock.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\Program.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\Serialization\SnowflakeConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\Snowflake.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\SnowflakeConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\SnowflakeFragments.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\SnowflakeGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\SnowflakeRepresentation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\Base64Extensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\BooleanExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\DelegateExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\EnumerableExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\KeyValuePairExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\ObjectExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\StringExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\TaskExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\TypeCache.cs" />
+  </ItemGroup>
+</Project>
