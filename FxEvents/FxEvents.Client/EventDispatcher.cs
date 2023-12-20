@@ -15,6 +15,7 @@ namespace FxEvents
         internal static ClientGateway Events;
         internal static bool Debug { get; set; }
         internal static bool Initialized = false;
+        internal static string EncryptionKey = "";
 
         internal static EventDispatcher Instance;
 
@@ -45,8 +46,15 @@ namespace FxEvents
             return @event;
         }
 
-        public static void Initalize(string inboundEvent, string outboundEvent, string signatureEvent)
+        public static void Initalize(string inboundEvent, string outboundEvent, string signatureEvent, string encryptionKey)
         {
+            if (string.IsNullOrWhiteSpace(encryptionKey))
+            {
+                Logger.Fatal("FXEvents: Encryption key cannot be empty, please add an encryption key or use generatekey command in console to generate one to save");
+                return;
+            }
+            EncryptionKey = encryptionKey;
+
             if (string.IsNullOrWhiteSpace(signatureEvent))
             {
                 Logger.Error("SignaturePipeline cannot be null, empty or whitespace");

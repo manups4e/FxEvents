@@ -1,4 +1,5 @@
-﻿using FxEvents.Shared.EventSubsystem;
+﻿using FxEvents.Shared;
+using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
@@ -74,7 +75,7 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private async void Inbound([FromSource] string source, byte[] buffer)
+        private async void Inbound([FromSource] string source, byte[] encrypted)
         {
             try
             {
@@ -82,10 +83,7 @@ namespace FxEvents.EventSystem
 
                 if (!_signatures.TryGetValue(client, out string signature)) return;
 
-                using SerializationContext context = new SerializationContext(InboundPipeline, null, Serialization, buffer);
-
-                EventMessage message = context.Deserialize<EventMessage>();
-
+                EventMessage message = encrypted.DecryptObject<EventMessage>(EventDispatcher.EncryptionKey);
 
                 if (!VerifySignature(client, message, signature)) return;
 
@@ -115,7 +113,7 @@ namespace FxEvents.EventSystem
             return false;
         }
 
-        private void Outbound([FromSource] string source, byte[] buffer)
+        private void Outbound([FromSource] string source, byte[] encrypted)
         {
             try
             {
@@ -123,9 +121,7 @@ namespace FxEvents.EventSystem
 
                 if (!_signatures.TryGetValue(client, out string signature)) return;
 
-                using SerializationContext context = new SerializationContext(OutboundPipeline, null, Serialization, buffer);
-
-                EventResponseMessage response = context.Deserialize<EventResponseMessage>();
+                EventResponseMessage response = encrypted.DecryptObject<EventResponseMessage>(EventDispatcher.EncryptionKey);
 
                 if (!VerifySignature(client, response, signature)) return;
 

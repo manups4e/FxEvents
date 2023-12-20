@@ -33,11 +33,7 @@
 		<DebugType>portable</DebugType>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<Compile Include="..\Shared\**\*.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
+<ItemGroup>
 		<PackageReference Include="CitizenFX.Core.Server" Version="1.0.6335" />
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
@@ -64,4 +60,9 @@
 	<ItemGroup>
 		<EditorConfigFiles Remove=".editorconfig" />
 	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="..\CompiledLibs\Server\" />
+		<Exec Command="IF EXIST &quot;$(SolutionDir)FxEvents\scripts\post_server.bat&quot; call &quot;$(SolutionDir)FxEvents\scripts\post_server.bat&quot; &gt; &quot;$(SolutionDir)FxEvents\scripts\post_server.log&quot; 2&gt;&amp;1" IgnoreExitCode="true" />
+	</Target>
+	<Import Project="..\FxEvents.Shared\FxEvents.Shared.projitems" Label="Shared" />
 </Project>

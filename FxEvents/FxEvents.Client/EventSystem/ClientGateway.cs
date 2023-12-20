@@ -27,11 +27,11 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            _eventDispatcher.AddEventHandler(InboundPipeline, new Action<byte[]>(async serialized =>
+            _eventDispatcher.AddEventHandler(InboundPipeline, new Action<byte[]>(async encrypted =>
             {
                 try
                 {
-                    await ProcessInboundAsync(new ServerId().Handle, serialized);
+                    await ProcessInboundAsync(new ServerId().Handle, encrypted);
                 }
                 catch (Exception ex)
                 {

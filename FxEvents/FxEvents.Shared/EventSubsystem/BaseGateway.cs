@@ -38,9 +38,7 @@ namespace FxEvents.Shared.EventSubsystem
 
         public async Task ProcessInboundAsync(int source, byte[] serialized)
         {
-            using SerializationContext context = new SerializationContext(InboundPipeline, "(Process) In", Serialization, serialized);
-            EventMessage message = context.Deserialize<EventMessage>();
-
+            EventMessage message = serialized.DecryptObject<EventMessage>(EventDispatcher.EncryptionKey);
             await ProcessInboundAsync(message, source);
         }
 
@@ -194,16 +192,10 @@ namespace FxEvents.Shared.EventSubsystem
                     stopwatch.Start();
                 }
 
-                using (SerializationContext context = new SerializationContext(message.Endpoint, "(Process) Response", Serialization))
-                {
-                    context.Serialize(response);
-
-                    byte[] data = context.GetData();
-
-                    PushDelegate(OutboundPipeline, source, data);
-                    if (EventDispatcher.Debug)
-                        Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
-                }
+                byte[] data = response.EncryptObject(EventDispatcher.EncryptionKey);
+                PushDelegate(OutboundPipeline, source, data);
+                if (EventDispatcher.Debug)
+                    Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
             }
             else
             {
@@ -216,9 +208,7 @@ namespace FxEvents.Shared.EventSubsystem
 
         public void ProcessOutbound(byte[] serialized)
         {
-            using SerializationContext context = new SerializationContext(OutboundPipeline, "(Process) Out", Serialization, serialized);
-            EventResponseMessage response = context.Deserialize<EventResponseMessage>();
-
+            EventResponseMessage response = serialized.DecryptObject<EventResponseMessage>(EventDispatcher.EncryptionKey);
             ProcessOutbound(response);
         }
 
@@ -233,20 +223,20 @@ namespace FxEvents.Shared.EventSubsystem
         protected async Task<EventMessage> SendInternal(EventFlowType flow, int source, string endpoint, params object[] args)
         {
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-            List<EventParameter> parameters = new List<EventParameter>();
+            List<EventParameter> parameters = [];
 
             for (int idx = 0; idx < args.Length; idx++)
             {
                 object argument = args[idx];
                 Type type = argument.GetType();
 
-                using SerializationContext context = new SerializationContext(endpoint, $"(Send) Parameter Index '{idx}'", Serialization);
+                using SerializationContext context = new(endpoint, $"(Send) Parameter Index '{idx}'", Serialization);
 
                 context.Serialize(type, argument);
                 parameters.Add(new EventParameter(context.GetData()));
             }
 
-            EventMessage message = new EventMessage(endpoint, flow, parameters);
+            EventMessage message = new(endpoint, flow, parameters);
 
             if (PrepareDelegate != null)
             {
@@ -256,25 +246,18 @@ namespace FxEvents.Shared.EventSubsystem
                 stopwatch.Start();
             }
 
-            using (SerializationContext context = new SerializationContext(endpoint, "(Send) Output", Serialization))
+            byte[] data = message.EncryptObject(EventDispatcher.EncryptionKey);
+
+            PushDelegate(InboundPipeline, source, data);
+            if (EventDispatcher.Debug)
             {
-                context.Serialize(message);
-
-                byte[] data = context.GetData();
-
-                PushDelegate(InboundPipeline, source, data);
-                if (EventDispatcher.Debug)
-                {
-
 #if CLIENT
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
-                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
-                }
-
-                return message;
             }
+            return message;
         }
 
         protected async Task<T> GetInternal<T>(int source, string endpoint, params object[] args)

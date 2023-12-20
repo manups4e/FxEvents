@@ -41,6 +41,8 @@ Global
 		SolutionGuid = {46F9C3B8-35E3-4A06-8775-EF96C3B56EA8}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		FxEvents\FxEvents.Shared\FxEvents.Shared.projitems*{4f57e7a2-97b7-499b-8f9a-57f0af74c9ac}*SharedItemsImports = 5
+		FxEvents\FxEvents.Shared\FxEvents.Shared.projitems*{5c4fecb5-c970-46aa-8536-e6dd716bdce0}*SharedItemsImports = 5
 		FxEvents\FxEvents.Shared\FxEvents.Shared.projitems*{7d81b737-b66a-4961-bfa0-6a69347eed78}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

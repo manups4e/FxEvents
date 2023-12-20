@@ -83,9 +83,6 @@
 		<Reference Include="System.Xml" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="..\Shared\**\*.cs" />
-	</ItemGroup>
-	<ItemGroup>
 		<Folder Include="Properties\" />
 	</ItemGroup>
 	<ItemGroup>
@@ -102,4 +99,9 @@
 	<ItemGroup>
 		<EditorConfigFiles Remove="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
 	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="..\CompiledLibs\Client\" />
+		<Exec Command="IF EXIST &quot;$(SolutionDir)FxEvents\scripts\post_client.bat&quot; call &quot;$(SolutionDir)FxEvents\scripts\post_client.bat&quot; &gt; &quot;$(SolutionDir)FxEvents\scripts\post_client.log&quot; 2&gt;&amp;1" IgnoreExitCode="true" />
+	</Target>
+	<Import Project="..\FxEvents.Shared\FxEvents.Shared.projitems" Label="Shared" />
 </Project>
