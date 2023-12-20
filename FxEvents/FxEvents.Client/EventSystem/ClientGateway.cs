@@ -14,6 +14,8 @@ namespace FxEvents.EventSystem
         protected override ISerialization Serialization { get; }
         private string _signature;
 
+        private EventDispatcher _eventDispatcher => EventDispatcher.Instance;
+
         public ClientGateway()
         {
             SnowflakeGenerator.Create((short)new Random().Next(1, 199));
@@ -25,7 +27,7 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            EventDispatcher.Instance.AddEventHandler(InboundPipeline, new Action<byte[]>(async serialized =>
+            _eventDispatcher.AddEventHandler(InboundPipeline, new Action<byte[]>(async serialized =>
             {
                 try
                 {
@@ -37,7 +39,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            EventDispatcher.Instance.AddEventHandler(OutboundPipeline, new Action<byte[]>(serialized =>
+            _eventDispatcher.AddEventHandler(OutboundPipeline, new Action<byte[]>(serialized =>
             {
                 try
                 {
@@ -49,7 +51,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            EventDispatcher.Instance.AddEventHandler(SignaturePipeline, new Action<string>(signature => _signature = signature));
+            _eventDispatcher.AddEventHandler(SignaturePipeline, new Action<string>(signature => _signature = signature));
             BaseScript.TriggerServerEvent(SignaturePipeline);
         }
 
