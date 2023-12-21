@@ -67,10 +67,7 @@
 		  <GeneratePathProperty>False</GeneratePathProperty>
 		</PackageReference>
 
-		<Reference Include="CitizenFX.Core.Client" ExcludeAssets="runtime" Condition="'$(Configuration)' == 'Release RedM' Or '$(Configuration)' == 'Debug RedM'">
-			<HintPath>..\dependencies\RedM\CitizenFX.Core.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
+		<PackageReference Include="CitizenFX.Core.Client" Version="1.0.7257" />
 
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="Newtonsoft.Json">
