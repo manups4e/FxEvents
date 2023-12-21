@@ -35,7 +35,7 @@
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
 		<AssemblyVersion></AssemblyVersion>
 		<FileVersion></FileVersion>
-		<Version>2.5.4</Version>
+		<Version>2.6.0</Version>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
