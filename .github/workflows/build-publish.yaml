@@ -12,6 +12,9 @@ env:
 jobs:
   build:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        client: ['FiveM', 'RedM']
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -46,13 +49,13 @@ jobs:
       run: dotnet restore
 
     - name: Dotnet - Build
-      run: dotnet build -c Release --no-restore
+      run: dotnet build -c Release ${{ matrix.client }} --no-restore
 
     - name: Dotnet - Test
-      run: dotnet test -c Release --no-restore
+      run: dotnet test -c Release ${{ matrix.client }} --no-restore
 
     - name: Dotnet - Pack
-      run: dotnet pack -c Release --no-restore
+      run: dotnet pack -c Release ${{ matrix.client }} --no-restore
 
     - name: Publish - NuGet
       if: ${{ env.is-tag == 'true' }}
