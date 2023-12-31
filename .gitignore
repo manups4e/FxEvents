@@ -372,3 +372,6 @@ FodyWeavers.xsd
 [Rr]elease [Ff]ive[Mm]/
 [Dd]ebug [Rr]ed[Mm]/
 [Dd]ebug [Ff]ive[Mm]/
+
+# .idea files - Rider / JetBrains IDE's
+.idea
