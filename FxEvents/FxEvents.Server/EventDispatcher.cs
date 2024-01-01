@@ -133,6 +133,19 @@ namespace FxEvents
             }
             Events.Send(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
         }
+        
+        public static void Send(string endpoint, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+
+            var playerList = Instance.GetPlayers;
+            Events.Send(playerList.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
+        }
+        
         public static void Send(IEnumerable<ISource> clients, string endpoint, params object[] args)
         {
             if (!Initialized)
