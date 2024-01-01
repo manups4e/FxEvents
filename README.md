@@ -45,6 +45,7 @@ EventDispatcher.Send(Player, "eventName", params);
 EventDispatcher.Send(List<Player>, "eventName", params);
 EventDispatcher.Send(ISource, "eventName", params);
 EventDispatcher.Send(List<ISource>, "eventName", params);
+EventDispatcher.Send("eventName", params); // For all Connected Players
 ```
 
 ## To trigger a callback
