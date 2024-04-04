@@ -19,7 +19,7 @@
 		<AssemblyName>FxEvents.Client</AssemblyName>
 		<TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
 		<FileAlignment>512</FileAlignment>
-		<Deterministic>true</Deterministic>
+		<Deterministic>True</Deterministic>
 		<TargetFramework>net452</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<BaseOutputPath>..\..\CompiledLibs\Client</BaseOutputPath>
@@ -33,7 +33,6 @@
 		<Nullable>annotations</Nullable>
 		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
@@ -60,10 +59,6 @@
 		<Reference Include="System.Xml.Linq" />
 		<Reference Include="System.Data.DataSetExtensions" />
     	<PackageReference Include="CitizenFX.Core.Client" Version="1.0.7257" />
-		<PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
@@ -85,7 +80,6 @@
 		</None>
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="..\..\CompiledLibs\Client\" />
 		<Exec Command="IF EXIST &quot;$(SolutionDir)scripts\post_server.bat&quot; call &quot;$(SolutionDir)scripts\post_server.bat&quot; &gt; &quot;$(SolutionDir)scripts\post_server.log&quot; 2&gt;&amp;1" IgnoreExitCode="true" />
 	</Target>
 	<Import Project="..\FxEvents.Shared\FxEvents.Shared.projitems" Label="Shared" />

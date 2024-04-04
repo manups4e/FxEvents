@@ -29,6 +29,8 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
+obj/
+Obj/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
@@ -360,6 +362,9 @@ MigrationBackup/
 .scripts/
 *.bat
 *.log
+
+*.md
+*.txt
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
