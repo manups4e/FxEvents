@@ -49,7 +49,7 @@ jobs:
     - name: Install dotnet tool
       run: dotnet tool install -g dotnetCampus.TagToVersion
 
-    - name: Set tag to version client
+    - name: Set tag to version client 
       run: dotnet TagToVersion -t ${{ github.ref }} -f src/FxEvents.Client/build/Version.props
 
     - name: Set tag to version server
