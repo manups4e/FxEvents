@@ -56,20 +56,42 @@ jobs:
       run: dotnet restore
 
     - name: Dotnet - Build
-      run: dotnet build ScaleformUI_CSharp -c "Release" --no-restore
+      run: dotnet build -c "Release FiveM" --no-restore
 
     - name: Dotnet - Test
-      run: dotnet test ScaleformUI_CSharp -c "Release" --no-restore
+      run: dotnet test -c "Release FiveM" --no-restore
 
     - name: Dotnet - Pack
-      run: dotnet pack ScaleformUI_CSharp -c "Release" --no-restore
+      run: dotnet pack -c "Release FiveM" --no-restore
 
     - name: Publish - NuGet
       if: ${{ env.is-tag == 'true' }}
       run: dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
-      working-directory: FxEvents/CompiledLibs
+      working-directory: CompiledLibs\Release\
 
     - name: Publish - GitHub
       if: ${{ env.is-tag == 'true' }}
       run: dotnet nuget push **/*.nupkg --skip-duplicate
-      working-directory: FxEvents/CompiledLibs
+      working-directory: CompiledLibs\Release\
+
+    - name: Dotnet - Clean
+      run: dotnet clean
+
+    - name: Dotnet - Build
+      run: dotnet build -c "Release RedM" --no-restore
+
+    - name: Dotnet - Test
+      run: dotnet test -c "Release RedM" --no-restore
+
+    - name: Dotnet - Pack
+      run: dotnet pack -c "Release RedM" --no-restore
+
+    - name: Publish - NuGet
+      if: ${{ env.is-tag == 'true' }}
+      run: dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+      working-directory: CompiledLibs\Release\
+
+    - name: Publish - GitHub
+      if: ${{ env.is-tag == 'true' }}
+      run: dotnet nuget push **/*.nupkg --skip-duplicate
+      working-directory: CompiledLibs\Release\

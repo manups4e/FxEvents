@@ -93,10 +93,6 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-		<None Include="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
-	</ItemGroup>
-	<ItemGroup>
-		<EditorConfigFiles Remove="I:\workspace\fivem\curiosity\Curiosity\_vendor\FxEvents\FxEvents\FxEvents.Client\.editorconfig" />
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="..\CompiledLibs\Client\" />
