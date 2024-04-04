@@ -1,4 +1,3 @@
 <Project>
-	<Import Project="src\FxEvents.Client\build\Version.props" />
-	<Import Project="src\FxEvents.Server\build\Version.props" />
+	<Import Project="build\Version.props" />
 </Project>
