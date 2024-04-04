@@ -42,5 +42,30 @@ namespace FxEvents.Shared
             using SerializationContext context = new(data.ToString(), "FromBytes", msgpackSerialization, data);
             return context.Deserialize<T>();
         }
+
+        public static ulong ToUInt64(this byte[] bytes)
+        {
+            if (bytes == null)
+                throw new ArgumentNullException(nameof(bytes));
+            if (bytes.Length > sizeof(ulong))
+                throw new ArgumentException("Must be 8 elements or fewer", nameof(bytes));
+
+            ulong result = 0;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                result |= (ulong)bytes[i] << (i * 8);
+            }
+            return result;
+        }
+
+        public static byte[] FromUInt64(this ulong num)
+        {
+            byte[] buffer = new byte[sizeof(ulong)];
+            for (int i = 0; i < sizeof(ulong); i++)
+            {
+                buffer[i] = (byte)(num >> (i * 8));
+            }
+            return buffer;
+        }
     }
 }
