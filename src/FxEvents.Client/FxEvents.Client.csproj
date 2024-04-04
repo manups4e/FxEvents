@@ -51,8 +51,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="MsgPack">
-			<HintPath>..\FiveMMsgPack\MsgPack.dll</HintPath>
-			<Private>False</Private>
+		  <HintPath>..\..\FiveMMsgPack\MsgPack.dll</HintPath>
 		</Reference>
 		<Reference Include="System" />
 
@@ -91,8 +90,8 @@
 		</None>
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="..\CompiledLibs\Client\" />
-		<Exec Command="IF EXIST &quot;$(SolutionDir)FxEvents\scripts\post_client.bat&quot; call &quot;$(SolutionDir)FxEvents\scripts\post_client.bat&quot; &gt; &quot;$(SolutionDir)FxEvents\scripts\post_client.log&quot; 2&gt;&amp;1" IgnoreExitCode="true" />
+		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="..\..\CompiledLibs\Client\" />
+		<Exec Command="IF EXIST &quot;$(SolutionDir)scripts\post_server.bat&quot; call &quot;$(SolutionDir)scripts\post_server.bat&quot; &gt; &quot;$(SolutionDir)scripts\post_server.log&quot; 2&gt;&amp;1" IgnoreExitCode="true" />
 	</Target>
 	<Import Project="..\FxEvents.Shared\FxEvents.Shared.projitems" Label="Shared" />
 </Project>

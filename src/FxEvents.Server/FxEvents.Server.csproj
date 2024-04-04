@@ -64,8 +64,8 @@
 		<EditorConfigFiles Remove=".editorconfig" />
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="..\CompiledLibs\Server\" />
-		<Exec Command="IF EXIST &quot;$(SolutionDir)FxEvents\scripts\post_server.bat&quot; call &quot;$(SolutionDir)FxEvents\scripts\post_server.bat&quot; &gt; &quot;$(SolutionDir)FxEvents\scripts\post_server.log&quot; 2&gt;&amp;1" IgnoreExitCode="true" />
+		<Copy SkipUnchangedFiles="true" SourceFiles="@(SourceFiles)" DestinationFolder="..\..\CompiledLibs\Server\" />
+		<Exec Command="IF EXIST &quot;$(SolutionDir)scripts\post_server.bat&quot; call &quot;$(SolutionDir)scripts\post_server.bat&quot; &gt; &quot;$(SolutionDir)scripts\post_server.log&quot; 2&gt;&amp;1" IgnoreExitCode="true" />
 	</Target>
 	<Import Project="..\FxEvents.Shared\FxEvents.Shared.projitems" Label="Shared" />
 </Project>

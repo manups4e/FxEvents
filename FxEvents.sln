@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FxEvents.Client", "FxEvents\FxEvents.Client\FxEvents.Client.csproj", "{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FxEvents.Client", "src\FxEvents.Client\FxEvents.Client.csproj", "{4F57E7A2-97B7-499B-8F9A-57F0AF74C9AC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FxEvents.Server", "FxEvents\FxEvents.Server\FxEvents.Server.csproj", "{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FxEvents.Server", "src\FxEvents.Server\FxEvents.Server.csproj", "{5C4FECB5-C970-46AA-8536-E6DD716BDCE0}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "FxEvents.Shared", "FxEvents\FxEvents.Shared\FxEvents.Shared.shproj", "{7D81B737-B66A-4961-BFA0-6A69347EED78}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "FxEvents.Shared", "src\FxEvents.Shared\FxEvents.Shared.shproj", "{7D81B737-B66A-4961-BFA0-6A69347EED78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,8 +41,8 @@ Global
 		SolutionGuid = {46F9C3B8-35E3-4A06-8775-EF96C3B56EA8}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		FxEvents\FxEvents.Shared\FxEvents.Shared.projitems*{4f57e7a2-97b7-499b-8f9a-57f0af74c9ac}*SharedItemsImports = 5
-		FxEvents\FxEvents.Shared\FxEvents.Shared.projitems*{5c4fecb5-c970-46aa-8536-e6dd716bdce0}*SharedItemsImports = 5
-		FxEvents\FxEvents.Shared\FxEvents.Shared.projitems*{7d81b737-b66a-4961-bfa0-6a69347eed78}*SharedItemsImports = 13
+		src\FxEvents.Shared\FxEvents.Shared.projitems*{4f57e7a2-97b7-499b-8f9a-57f0af74c9ac}*SharedItemsImports = 5
+		src\FxEvents.Shared\FxEvents.Shared.projitems*{5c4fecb5-c970-46aa-8536-e6dd716bdce0}*SharedItemsImports = 5
+		src\FxEvents.Shared\FxEvents.Shared.projitems*{7d81b737-b66a-4961-bfa0-6a69347eed78}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal
