@@ -55,7 +55,7 @@ jobs:
     - name: Set tag to version server
       run: dotnet TagToVersion -t ${{ github.ref }} -f src/FxEvents.Server/build/Version.props
 
-    - name: Dotnet - Restore
+    - name: Dotnet - Restore 
       run: dotnet restore
 
     - name: Dotnet - Build
