@@ -25,12 +25,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Setup - GitVersion
-      uses: gittools/actions/gitversion/setup@v0
-      with:
-        versionSpec: '5.x'
-        preferLatestVersion: true
-
     - name: Setup - dotnet framework 4.8
       run: |
         choco install netfx-4.8-devpack -y
@@ -41,12 +35,6 @@ jobs:
         source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
       env:
         NUGET_AUTH_TOKEN: ${{ github.token }}
-
-    - name: GitVersion
-      id: git-version
-      uses: gittools/actions/gitversion/execute@v0
-      with:
-        useConfigFile: false
 
     - name: Install dotnet tool
       run: dotnet tool install -g dotnetCampus.TagToVersion
