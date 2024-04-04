@@ -46,7 +46,7 @@ jobs:
       id: git-version
       uses: gittools/actions/gitversion/execute@v0
       with:
-        useConfigFile: true
+        useConfigFile: false
 
     - name: Install dotnet tool
       run: dotnet tool install -g dotnetCampus.TagToVersion
