@@ -16,7 +16,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        client: ['FiveM']
+        client: ['FiveM', 'RedM']
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -67,9 +67,9 @@ jobs:
     - name: Publish - NuGet
       if: ${{ env.is-tag == 'true' }}
       run: dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
-      working-directory: CompiledLibs\Release\
+      working-directory: FxEvents/CompiledLibs
 
     - name: Publish - GitHub
       if: ${{ env.is-tag == 'true' }}
       run: dotnet nuget push **/*.nupkg --skip-duplicate
-      working-directory: CompiledLibs\Release\
+      working-directory: FxEvents/CompiledLibs
