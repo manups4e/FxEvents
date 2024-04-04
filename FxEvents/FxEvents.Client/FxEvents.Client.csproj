@@ -33,9 +33,6 @@
 		<Nullable>annotations</Nullable>
 		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-		<AssemblyVersion></AssemblyVersion>
-		<FileVersion></FileVersion>
-		<Version>2.5.4</Version>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
@@ -68,6 +65,11 @@
 		</PackageReference>
 
 		<PackageReference Include="CitizenFX.Core.Client" Version="1.0.7257" />
+
+		<PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="Newtonsoft.Json">
