@@ -22,7 +22,7 @@
 		<Deterministic>true</Deterministic>
 		<TargetFramework>net452</TargetFramework>
 		<LangVersion>latest</LangVersion>
-		<BaseOutputPath>..\CompiledLibs\Client</BaseOutputPath>
+		<BaseOutputPath>..\..\CompiledLibs\Client</BaseOutputPath>
 		<Title>FxEvents.Client</Title>
 		<PackageProjectUrl>https://github.com/manups4e/FxEvents</PackageProjectUrl>
 		<Copyright>Copyright Leonardo Emanuele</Copyright>

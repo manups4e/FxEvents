@@ -14,7 +14,7 @@
 		<LangVersion>latest</LangVersion>
 		<AssemblyName>FxEvents.Server</AssemblyName>
 		<RootNamespace>FxEvents.Server</RootNamespace>
-		<BaseOutputPath>..\CompiledLibs\Server</BaseOutputPath>
+		<BaseOutputPath>..\..\CompiledLibs\Server</BaseOutputPath>
 		<Nullable>annotations</Nullable>
 		<Configurations>Debug;Release</Configurations>
 		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
