@@ -33,6 +33,7 @@
 		<Nullable>annotations</Nullable>
 		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>
@@ -43,7 +44,7 @@
 		<WarningLevel>4</WarningLevel>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Release FiveM' Or '$(Configuration)' == 'Release RedM'">
-		<DebugType>pdbonly</DebugType>
+		<DebugType>embedded</DebugType>
 		<Optimize>true</Optimize>
 		<DefineConstants>CLIENT</DefineConstants>
 		<ErrorReport>prompt</ErrorReport>
@@ -58,14 +59,11 @@
 		<Reference Include="System.Core" />
 		<Reference Include="System.Xml.Linq" />
 		<Reference Include="System.Data.DataSetExtensions" />
-
     	<PackageReference Include="CitizenFX.Core.Client" Version="1.0.7257" />
-
 		<PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
@@ -75,9 +73,6 @@
 		<Reference Include="System.Data" />
 		<Reference Include="System.Net.Http" />
 		<Reference Include="System.Xml" />
-	</ItemGroup>
-	<ItemGroup>
-		<Folder Include="Properties\" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\LICENSE.txt">
