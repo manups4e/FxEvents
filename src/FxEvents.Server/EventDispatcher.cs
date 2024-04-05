@@ -133,7 +133,7 @@ namespace FxEvents
             }
             Events.Send(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
         }
-        
+
         public static void Send(string endpoint, params object[] args)
         {
             if (!Initialized)
@@ -142,10 +142,10 @@ namespace FxEvents
                 return;
             }
 
-            var playerList = Instance.GetPlayers;
+            PlayerList playerList = Instance.GetPlayers;
             Events.Send(playerList.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
         }
-        
+
         public static void Send(IEnumerable<ISource> clients, string endpoint, params object[] args)
         {
             if (!Initialized)
@@ -155,6 +155,58 @@ namespace FxEvents
             }
             Events.Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
         }
+
+        public static void SendLatent(Player player, string endpoint, int bytesPerSeconds, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Events.SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesPerSeconds, args);
+        }
+
+        public static void SendLatent(ISource client, string endpoint, int bytesPerSeconds, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Events.SendLatent(client.Handle, endpoint, bytesPerSeconds, args);
+        }
+
+        public static void SendLatent(IEnumerable<Player> players, string endpoint, int bytesPerSeconds, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Events.SendLatent(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
+        }
+
+        public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            PlayerList playerList = Instance.GetPlayers;
+            Events.SendLatent(playerList.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
+        }
+
+        public static void SendLatent(IEnumerable<ISource> clients, string endpoint, int bytesPerSeconds, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Events.SendLatent(clients.Select(x => x.Handle).ToList(), endpoint, bytesPerSeconds, args);
+        }
+
         public static Task<T> Get<T>(Player player, string endpoint, params object[] args)
         {
             if (!Initialized)

@@ -81,6 +81,11 @@ namespace FxEvents.EventSystem
             await SendInternal(EventFlowType.Straight, new ServerId().Handle, endpoint, args);
         }
 
+        public async void SendLatent(string endpoint, int bytePerSecond, params object[] args)
+        {
+            await SendInternalLatent(EventFlowType.Straight, new ServerId().Handle, endpoint, bytePerSecond, args);
+        }
+
         public async Task<T> Get<T>(string endpoint, params object[] args)
         {
             return await GetInternal<T>(new ServerId().Handle, endpoint, args);

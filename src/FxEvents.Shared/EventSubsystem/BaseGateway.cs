@@ -19,6 +19,7 @@ namespace FxEvents.Shared.EventSubsystem
     public delegate Task EventDelayMethod(int ms = 0);
     public delegate Task EventMessagePreparation(string pipeline, int source, IMessage message);
     public delegate void EventMessagePush(string pipeline, int source, byte[] buffer);
+    public delegate void EventMessagePushLatent(string pipeline, int source, int bytePerSecond, byte[] buffer);
     public delegate ISource ConstructorCustomActivator<T>(int handle);
     public abstract class BaseGateway
     {
@@ -35,6 +36,7 @@ namespace FxEvents.Shared.EventSubsystem
         public EventDelayMethod? DelayDelegate { get; set; }
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
+        public EventMessagePushLatent? PushDelegateLatent { get; set; }
 
         public async Task ProcessInboundAsync(int source, byte[] serialized)
         {
@@ -255,6 +257,47 @@ namespace FxEvents.Shared.EventSubsystem
                 Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
                 Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+#endif
+            }
+            return message;
+        }
+
+        protected async Task<EventMessage> SendInternalLatent(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
+        {
+            StopwatchUtil stopwatch = StopwatchUtil.StartNew();
+            List<EventParameter> parameters = [];
+
+            for (int idx = 0; idx < args.Length; idx++)
+            {
+                object argument = args[idx];
+                Type type = argument.GetType();
+                //Debug.WriteLine($"outbound latent {endpoint} - index: {idx}, type:{type.FullName}, value:{argument.ToJson()}");
+
+                using SerializationContext context = new(endpoint, $"(Send) Parameter Index '{idx}'", Serialization);
+
+                context.Serialize(type, argument);
+                parameters.Add(new EventParameter(context.GetData()));
+            }
+
+            EventMessage message = new(endpoint, flow, parameters);
+
+            if (PrepareDelegate != null)
+            {
+                stopwatch.Stop();
+
+                await PrepareDelegate(InboundPipeline, source, message);
+                stopwatch.Start();
+            }
+
+            byte[] data = message.EncryptObject(EventDispatcher.EncryptionKey);
+
+            PushDelegateLatent(InboundPipeline, source, bytePerSecond, data);
+            if (EventDispatcher.Debug)
+            {
+#if CLIENT
+                Logger.Debug($"[{endpoint} {flow}] Sent latent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+#elif SERVER
+                Logger.Debug($"[{endpoint} {flow}] Sent latent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
             }
             return message;

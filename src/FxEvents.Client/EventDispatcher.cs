@@ -101,6 +101,17 @@ namespace FxEvents
             }
             Events.Send(endpoint, args);
         }
+
+        public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Events.SendLatent(endpoint, bytesPerSeconds, args);
+        }
+
         public static async Task<T> Get<T>(string endpoint, params object[] args)
         {
             if (!Initialized)

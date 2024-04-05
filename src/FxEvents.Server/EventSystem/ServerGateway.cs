@@ -154,6 +154,27 @@ namespace FxEvents.EventSystem
             await SendInternal(EventFlowType.Straight, target, endpoint, args);
         }
 
+        public void SendLatent(Player player, string endpoint, int bytesxSecond, params object[] args) => SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesxSecond, args);
+        public void SendLatent(ISource client, string endpoint, int bytesxSecond, params object[] args) => SendLatent(client.Handle, endpoint, bytesxSecond, args);
+        public void SendLatent(List<Player> players, string endpoint, int bytesxSecond, params object[] args) => SendLatent(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesxSecond, args);
+        public void SendLatent(List<ISource> clients, string endpoint, int bytesxSecond, params object[] args) => SendLatent(clients.Select(x => x.Handle).ToList(), endpoint, bytesxSecond, args);
+
+        public async void SendLatent(List<int> targets, string endpoint, int bytesxSecond, params object[] args)
+        {
+            int i = 0;
+            while (i < targets.Count)
+            {
+                await BaseScript.Delay(0);
+                SendLatent(targets[i], endpoint, bytesxSecond, args);
+                i++;
+            }
+        }
+
+        public async void SendLatent(int target, string endpoint, int bytesxSecond, params object[] args)
+        {
+            await SendInternalLatent(EventFlowType.Straight, target, endpoint, bytesxSecond, args);
+        }
+
         public Task<T> Get<T>(Player player, string endpoint, params object[] args) =>
             Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
 
