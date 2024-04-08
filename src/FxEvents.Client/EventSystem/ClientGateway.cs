@@ -1,4 +1,5 @@
-﻿using FxEvents.Shared.Diagnostics;
+﻿using FxEvents.Shared;
+using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Serialization;
@@ -23,6 +24,7 @@ namespace FxEvents.EventSystem
             DelayDelegate = async delay => await BaseScript.Delay(delay);
             PrepareDelegate = PrepareAsync;
             PushDelegate = Push;
+            PushDelegateLatent = PushLatent;
         }
 
         internal void AddEvents()
@@ -35,7 +37,8 @@ namespace FxEvents.EventSystem
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error("InboundPipeline:" + ex.ToString());
+                    EventMessage message = encrypted.DecryptObject<EventMessage>(EventDispatcher.EncryptionKey);
+                    Logger.Error($"InboundPipeline [{message.Endpoint}]:" + ex.ToString());
                 }
             }));
 
@@ -76,11 +79,16 @@ namespace FxEvents.EventSystem
             BaseScript.TriggerServerEvent(pipeline, buffer);
         }
 
+        public void PushLatent(string pipeline, int source, int bytePerSecond, byte[] buffer)
+        {
+            if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
+            BaseScript.TriggerLatentServerEvent(pipeline, bytePerSecond, buffer);
+        }
+
         public async void Send(string endpoint, params object[] args)
         {
             await SendInternal(EventFlowType.Straight, new ServerId().Handle, endpoint, args);
         }
-
         public async void SendLatent(string endpoint, int bytePerSecond, params object[] args)
         {
             await SendInternalLatent(EventFlowType.Straight, new ServerId().Handle, endpoint, bytePerSecond, args);

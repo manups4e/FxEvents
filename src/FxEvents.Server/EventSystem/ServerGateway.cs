@@ -26,6 +26,7 @@ namespace FxEvents.EventSystem
             Serialization = new MsgPackSerialization();
             DelayDelegate = async delay => await BaseScript.Delay(delay);
             PushDelegate = Push;
+            PushDelegateLatent = PushLatent;
             _signatures = new();
         }
 
@@ -44,6 +45,13 @@ namespace FxEvents.EventSystem
                 BaseScript.TriggerClientEvent(pipeline, buffer);
         }
 
+        public void PushLatent(string pipeline, int source, int bytePerSecond, byte[] buffer)
+        {
+            if (source != new ServerId().Handle)
+                BaseScript.TriggerLatentClientEvent(_eventDispatcher.GetPlayers[source], pipeline, bytePerSecond, buffer);
+            else
+                BaseScript.TriggerLatentClientEvent(pipeline, bytePerSecond, buffer);
+        }
 
         private void GetSignature([FromSource] string source)
         {

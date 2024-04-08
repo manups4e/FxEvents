@@ -130,11 +130,15 @@ namespace FxEvents.Shared.EventSubsystem
                     using SerializationContext context = new SerializationContext(message.Endpoint, $"(Process) Parameter Index {idx}",
                         Serialization, parameter.Data);
 
-                    holder.Add(context.Deserialize(type));
+                    object a = context.Deserialize(type);
+                    holder.Add(a);
+
+                    //Debug.WriteLine($"inbound {message.Endpoint} - index: {idx}, type:{type.FullName}, value:{a.ToJson()}");
                 }
 
                 parameters.AddRange(holder.ToArray());
 
+                //Debug.WriteLine(parameters.ToArray().ToJson());
                 return @delegate.DynamicInvoke(parameters.ToArray());
             }
 
@@ -224,42 +228,52 @@ namespace FxEvents.Shared.EventSubsystem
 
         protected async Task<EventMessage> SendInternal(EventFlowType flow, int source, string endpoint, params object[] args)
         {
-            StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-            List<EventParameter> parameters = [];
-
-            for (int idx = 0; idx < args.Length; idx++)
+            try
             {
-                object argument = args[idx];
-                Type type = argument.GetType();
+                StopwatchUtil stopwatch = StopwatchUtil.StartNew();
+                List<EventParameter> parameters = [];
 
-                using SerializationContext context = new(endpoint, $"(Send) Parameter Index '{idx}'", Serialization);
+                for (int idx = 0; idx < args.Length; idx++)
+                {
+                    object argument = args[idx];
+                    Type type = argument.GetType();
+                    //Debug.WriteLine($"outbound {endpoint} - index: {idx}, type:{type.FullName}, value:{argument.ToJson()}");
 
-                context.Serialize(type, argument);
-                parameters.Add(new EventParameter(context.GetData()));
-            }
+                    using SerializationContext context = new(endpoint, $"(Send) Parameter Index '{idx}'", Serialization);
 
-            EventMessage message = new(endpoint, flow, parameters);
+                    context.Serialize(type, argument);
+                    parameters.Add(new EventParameter(context.GetData()));
+                }
 
-            if (PrepareDelegate != null)
-            {
-                stopwatch.Stop();
+                EventMessage message = new(endpoint, flow, parameters);
 
-                await PrepareDelegate(InboundPipeline, source, message);
-                stopwatch.Start();
-            }
+                if (PrepareDelegate != null)
+                {
+                    stopwatch.Stop();
 
-            byte[] data = message.EncryptObject(EventDispatcher.EncryptionKey);
+                    await PrepareDelegate(InboundPipeline, source, message);
+                    stopwatch.Start();
+                }
 
-            PushDelegate(InboundPipeline, source, data);
-            if (EventDispatcher.Debug)
-            {
+                byte[] data = message.EncryptObject(EventDispatcher.EncryptionKey);
+
+                PushDelegate(InboundPipeline, source, data);
+                if (EventDispatcher.Debug)
+                {
 #if CLIENT
-                Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #elif SERVER
-                Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                    Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName("" + source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 #endif
+                }
+                return message;
             }
-            return message;
+            catch (Exception ex)
+            {
+                Logger.Error($"{endpoint} - {ex.ToString()}");
+                EventMessage message = new(endpoint, flow, new List<EventParameter>());
+                return message;
+            }
         }
 
         protected async Task<EventMessage> SendInternalLatent(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)

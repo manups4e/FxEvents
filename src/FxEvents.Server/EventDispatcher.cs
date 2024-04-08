@@ -216,6 +216,7 @@ namespace FxEvents
             }
             return Events.Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
         }
+
         public static Task<T> Get<T>(ISource client, string endpoint, params object[] args)
         {
             if (!Initialized)
@@ -225,6 +226,7 @@ namespace FxEvents
             }
             return Events.Get<T>(client.Handle, endpoint, args);
         }
+
         public static void Mount(string endpoint, Delegate @delegate)
         {
             if (!Initialized)
