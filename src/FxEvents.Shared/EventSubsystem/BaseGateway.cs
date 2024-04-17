@@ -31,7 +31,7 @@ namespace FxEvents.Shared.EventSubsystem
 
         private List<Tuple<EventMessage, EventHandler>> _processed = new();
         private List<EventObservable> _queue = new();
-        private List<EventHandler> _handlers = new();
+        private EventHandlerCollection _handlers = new();
 
         public EventDelayMethod? DelayDelegate { get; set; }
         public EventMessagePreparation? PrepareDelegate { get; set; }
@@ -122,31 +122,54 @@ namespace FxEvents.Shared.EventSubsystem
                 List<object> holder = new List<object>();
                 ParameterInfo[] parameterInfos = @delegate.Method.GetParameters();
 
-                for (int idx = 0; idx < array.Length; idx++)
+                for (int idx = startingIndex; idx < parameterInfos.Length; idx++)
                 {
-                    EventParameter parameter = array[idx];
-                    Type type = parameterInfos[startingIndex + idx].ParameterType;
+                    ParameterInfo parameterInfo = parameterInfos[idx];
+                    Type type = parameterInfo.ParameterType;
 
-                    using SerializationContext context = new SerializationContext(message.Endpoint, $"(Process) Parameter Index {idx}",
-                        Serialization, parameter.Data);
-
-                    object a = context.Deserialize(type);
-                    holder.Add(a);
-
-                    //Debug.WriteLine($"inbound {message.Endpoint} - index: {idx}, type:{type.FullName}, value:{a.ToJson()}");
+                    if (idx - startingIndex < array.Length)
+                    {
+                        EventParameter parameter = array[idx - startingIndex];
+                        using SerializationContext context = new SerializationContext(message.Endpoint, $"(Process) Parameter Index {idx - startingIndex}",
+                            Serialization, parameter.Data);
+                        object a = context.Deserialize(type);
+                        holder.Add(a);
+                    }
+                    else
+                    {
+                        object a = Activator.CreateInstance(type);
+                        holder.Add(a);
+                    }
                 }
 
                 parameters.AddRange(holder.ToArray());
 
-                //Debug.WriteLine(parameters.ToArray().ToJson());
-                return @delegate.DynamicInvoke(parameters.ToArray());
+                try
+                {
+                    return @delegate.DynamicInvoke(parameters.ToArray());
+                }
+                catch (Exception ex)
+                {
+                    if (isServer && takesSource)
+                        parameters.RemoveAt(0);
+                    Logger.Error($"Handler [{message.Endpoint}] with parameters [{parameters.ToJson()}] threw an error.\n" + ex);
+                    return null;
+                }
             }
 
             if (message.Flow == EventFlowType.Circular)
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                EventHandler subscription = _handlers.SingleOrDefault(self => self.Endpoint == message.Endpoint) ??
-                                   throw new Exception($"Could not find a handler for endpoint '{message.Endpoint}'");
+                KeyValuePair<bool, int> hasSingle = _handlers.HasSingleEndpoint(message.Endpoint);
+                if (!hasSingle.Key)
+                {
+                    if (hasSingle.Value > 1)
+                        throw new EventException($"Found multiple callback handlers for event {message.Endpoint}, only 1 allowed.");
+                    else if (hasSingle.Value == 0)
+                        throw new EventException($"Callback handler for event {message.Endpoint} not found.");
+                }
+
+                EventHandler subscription = _handlers[message.Endpoint][0];
                 object result = InvokeDelegate(subscription);
 
                 if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
@@ -205,7 +228,7 @@ namespace FxEvents.Shared.EventSubsystem
             }
             else
             {
-                foreach (EventHandler handler in _handlers.Where(self => message.Endpoint == self.Endpoint))
+                foreach (EventHandler handler in _handlers.FindAllEndpoints(message.Endpoint))
                 {
                     InvokeDelegate(handler);
                 }

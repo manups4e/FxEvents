@@ -73,11 +73,6 @@ namespace FxEvents.Shared.Serialization.Implementations
         #region Serialization
         public void Serialize(Type type, object value, SerializationContext context)
         {
-            string typeIdentifier = GetTypeIdentifier(type);
-            if (EventDispatcher.Debug)
-            {
-                logger.Debug("SERIALIZE - typeIdentifier: " + type.FullName);
-            }
             if (type.Name.StartsWith("Tuple"))
                 SerializeTuple(type, value, context);
             else
@@ -173,12 +168,6 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         public T Deserialize<T>(Type type, SerializationContext context)
         {
-            string typeIdentifier = GetTypeIdentifier(type);
-            if (EventDispatcher.Debug)
-            {
-                logger.Debug("DESERIALIZE - typeIdentifier: " + typeIdentifier);
-            }
-
             if (TypeCache<T>.IsSimpleType)
             {
                 object primitive = Deserialize(type, context);

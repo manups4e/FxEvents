@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ClientId.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ContractResolvers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Encryption.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\EventHandlerCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ConcurrentAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ForceAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
