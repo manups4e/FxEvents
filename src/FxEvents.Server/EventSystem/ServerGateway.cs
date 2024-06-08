@@ -32,9 +32,9 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            _eventDispatcher.AddEventHandler(SignaturePipeline, new Action<string>(GetSignature));
-            _eventDispatcher.AddEventHandler(InboundPipeline, new Action<string, byte[]>(Inbound));
-            _eventDispatcher.AddEventHandler(OutboundPipeline, new Action<string, byte[]>(Outbound));
+            _eventDispatcher.RegisterEvent(SignaturePipeline, new Action<string>(GetSignature));
+            _eventDispatcher.RegisterEvent(InboundPipeline, new Action<string, byte[]>(Inbound));
+            _eventDispatcher.RegisterEvent(OutboundPipeline, new Action<string, byte[]>(Outbound));
         }
 
         public void Push(string pipeline, int source, byte[] buffer)
