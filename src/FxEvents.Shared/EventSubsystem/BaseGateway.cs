@@ -4,12 +4,15 @@ using FxEvents.Shared.Message;
 using FxEvents.Shared.Models;
 using FxEvents.Shared.Payload;
 using FxEvents.Shared.Serialization;
+using FxEvents.Shared.TypeExtensions;
 using Logger;
+using MsgPack;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,9 +32,8 @@ namespace FxEvents.Shared.EventSubsystem
         internal string SignaturePipeline;
         protected abstract ISerialization Serialization { get; }
 
-        private List<Tuple<EventMessage, EventHandler>> _processed = new();
         private List<EventObservable> _queue = new();
-        private EventHandlerCollection _handlers = new();
+        internal EventsDictionary _handlers = new();
 
         public EventDelayMethod? DelayDelegate { get; set; }
         public EventMessagePreparation? PrepareDelegate { get; set; }
@@ -40,19 +42,23 @@ namespace FxEvents.Shared.EventSubsystem
 
         public async Task ProcessInboundAsync(int source, byte[] serialized)
         {
-            EventMessage message = serialized.DecryptObject<EventMessage>(EventDispatcher.EncryptionKey);
+            EventMessage message = serialized.DecryptObject<EventMessage>("PLACEHOLDER");
             await ProcessInboundAsync(message, source);
         }
 
         public async Task ProcessInboundAsync(EventMessage message, int source)
         {
-            object InvokeDelegate(EventHandler subscription)
+            object InvokeDelegate(Delegate @delegate)
             {
                 List<object> parameters = new List<object>();
-                bool isServer = API.IsDuplicityVersion();
-                Delegate @delegate = subscription.Delegate;
                 MethodInfo method = @delegate.Method;
+#if CLIENT
+                bool isServer = false;
+                bool takesSource = false;
+#elif SERVER
+                bool isServer = true;
                 bool takesSource = method.GetParameters().Any(self => self.GetCustomAttribute<FromSourceAttribute>() != null);
+#endif
                 int startingIndex = takesSource && isServer ? 1 : 0;
 
                 object CallInternalDelegate()
@@ -69,15 +75,13 @@ namespace FxEvents.Shared.EventSubsystem
 
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
                                                                         typeof(Player).IsAssignableFrom(self.ParameterType) ||
-                                                                        typeof(string).IsAssignableFrom(self.ParameterType) || typeof(int).IsAssignableFrom(self.ParameterType));
+                                                                        typeof(string).IsAssignableFrom(self.ParameterType) || 
+                                                                        typeof(int).IsAssignableFrom(self.ParameterType));
                     Type type = param.ParameterType;
                     if (typeof(ISource).IsAssignableFrom(type))
                     {
-                        ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)));
-                        if (constructor == null)
-                        {
-                            throw new Exception("no constructor to initialize the ISource class");
-                        }
+                        ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int))) 
+                            ?? throw new Exception("no constructor to initialize the ISource class");
 
                         ParameterExpression parameter = Expression.Parameter(typeof(int), "handle");
                         NewExpression expression = Expression.New(constructor, parameter);
@@ -91,7 +95,6 @@ namespace FxEvents.Shared.EventSubsystem
                         }
                         else
                         {
-
                             ConstructorCustomActivator<ISource> activator = (ConstructorCustomActivator<ISource>)Expression
                                 .Lambda(typeof(ConstructorCustomActivator<ISource>), expression, parameter).Compile();
 
@@ -126,19 +129,89 @@ namespace FxEvents.Shared.EventSubsystem
                 {
                     ParameterInfo parameterInfo = parameterInfos[idx];
                     Type type = parameterInfo.ParameterType;
-
                     if (idx - startingIndex < array.Length)
                     {
                         EventParameter parameter = array[idx - startingIndex];
-                        using SerializationContext context = new SerializationContext(message.Endpoint, $"(Process) Parameter Index {idx - startingIndex}",
-                            Serialization, parameter.Data);
-                        object a = context.Deserialize(type);
-                        holder.Add(a);
+                        using SerializationContext context = new(message.Endpoint, $"(Process) Parameter Index {idx - startingIndex}", Serialization, parameter.Data);
+                        MessagePackObject a = context.Deserialize<MessagePackObject>();
+                        if (a.UnderlyingType != type)
+                        {
+                            switch (Type.GetTypeCode(type))
+                            {
+                                case TypeCode.Object:
+                                case TypeCode.DBNull:
+                                case TypeCode.DateTime:
+                                    holder.Add(Activator.CreateInstance(type, a.ToObject()));
+                                    break;
+                                case TypeCode.Byte:
+                                    holder.Add(Convert.ToByte(a.ToObject()));
+                                    break;
+                                case TypeCode.SByte:
+                                    holder.Add(Convert.ToSByte(a.ToObject()));
+                                    break;
+                                case TypeCode.String:
+                                    holder.Add(Convert.ToString(a.ToObject()));
+                                    break;
+                                case TypeCode.Boolean:
+                                    holder.Add(Convert.ToBoolean(a.ToObject()));
+                                    break;
+                                case TypeCode.Char:
+                                    holder.Add(Convert.ToChar(a.ToObject()));
+                                    break;
+                                case TypeCode.Decimal:
+                                    holder.Add(Convert.ToDecimal(a.ToObject()));
+                                    break;
+                                case TypeCode.Single:
+                                    holder.Add(Convert.ToSingle(a.ToObject()));
+                                    break;
+                                case TypeCode.Double:
+                                    holder.Add(Convert.ToDouble(a.ToObject()));
+                                    break;
+                                case TypeCode.Int16:
+                                    holder.Add(Convert.ToInt16(a.ToObject()));
+                                    break;
+                                case TypeCode.Int32:
+                                    holder.Add(Convert.ToInt32(a.ToObject()));
+                                    break;
+                                case TypeCode.Int64:
+                                    holder.Add(Convert.ToInt64(a.ToObject()));
+                                    break;
+                                case TypeCode.UInt16:
+                                    holder.Add(Convert.ToUInt16(a.ToObject()));
+                                    break;
+                                case TypeCode.UInt32:
+                                    holder.Add(Convert.ToUInt32(a.ToObject()));
+                                    break;
+                                case TypeCode.UInt64:
+                                    holder.Add(Convert.ToUInt64(a.ToObject()));
+                                    break;
+                                case TypeCode.Empty:
+                                    holder.Add(string.Empty);
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            if (TypeCache.IsSimpleType(type))
+                                holder.Add(a.ToObject());
+                            else
+                                holder.Add(Activator.CreateInstance(type, a.ToObject()));
+                        }
                     }
                     else
                     {
-                        object a = Activator.CreateInstance(type);
-                        holder.Add(a);
+                        if (TypeCache.IsSimpleType(type))
+                        {
+                            if(parameterInfo.DefaultValue != null)
+                                holder.Add(parameterInfo.DefaultValue);
+                            else
+                                holder.Add(default);
+                        }
+                        else
+                        {
+                            object a = Activator.CreateInstance(type);
+                            holder.Add(a);
+                        }
                     }
                 }
 
@@ -160,17 +233,17 @@ namespace FxEvents.Shared.EventSubsystem
             if (message.Flow == EventFlowType.Circular)
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                KeyValuePair<bool, int> hasSingle = _handlers.HasSingleEndpoint(message.Endpoint);
-                if (!hasSingle.Key)
+                int hasSingle = _handlers[message.Endpoint].m_callbacks.Count;
+                if (hasSingle != 1)
                 {
-                    if (hasSingle.Value > 1)
+                    if (hasSingle > 1)
                         throw new EventException($"Found multiple callback handlers for event {message.Endpoint}, only 1 allowed.");
-                    else if (hasSingle.Value == 0)
+                    else if (hasSingle == 0)
                         throw new EventException($"Callback handler for event {message.Endpoint} not found.");
                 }
 
-                EventHandler subscription = _handlers[message.Endpoint][0];
-                object result = InvokeDelegate(subscription);
+                EventEntry subscription = _handlers[message.Endpoint];
+                object result = InvokeDelegate(subscription.m_callbacks[0]);
 
                 if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
                 {
@@ -195,7 +268,7 @@ namespace FxEvents.Shared.EventSubsystem
                     else
                     {
                         throw new EventTimeoutException(
-                            $"({message.Endpoint} - {subscription.Delegate.Method.DeclaringType?.Name ?? "null"}/{subscription.Delegate.Method.Name}) The operation was timed out");
+                            $"({message.Endpoint} - {subscription.m_callbacks[0].Method.DeclaringType?.Name ?? "null"}/{subscription.m_callbacks[0].Method.Name}) The operation was timed out");
                     }
                 }
 
@@ -221,14 +294,14 @@ namespace FxEvents.Shared.EventSubsystem
                     stopwatch.Start();
                 }
 
-                byte[] data = response.EncryptObject(EventDispatcher.EncryptionKey);
+                byte[] data = response.EncryptObject("PLACEHOLDER");
                 PushDelegate(OutboundPipeline, source, data);
                 if (EventDispatcher.Debug)
                     Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
             }
             else
             {
-                foreach (EventHandler handler in _handlers.FindAllEndpoints(message.Endpoint))
+                foreach (Delegate handler in _handlers[message.Endpoint].m_callbacks)
                 {
                     InvokeDelegate(handler);
                 }
@@ -237,7 +310,7 @@ namespace FxEvents.Shared.EventSubsystem
 
         public void ProcessOutbound(byte[] serialized)
         {
-            EventResponseMessage response = serialized.DecryptObject<EventResponseMessage>(EventDispatcher.EncryptionKey);
+            EventResponseMessage response = serialized.DecryptObject<EventResponseMessage>("PLACEHOLDER");
             ProcessOutbound(response);
         }
 
@@ -278,7 +351,7 @@ namespace FxEvents.Shared.EventSubsystem
                     stopwatch.Start();
                 }
 
-                byte[] data = message.EncryptObject(EventDispatcher.EncryptionKey);
+                byte[] data = message.EncryptObject("PLACEHOLDER");
 
                 PushDelegate(InboundPipeline, source, data);
                 if (EventDispatcher.Debug)
@@ -326,7 +399,7 @@ namespace FxEvents.Shared.EventSubsystem
                 stopwatch.Start();
             }
 
-            byte[] data = message.EncryptObject(EventDispatcher.EncryptionKey);
+            byte[] data = message.EncryptObject("PLACEHOLDER");
 
             PushDelegateLatent(InboundPipeline, source, bytePerSecond, data);
             if (EventDispatcher.Debug)
@@ -375,12 +448,11 @@ namespace FxEvents.Shared.EventSubsystem
         {
             if (EventDispatcher.Debug)
                 Logger.Debug($"Mounted: {endpoint}");
-            _handlers.Add(new EventHandler(endpoint, @delegate));
+            _handlers.Add(endpoint, @delegate);
         }
         public void Unmount(string endpoint)
         {
-            if (_handlers.Any(x => x.Endpoint == endpoint))
-                _handlers.RemoveAll(x => x.Endpoint == endpoint);
+            _handlers.Remove(endpoint);
         }
     }
 }

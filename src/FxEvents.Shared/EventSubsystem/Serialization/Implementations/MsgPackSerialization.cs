@@ -17,7 +17,7 @@ namespace FxEvents.Shared.Serialization.Implementations
         private delegate T ObjectActivator<out T>();
         private delegate void VoidMethod();
         private Log logger = new();
-        private MsgPack.Serialization.SerializationContext _context = new(MsgPack.PackerCompatibilityOptions.None) { SerializationMethod = SerializationMethod.Map };
+        private MsgPack.Serialization.SerializationContext _context = new(MsgPack.PackerCompatibilityOptions.None) { SerializationMethod = SerializationMethod.Map, GeneratorOption = SerializationMethodGeneratorOption.Fast };
         public MsgPackSerialization()
         {
             Vector2Resolver vector2 = new(_context);

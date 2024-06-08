@@ -2,6 +2,7 @@
 global using CitizenFX.Core.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
+using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.EventSubsystem.Attributes;
 using Logger;
 using System;
@@ -16,12 +17,11 @@ namespace FxEvents
     {
         internal static Log Logger;
         internal PlayerList GetPlayers => Players;
-        internal static ClientGateway Events;
+        internal static ClientGateway clientGateway;
         internal static bool Debug { get; set; }
         internal static bool Initialized = false;
-        internal static string EncryptionKey = "";
-
         internal static EventDispatcher Instance;
+        public static EventsDictionary Events => clientGateway._handlers;
 
         public EventDispatcher()
         {
@@ -50,15 +50,8 @@ namespace FxEvents
             return @event;
         }
 
-        public static void Initalize(string inboundEvent, string outboundEvent, string signatureEvent, string encryptionKey)
+        public static void Initalize(string inboundEvent, string outboundEvent, string signatureEvent)
         {
-            if (string.IsNullOrWhiteSpace(encryptionKey))
-            {
-                Logger.Fatal("FXEvents: Encryption key cannot be empty, please add an encryption key or use generatekey command in console to generate one to save");
-                return;
-            }
-            EncryptionKey = encryptionKey;
-
             if (string.IsNullOrWhiteSpace(signatureEvent))
             {
                 Logger.Error("SignaturePipeline cannot be null, empty or whitespace");
@@ -77,12 +70,12 @@ namespace FxEvents
             string _sig = SetSignaturePipelineString(signatureEvent);
             string _in = SetInboundPipelineString(inboundEvent);
             string _out = SetOutboundPipelineString(outboundEvent);
-            Events = new ClientGateway();
-            Events.SignaturePipeline = _sig;
-            Events.InboundPipeline = _in;
-            Events.OutboundPipeline = _out;
+            clientGateway = new ClientGateway();
+            clientGateway.SignaturePipeline = _sig;
+            clientGateway.InboundPipeline = _in;
+            clientGateway.OutboundPipeline = _out;
             Initialized = true;
-            Events.AddEvents();
+            clientGateway.AddEvents();
 
             var assembly = Assembly.GetCallingAssembly();
 
@@ -123,7 +116,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Events.Send(endpoint, args);
+            clientGateway.Send(endpoint, args);
         }
 
         public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
@@ -133,7 +126,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Events.SendLatent(endpoint, bytesPerSeconds, args);
+            clientGateway.SendLatent(endpoint, bytesPerSeconds, args);
         }
 
         public static async Task<T> Get<T>(string endpoint, params object[] args)
@@ -143,7 +136,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return default;
             }
-            return await Events.Get<T>(endpoint, args);
+            return await clientGateway.Get<T>(endpoint, args);
         }
         public static void Mount(string endpoint, Delegate @delegate)
         {
@@ -152,7 +145,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Events.Mount(endpoint, @delegate);
+            clientGateway.Mount(endpoint, @delegate);
         }
         public static void Unmount(string endpoint)
         {
@@ -161,7 +154,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Events.Unmount(endpoint);
+            clientGateway.Unmount(endpoint);
         }
 
     }
