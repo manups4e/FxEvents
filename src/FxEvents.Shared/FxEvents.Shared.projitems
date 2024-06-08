@@ -11,18 +11,18 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)BinaryHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ContractResolvers.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Encryption.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\EventHandlerCollection.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ConcurrentAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Encryption\Encryption.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Encryption\Curve25519.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Encryption\Curve25519Inner.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\FxEventAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ForceAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\SerializationAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\BaseGateway.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\IEventLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ClientStopwatch.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ServerStopwatch.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\StopwatchUtil.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\EventHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\EventsDictionary.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Exceptions\EventException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\ISerializable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\ISource.cs" />
@@ -30,6 +30,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventMessage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventParameter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventResponseMessage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\NetworkEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventObservable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventValueHolder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\BinarySerialization.cs" />

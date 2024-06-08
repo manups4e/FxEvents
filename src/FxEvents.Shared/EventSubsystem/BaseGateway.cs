@@ -1,4 +1,5 @@
 ﻿using FxEvents.Shared.Diagnostics;
+using FxEvents.Shared.Encryption;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Models;
@@ -245,30 +246,34 @@ namespace FxEvents.Shared.EventSubsystem
                 EventEntry subscription = _handlers[message.Endpoint];
                 object result = InvokeDelegate(subscription.m_callbacks[0]);
 
-                if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
+                Logger.Warning(result.GetType().IsGenericType.ToString());
+                if (result.GetType().IsGenericType)
                 {
-                    using CancellationTokenSource token = new CancellationTokenSource();
-
-                    Task task = (Task)result;
-                    Task timeout = DelayDelegate!(10000);
-                    Task completed = await Task.WhenAny(task, timeout);
-
-                    if (completed == task)
+                    if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
                     {
-                        token.Cancel();
+                        using CancellationTokenSource token = new CancellationTokenSource();
+
+                        Task task = (Task)result;
+                        Task timeout = DelayDelegate!(10000);
+                        Task completed = await Task.WhenAny(task, timeout);
+
+                        if (completed == task)
+                        {
+                            token.Cancel();
 
 #if CLIENT
-                        await task;
+                            await task;
 #elif SERVER
-                        await task.ConfigureAwait(false);
+                            await task.ConfigureAwait(false);
 #endif
 
-                        result = ((dynamic)task).Result;
-                    }
-                    else
-                    {
-                        throw new EventTimeoutException(
-                            $"({message.Endpoint} - {subscription.m_callbacks[0].Method.DeclaringType?.Name ?? "null"}/{subscription.m_callbacks[0].Method.Name}) The operation was timed out");
+                            result = ((dynamic)task).Result;
+                        }
+                        else
+                        {
+                            throw new EventTimeoutException(
+                                $"({message.Endpoint} - {subscription.m_callbacks[0].Method.DeclaringType?.Name ?? "null"}/{subscription.m_callbacks[0].Method.Name}) The operation was timed out");
+                        }
                     }
                 }
 

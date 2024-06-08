@@ -8,7 +8,7 @@ namespace FxEvents.Shared.Message
     public class EventMessage : IMessage
     {
         public Snowflake Id { get; set; }
-        public string? Signature { get; set; }
+        public byte[]? Signature { get; set; }
         public string? Endpoint { get; set; }
         public EventFlowType Flow { get; set; }
         public IEnumerable<EventParameter> Parameters { get; set; }

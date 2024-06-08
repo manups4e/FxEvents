@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FxEvents.Shared
+namespace FxEvents.Shared.Encryption
 {
     public static class Encryption
     {
