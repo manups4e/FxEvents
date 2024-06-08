@@ -93,6 +93,14 @@ EventHub.Mount("eventName", new Func<ISource, type1, type2, Task<returnType>>(as
   return val3
 }));
 ```
+
+- Callbacks can also be mounted using [FxEvent("EventName")] attribute ⚠️ ONLY 1 PER ENDPOINT. Example
+```c#
+[FxEvent("myEvent")]
+public static string GimmeAll(int a, string b)
+    => "this is a test";
+```
+
 ### Calling it
 ```c#
 // clientside
