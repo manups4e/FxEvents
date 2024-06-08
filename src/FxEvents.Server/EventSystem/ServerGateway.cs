@@ -1,4 +1,6 @@
-﻿using FxEvents.Shared;
+﻿using CitizenFX.Core;
+using FxEvents.Shared;
+using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Serialization;
@@ -16,7 +18,7 @@ namespace FxEvents.EventSystem
     public class ServerGateway : BaseGateway
     {
         protected override ISerialization Serialization { get; }
-        private Dictionary<int, string> _signatures;
+        internal Dictionary<int, byte[]> _signatures;
 
         private EventDispatcher _eventDispatcher => EventDispatcher.Instance;
 
@@ -32,7 +34,7 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            _eventDispatcher.RegisterEvent(SignaturePipeline, new Action<string>(GetSignature));
+            _eventDispatcher.RegisterEvent(SignaturePipeline, new Action<string, byte[]>(GetSignature));
             _eventDispatcher.RegisterEvent(InboundPipeline, new Action<string, byte[]>(Inbound));
             _eventDispatcher.RegisterEvent(OutboundPipeline, new Action<string, byte[]>(Outbound));
         }
@@ -53,29 +55,22 @@ namespace FxEvents.EventSystem
                 BaseScript.TriggerLatentClientEvent(pipeline, bytePerSecond, buffer);
         }
 
-        private void GetSignature([FromSource] string source)
+        private void GetSignature([FromSource] string source, byte[] clientPubKey)
         {
             try
             {
                 int client = int.Parse(source.Replace("net:", string.Empty));
-
                 if (_signatures.ContainsKey(client))
                 {
                     Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
                     return;
                 }
 
-                byte[] holder = new byte[128];
+                Curve25519 curve25519 = Curve25519.Create();
+                byte[] secret = curve25519.GetSharedSecret(clientPubKey);
 
-                using (RNGCryptoServiceProvider service = new RNGCryptoServiceProvider())
-                {
-                    service.GetBytes(holder);
-                }
-
-                string signature = BitConverter.ToString(holder).Replace("-", "").ToLower();
-
-                _signatures.Add(client, signature);
-                BaseScript.TriggerClientEvent(_eventDispatcher.GetPlayers[client], SignaturePipeline, signature);
+                _signatures.Add(client, secret);
+                BaseScript.TriggerClientEvent(_eventDispatcher.GetPlayers[client], SignaturePipeline, curve25519.GetPublicKey());
             }
             catch (Exception ex)
             {
@@ -89,9 +84,9 @@ namespace FxEvents.EventSystem
             {
                 int client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (!_signatures.TryGetValue(client, out string signature)) return;
+                if (!_signatures.TryGetValue(client, out byte[] signature)) return;
 
-                EventMessage message = encrypted.DecryptObject<EventMessage>(EventDispatcher.EncryptionKey);
+                EventMessage message = encrypted.DecryptObject<EventMessage>("PLACEHOLDER");
 
                 if (!VerifySignature(client, message, signature)) return;
 
@@ -110,13 +105,13 @@ namespace FxEvents.EventSystem
             }
         }
 
-        public bool VerifySignature(int source, IMessage message, string signature)
+        public bool VerifySignature(int source, IMessage message, byte[] signature)
         {
-            if (message.Signature == signature) return true;
+            if (message.Signature.SequenceEqual(signature)) return true;
 
             Logger.Error($"[{message.Endpoint}] Client {source} had invalid event signature, aborting:");
-            Logger.Error($"[{message.Endpoint}] \tSupplied Signature: {message.Signature}");
-            Logger.Error($"[{message.Endpoint}] \tActual Signature: {signature}");
+            Logger.Error($"[{message.Endpoint}] Supplied Signature: {message.Signature.BytesToString()}");
+            Logger.Error($"[{message.Endpoint}] Actual Signature: {signature.BytesToString()}");
 
             return false;
         }
@@ -127,9 +122,9 @@ namespace FxEvents.EventSystem
             {
                 int client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (!_signatures.TryGetValue(client, out string signature)) return;
+                if (!_signatures.TryGetValue(client, out byte[] signature)) return;
 
-                EventResponseMessage response = encrypted.DecryptObject<EventResponseMessage>(EventDispatcher.EncryptionKey);
+                EventResponseMessage response = encrypted.DecryptObject<EventResponseMessage>("PLACEHOLDER");
 
                 if (!VerifySignature(client, response, signature)) return;
 
@@ -193,5 +188,6 @@ namespace FxEvents.EventSystem
         {
             return await GetInternal<T>(target, endpoint, args);
         }
+
     }
 }
