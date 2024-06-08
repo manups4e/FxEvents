@@ -6,6 +6,7 @@ using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.EventSubsystem.Attributes;
 using Logger;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -78,6 +79,8 @@ namespace FxEvents
             clientGateway.AddEvents();
 
             var assembly = Assembly.GetCallingAssembly();
+            // we keep it outside because multiple classes with same event callback? no sir no.
+            List<string> withReturnType = new List<string>();
 
             foreach (var type in assembly.GetTypes())
             {
@@ -87,13 +90,26 @@ namespace FxEvents
                 foreach (var method in methods)
                 {
                     var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
-                    var actionType = Expression.GetDelegateType(parameters.Concat(new[] { typeof(void) }).ToArray());
+                    var actionType = Expression.GetDelegateType(parameters.Concat(new[] { method.ReturnType }).ToArray());
                     var attribute = method.GetCustomAttribute<FxEventAttribute>();
+
+                    if (method.ReturnType != null)
+                    {
+                        if (withReturnType.Contains(attribute.Name))
+                        {
+                            // throw error and break execution for the script sake.
+                            throw new Exception($"FxEvents - Failed registering [{attribute.Name}] delegates. Cannot register more than 1 delegate for [{attribute.Name}] with a return type!");
+                        }
+                        else
+                        {
+                            withReturnType.Add(attribute.Name);
+                        }
+                    }
 
                     if (method.IsStatic)
                         Mount(attribute.Name, Delegate.CreateDelegate(actionType, method));
                     else
-                        Mount(attribute.Name, Delegate.CreateDelegate(actionType, Instance, method.Name));
+                        Logger.Error($"Error registering method {method.Name} - FxEvents supports only Static methods for its [FxEvent] attribute!");
                 }
             }
         }

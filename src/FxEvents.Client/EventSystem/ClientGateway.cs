@@ -1,11 +1,13 @@
 ﻿using FxEvents.Shared;
 using FxEvents.Shared.Diagnostics;
+using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.Snowflakes;
 using System;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace FxEvents.EventSystem
@@ -13,13 +15,16 @@ namespace FxEvents.EventSystem
     public class ClientGateway : BaseGateway
     {
         protected override ISerialization Serialization { get; }
-        private string _signature;
 
         private EventDispatcher _eventDispatcher => EventDispatcher.Instance;
+        private Curve25519 _curve25519;
+        private byte[] _secret = [];
+
 
         public ClientGateway()
         {
             SnowflakeGenerator.Create((short)new Random().Next(1, 199));
+            _curve25519 = Curve25519.Create();
             Serialization = new MsgPackSerialization();
             DelayDelegate = async delay => await BaseScript.Delay(delay);
             PrepareDelegate = PrepareAsync;
@@ -37,7 +42,7 @@ namespace FxEvents.EventSystem
                 }
                 catch (Exception ex)
                 {
-                    EventMessage message = encrypted.DecryptObject<EventMessage>(EventDispatcher.EncryptionKey);
+                    EventMessage message = encrypted.DecryptObject<EventMessage>("PLACEHOLDER");
                     Logger.Error($"InboundPipeline [{message.Endpoint}]:" + ex.ToString());
                 }
             }));
@@ -54,23 +59,26 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            _eventDispatcher.AddEventHandler(SignaturePipeline, new Action<string>(signature => _signature = signature));
-            BaseScript.TriggerServerEvent(SignaturePipeline);
+            _eventDispatcher.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => {
+                Logger.Debug($"Signature {signature} received from server");
+                _secret = _curve25519.GetSharedSecret(signature);
+            }));
+            BaseScript.TriggerServerEvent(SignaturePipeline, _curve25519.GetPublicKey());
         }
 
         public async Task PrepareAsync(string pipeline, int source, IMessage message)
         {
-            if (string.IsNullOrWhiteSpace(_signature))
+            if (_secret.Length == 0)
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                while (_signature == null) await BaseScript.Delay(0);
+                while (_secret.Length == 0) await BaseScript.Delay(0);
                 if (EventDispatcher.Debug)
                 {
                     Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");
                 }
             }
 
-            message.Signature = _signature;
+            message.Signature = _secret;
         }
 
         public void Push(string pipeline, int source, byte[] buffer)
