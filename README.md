@@ -41,6 +41,7 @@ EventHub.Mount("eventName", new Action<ISource, type1, type2>(([FromSource] sour
 public static async void GimmeAll(int a, string b)
     => Logger.Info($"GimmeAll1 {a} {b}");
 
+[FxEvent("myEvent")]
 public static async void GimmeAll(int a) 
     => Logger.Info($"GimmeAll1 {a}");
 
