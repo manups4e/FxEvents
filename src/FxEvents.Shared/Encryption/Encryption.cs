@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,60 +11,92 @@ namespace FxEvents.Shared.Encryption
     {
         static readonly Random random = new Random(DateTime.Now.Millisecond);
         #region Byte encryption
-        private static byte[] EncryptBytes(byte[] data, string strEncrKey)
+        private static byte[] GenerateIV()
         {
             byte[] rgbIV = new byte[16];
             using (RNGCryptoServiceProvider rng = new())
-            {
-                rng.GetBytes(rgbIV);
-            }
+            rng.GetBytes(rgbIV);
+            return rgbIV;
+        }
 
-            byte[] bytes;
-            using (SHA256Managed sha256 = new())
-            {
-                bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(strEncrKey));
-            }
+        private static byte[] ComputeHash(string input)
+        {
+            using SHA256Managed sha256 = new SHA256Managed();
+            return sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+        }
 
-            using AesManaged aesAlg = new();
-            aesAlg.Key = bytes;
-            aesAlg.IV = rgbIV;
+        private static byte[] EncryptBytes(byte[] data, object input)
+        {
+            byte[] rgbIV = GenerateIV();
+            byte[] keyBytes = input switch
+            {
+                int sourceId => EventDispatcher.Gateway.GetSecret(sourceId),
+                string strKey => ComputeHash(strKey),
+                _ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
+            };
+            using AesManaged aesAlg = new AesManaged
+            {
+                Key = keyBytes,
+                IV = rgbIV
+            };
 
             ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
 
-            using MemoryStream msEncrypt = new();
-            // prepend the IV to the encrypted data
+            using MemoryStream msEncrypt = new MemoryStream();
             msEncrypt.Write(rgbIV, 0, rgbIV.Length);
-            using CryptoStream csEncrypt = new(msEncrypt, encryptor, CryptoStreamMode.Write);
+            using CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
             csEncrypt.Write(data, 0, data.Length);
             csEncrypt.FlushFinalBlock();
+
             return msEncrypt.ToArray();
         }
 
-        private static byte[] DecryptBytes(byte[] data, string sDecrKey)
+        private static byte[] DecryptBytes(byte[] data, object input)
         {
-            byte[] rgbIV = new byte[16];
-            Array.Copy(data, 0, rgbIV, 0, rgbIV.Length);
-
-            byte[] bytes;
-            using (SHA256Managed sha256 = new())
+            byte[] rgbIV = data.Take(16).ToArray(); // Extract the IV from the beginning of the data
+            byte[] keyBytes = input switch
             {
-                bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sDecrKey));
-            }
-
-            using AesManaged aesAlg = new();
-            aesAlg.Key = bytes;
-            aesAlg.IV = rgbIV;
+                int sourceId => EventDispatcher.Gateway.GetSecret(sourceId),
+                string strKey => ComputeHash(strKey),
+                _ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
+            };
+            using AesManaged aesAlg = new AesManaged
+            {
+                Key = keyBytes,
+                IV = rgbIV
+            };
 
             ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 
-            using MemoryStream msDecrypt = new(data, rgbIV.Length, data.Length - rgbIV.Length);
-            using CryptoStream csDecrypt = new(msDecrypt, decryptor, CryptoStreamMode.Read);
-            using MemoryStream msDecrypted = new();
+            using MemoryStream msDecrypt = new MemoryStream(data.Skip(16).ToArray()); // Skip the IV part
+            using CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+            using MemoryStream msDecrypted = new MemoryStream();
             csDecrypt.CopyTo(msDecrypted);
+
             return msDecrypted.ToArray();
         }
         #endregion
 
+
+        internal static byte[] EncryptObject<T>(this T obj, int plySource = -1)
+        {
+            return EncryptBytes(obj.ToBytes(), plySource);
+        }
+
+        internal static T DecryptObject<T>(this byte[] data, int plySource = -1)
+        {
+            return DecryptBytes(data, plySource).FromBytes<T>();
+        }
+
+
+        /// <summary>
+        /// Encrypt the object.
+        /// </summary>
+        /// <typeparam name="T"/>
+        /// <param name="obj">The object to encrypt.</param>
+        /// <param name="key">The string key to encrypt it.</param>
+        /// <exception cref="Exception"></exception>
+        /// <returns>An encrypted array of byte</returns>
         public static byte[] EncryptObject<T>(this T obj, string key)
         {
             if (string.IsNullOrWhiteSpace(key))
@@ -71,11 +104,19 @@ namespace FxEvents.Shared.Encryption
             return EncryptBytes(obj.ToBytes(), key);
         }
 
+        /// <summary>
+        /// Decrypt the object.
+        /// </summary>
+        /// <typeparam name="T"/>
+        /// <param name="data">The data to decrypt.</param>
+        /// <param name="key">The key to decrypt it (MUST BE THE SAME AS THE ENCRYPTION KEY).</param>
+        /// <exception cref="Exception"></exception>
+        /// <returns>A <typeparamref name="T"/></returns>
         public static T DecryptObject<T>(this byte[] data, string key)
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new Exception("FXEvents: Encryption key cannot be empty!");
-            return DecryptBytes(data, key).FromBytes<T>();
+            return EncryptBytes(data, key).FromBytes<T>();
         }
 
         internal static async Task<Tuple<string, string>> GenerateKey()

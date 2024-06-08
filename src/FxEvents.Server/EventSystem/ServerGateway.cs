@@ -70,6 +70,8 @@ namespace FxEvents.EventSystem
                 byte[] secret = curve25519.GetSharedSecret(clientPubKey);
 
                 _signatures.Add(client, secret);
+                Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] Added signature {secret.BytesToString()}");
+
                 BaseScript.TriggerClientEvent(_eventDispatcher.GetPlayers[client], SignaturePipeline, curve25519.GetPublicKey());
             }
             catch (Exception ex)
@@ -86,9 +88,7 @@ namespace FxEvents.EventSystem
 
                 if (!_signatures.TryGetValue(client, out byte[] signature)) return;
 
-                EventMessage message = encrypted.DecryptObject<EventMessage>("PLACEHOLDER");
-
-                if (!VerifySignature(client, message, signature)) return;
+                EventMessage message = encrypted.DecryptObject<EventMessage>(client);
 
                 try
                 {
@@ -105,17 +105,6 @@ namespace FxEvents.EventSystem
             }
         }
 
-        public bool VerifySignature(int source, IMessage message, byte[] signature)
-        {
-            if (message.Signature.SequenceEqual(signature)) return true;
-
-            Logger.Error($"[{message.Endpoint}] Client {source} had invalid event signature, aborting:");
-            Logger.Error($"[{message.Endpoint}] Supplied Signature: {message.Signature.BytesToString()}");
-            Logger.Error($"[{message.Endpoint}] Actual Signature: {signature.BytesToString()}");
-
-            return false;
-        }
-
         private void Outbound([FromSource] string source, byte[] encrypted)
         {
             try
@@ -124,9 +113,7 @@ namespace FxEvents.EventSystem
 
                 if (!_signatures.TryGetValue(client, out byte[] signature)) return;
 
-                EventResponseMessage response = encrypted.DecryptObject<EventResponseMessage>("PLACEHOLDER");
-
-                if (!VerifySignature(client, response, signature)) return;
+                EventResponseMessage response = encrypted.DecryptObject<EventResponseMessage>(client);
 
                 ProcessOutbound(response);
             }
@@ -189,5 +176,11 @@ namespace FxEvents.EventSystem
             return await GetInternal<T>(target, endpoint, args);
         }
 
+        internal byte[] GetSecret(int source)
+        {
+            if (!_signatures.ContainsKey(source))
+                throw new Exception("Shared Encryption Secret has not been generated yet");
+            return _signatures[source];
+        }
     }
 }

@@ -9,15 +9,13 @@ namespace FxEvents.Shared.Message
     {
         public Snowflake Id { get; set; }
         public string Endpoint { get; set; }
-        public byte[]? Signature { get; set; }
         public byte[]? Data { get; set; }
 
         public EventResponseMessage() { }
-        public EventResponseMessage(Snowflake id, string endpoint, byte[]? signature, byte[]? data)
+        public EventResponseMessage(Snowflake id, string endpoint, byte[]? data)
         {
             Id = id;
             Endpoint = endpoint;
-            Signature = signature;
             Data = data;
         }
 

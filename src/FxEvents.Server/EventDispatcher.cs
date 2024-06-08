@@ -20,12 +20,12 @@ namespace FxEvents
         internal static Log Logger { get; set; }
         internal ExportDictionary GetExports => Exports;
         internal PlayerList GetPlayers => Players;
-        internal static ServerGateway serverGateway { get; set; }
+        internal static ServerGateway Gateway { get; set; }
         internal static bool Debug { get; set; }
         internal static bool Initialized = false;
         internal static EventDispatcher Instance;
 
-        public static EventsDictionary Events => serverGateway._handlers;
+        public static EventsDictionary Events => Gateway._handlers;
 
         public EventDispatcher()
         {
@@ -86,12 +86,12 @@ namespace FxEvents
             string _sig = SetSignaturePipelineString(signatureEvent);
             string _in = SetInboundPipelineString(inboundEvent);
             string _out = SetOutboundPipelineString(outboundEvent);
-            serverGateway = new ServerGateway();
-            serverGateway.SignaturePipeline = _sig;
-            serverGateway.InboundPipeline = _in;
-            serverGateway.OutboundPipeline = _out;
+            Gateway = new ServerGateway();
+            Gateway.SignaturePipeline = _sig;
+            Gateway.InboundPipeline = _in;
+            Gateway.OutboundPipeline = _out;
             Initialized = true;
-            serverGateway.AddEvents();
+            Gateway.AddEvents();
 
             var assembly = Assembly.GetCallingAssembly();
             // we keep it outside because multiple classes with same event callback? no sir no.
@@ -147,7 +147,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.Send(Convert.ToInt32(player.Handle), endpoint, args);
+            Gateway.Send(Convert.ToInt32(player.Handle), endpoint, args);
         }
         public static void Send(ISource client, string endpoint, params object[] args)
         {
@@ -156,7 +156,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.Send(client.Handle, endpoint, args);
+            Gateway.Send(client.Handle, endpoint, args);
         }
         public static void Send(IEnumerable<Player> players, string endpoint, params object[] args)
         {
@@ -165,7 +165,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.Send(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
+            Gateway.Send(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
         }
 
         public static void Send(string endpoint, params object[] args)
@@ -177,7 +177,7 @@ namespace FxEvents
             }
 
             PlayerList playerList = Instance.GetPlayers;
-            serverGateway.Send(playerList.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
+            Gateway.Send(playerList.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
         }
 
         public static void Send(IEnumerable<ISource> clients, string endpoint, params object[] args)
@@ -187,7 +187,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
+            Gateway.Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
         }
 
         public static void SendLatent(Player player, string endpoint, int bytesPerSeconds, params object[] args)
@@ -197,7 +197,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesPerSeconds, args);
+            Gateway.SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesPerSeconds, args);
         }
 
         public static void SendLatent(ISource client, string endpoint, int bytesPerSeconds, params object[] args)
@@ -207,7 +207,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.SendLatent(client.Handle, endpoint, bytesPerSeconds, args);
+            Gateway.SendLatent(client.Handle, endpoint, bytesPerSeconds, args);
         }
 
         public static void SendLatent(IEnumerable<Player> players, string endpoint, int bytesPerSeconds, params object[] args)
@@ -217,7 +217,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.SendLatent(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
+            Gateway.SendLatent(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
         }
 
         public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
@@ -228,7 +228,7 @@ namespace FxEvents
                 return;
             }
             PlayerList playerList = Instance.GetPlayers;
-            serverGateway.SendLatent(playerList.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
+            Gateway.SendLatent(playerList.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
         }
 
         public static void SendLatent(IEnumerable<ISource> clients, string endpoint, int bytesPerSeconds, params object[] args)
@@ -238,7 +238,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.SendLatent(clients.Select(x => x.Handle).ToList(), endpoint, bytesPerSeconds, args);
+            Gateway.SendLatent(clients.Select(x => x.Handle).ToList(), endpoint, bytesPerSeconds, args);
         }
 
         public static Task<T> Get<T>(Player player, string endpoint, params object[] args)
@@ -248,7 +248,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return default;
             }
-            return serverGateway.Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
+            return Gateway.Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
         }
 
         public static Task<T> Get<T>(ISource client, string endpoint, params object[] args)
@@ -258,7 +258,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return default;
             }
-            return serverGateway.Get<T>(client.Handle, endpoint, args);
+            return Gateway.Get<T>(client.Handle, endpoint, args);
         }
 
         public static void Mount(string endpoint, Delegate @delegate)
@@ -268,7 +268,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.Mount(endpoint, @delegate);
+            Gateway.Mount(endpoint, @delegate);
         }
         public static void Unmount(string endpoint)
         {
@@ -277,13 +277,13 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            serverGateway.Unmount(endpoint);
+            Gateway.Unmount(endpoint);
         }
 
         private void OnPlayerDropped([FromSource] Player player)
         {
-            if (serverGateway._signatures.ContainsKey(int.Parse(player.Handle)))
-                serverGateway._signatures.Remove(int.Parse(player.Handle));
+            if (Gateway._signatures.ContainsKey(int.Parse(player.Handle)))
+                Gateway._signatures.Remove(int.Parse(player.Handle));
         }
     }
 }

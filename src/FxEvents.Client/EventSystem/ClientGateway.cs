@@ -42,7 +42,7 @@ namespace FxEvents.EventSystem
                 }
                 catch (Exception ex)
                 {
-                    EventMessage message = encrypted.DecryptObject<EventMessage>("PLACEHOLDER");
+                    EventMessage message = encrypted.DecryptObject<EventMessage>();
                     Logger.Error($"InboundPipeline [{message.Endpoint}]:" + ex.ToString());
                 }
             }));
@@ -60,7 +60,7 @@ namespace FxEvents.EventSystem
             }));
 
             _eventDispatcher.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => {
-                Logger.Debug($"Signature {signature} received from server");
+                Logger.Info($"Signature {signature} received from server");
                 _secret = _curve25519.GetSharedSecret(signature);
             }));
             BaseScript.TriggerServerEvent(SignaturePipeline, _curve25519.GetPublicKey());
@@ -77,8 +77,6 @@ namespace FxEvents.EventSystem
                     Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");
                 }
             }
-
-            message.Signature = _secret;
         }
 
         public void Push(string pipeline, int source, byte[] buffer)
@@ -105,6 +103,13 @@ namespace FxEvents.EventSystem
         public async Task<T> Get<T>(string endpoint, params object[] args)
         {
             return await GetInternal<T>(new ServerId().Handle, endpoint, args);
+        }
+
+        internal byte[] GetSecret(int _)
+        {
+            if (_secret == null)
+                throw new Exception("Shared Encryption Secret has not been generated yet");
+            return _secret;
         }
     }
 }

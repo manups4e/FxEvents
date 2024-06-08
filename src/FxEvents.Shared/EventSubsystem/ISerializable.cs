@@ -7,6 +7,5 @@ namespace FxEvents.Shared.EventSubsystem
     {
         Snowflake Id { get; set; }
         string Endpoint { get; set; }
-        byte[] Signature { get; set; }
     }
 }

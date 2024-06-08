@@ -18,11 +18,11 @@ namespace FxEvents
     {
         internal static Log Logger;
         internal PlayerList GetPlayers => Players;
-        internal static ClientGateway clientGateway;
+        internal static ClientGateway Gateway;
         internal static bool Debug { get; set; }
         internal static bool Initialized = false;
         internal static EventDispatcher Instance;
-        public static EventsDictionary Events => clientGateway._handlers;
+        public static EventsDictionary Events => Gateway._handlers;
 
         public EventDispatcher()
         {
@@ -71,12 +71,12 @@ namespace FxEvents
             string _sig = SetSignaturePipelineString(signatureEvent);
             string _in = SetInboundPipelineString(inboundEvent);
             string _out = SetOutboundPipelineString(outboundEvent);
-            clientGateway = new ClientGateway();
-            clientGateway.SignaturePipeline = _sig;
-            clientGateway.InboundPipeline = _in;
-            clientGateway.OutboundPipeline = _out;
+            Gateway = new ClientGateway();
+            Gateway.SignaturePipeline = _sig;
+            Gateway.InboundPipeline = _in;
+            Gateway.OutboundPipeline = _out;
             Initialized = true;
-            clientGateway.AddEvents();
+            Gateway.AddEvents();
 
             var assembly = Assembly.GetCallingAssembly();
             // we keep it outside because multiple classes with same event callback? no sir no.
@@ -132,7 +132,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            clientGateway.Send(endpoint, args);
+            Gateway.Send(endpoint, args);
         }
 
         public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
@@ -142,7 +142,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            clientGateway.SendLatent(endpoint, bytesPerSeconds, args);
+            Gateway.SendLatent(endpoint, bytesPerSeconds, args);
         }
 
         public static async Task<T> Get<T>(string endpoint, params object[] args)
@@ -152,7 +152,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return default;
             }
-            return await clientGateway.Get<T>(endpoint, args);
+            return await Gateway.Get<T>(endpoint, args);
         }
         public static void Mount(string endpoint, Delegate @delegate)
         {
@@ -161,7 +161,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            clientGateway.Mount(endpoint, @delegate);
+            Gateway.Mount(endpoint, @delegate);
         }
         public static void Unmount(string endpoint)
         {
@@ -170,7 +170,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            clientGateway.Unmount(endpoint);
+            Gateway.Unmount(endpoint);
         }
 
     }

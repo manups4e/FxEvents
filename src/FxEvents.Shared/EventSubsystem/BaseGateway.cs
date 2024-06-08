@@ -43,7 +43,7 @@ namespace FxEvents.Shared.EventSubsystem
 
         public async Task ProcessInboundAsync(int source, byte[] serialized)
         {
-            EventMessage message = serialized.DecryptObject<EventMessage>("PLACEHOLDER");
+            EventMessage message = serialized.DecryptObject<EventMessage>(source);
             await ProcessInboundAsync(message, source);
         }
 
@@ -277,7 +277,7 @@ namespace FxEvents.Shared.EventSubsystem
                 }
 
                 Type resultType = result?.GetType() ?? typeof(object);
-                EventResponseMessage response = new EventResponseMessage(message.Id, message.Endpoint, message.Signature, null);
+                EventResponseMessage response = new EventResponseMessage(message.Id, message.Endpoint, null);
 
                 if (result != null)
                 {
@@ -290,15 +290,7 @@ namespace FxEvents.Shared.EventSubsystem
                     response.Data = new byte[] { };
                 }
 
-                if (PrepareDelegate != null)
-                {
-                    stopwatch.Stop();
-
-                    await PrepareDelegate(response.Endpoint, source, response);
-                    stopwatch.Start();
-                }
-
-                byte[] data = response.EncryptObject("PLACEHOLDER");
+                byte[] data = response.EncryptObject(source);
                 PushDelegate(OutboundPipeline, source, data);
                 if (EventDispatcher.Debug)
                     Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
@@ -314,7 +306,7 @@ namespace FxEvents.Shared.EventSubsystem
 
         public void ProcessOutbound(byte[] serialized)
         {
-            EventResponseMessage response = serialized.DecryptObject<EventResponseMessage>("PLACEHOLDER");
+            EventResponseMessage response = serialized.DecryptObject<EventResponseMessage>();
             ProcessOutbound(response);
         }
 
@@ -355,7 +347,7 @@ namespace FxEvents.Shared.EventSubsystem
                     stopwatch.Start();
                 }
 
-                byte[] data = message.EncryptObject("PLACEHOLDER");
+                byte[] data = message.EncryptObject(source);
 
                 PushDelegate(InboundPipeline, source, data);
                 if (EventDispatcher.Debug)
@@ -403,7 +395,7 @@ namespace FxEvents.Shared.EventSubsystem
                 stopwatch.Start();
             }
 
-            byte[] data = message.EncryptObject("PLACEHOLDER");
+            byte[] data = message.EncryptObject(source);
 
             PushDelegateLatent(InboundPipeline, source, bytePerSecond, data);
             if (EventDispatcher.Debug)
