@@ -3,10 +3,13 @@ global using CitizenFX.Core.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using FxEvents.Shared.EventSubsystem;
+using FxEvents.Shared.EventSubsystem.Attributes;
 using Logger;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace FxEvents
@@ -93,6 +96,26 @@ namespace FxEvents
             Events.OutboundPipeline = _out;
             Initialized = true;
             Events.AddEvents();
+
+            var assembly = Assembly.GetCallingAssembly();
+
+            foreach (var type in assembly.GetTypes())
+            {
+                var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                    .Where(m => m.GetCustomAttributes(typeof(FxEventAttribute), false).Length > 0);
+
+                foreach (var method in methods)
+                {
+                    var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
+                    var actionType = Expression.GetDelegateType(parameters.Concat(new[] { typeof(void) }).ToArray());
+                    var attribute = method.GetCustomAttribute<FxEventAttribute>();
+
+                    if (method.IsStatic)
+                        Mount(attribute.Name, Delegate.CreateDelegate(actionType, method));
+                    else
+                        Mount(attribute.Name, Delegate.CreateDelegate(actionType, Instance, method.Name));
+                }
+            }
         }
 
         /// <summary>
@@ -100,7 +123,7 @@ namespace FxEvents
         /// </summary>
         /// <param name="name">Nome evento</param>
         /// <param name="action">Azione legata all'evento</param>
-        internal async void AddEventHandler(string eventName, Delegate action)
+        internal async void RegisterEvent(string eventName, Delegate action)
         {
             while (!Initialized) await BaseScript.Delay(0);
             EventHandlers[eventName] += action;
