@@ -20,7 +20,7 @@ namespace FxEvents.EventSystem
         protected override ISerialization Serialization { get; }
         internal Dictionary<int, byte[]> _signatures;
 
-        private EventDispatcher _eventDispatcher => EventDispatcher.Instance;
+        private EventHub _hub => EventHub.Instance;
 
         public ServerGateway()
         {
@@ -34,15 +34,15 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            _eventDispatcher.RegisterEvent(SignaturePipeline, new Action<string, byte[]>(GetSignature));
-            _eventDispatcher.RegisterEvent(InboundPipeline, new Action<string, byte[]>(Inbound));
-            _eventDispatcher.RegisterEvent(OutboundPipeline, new Action<string, byte[]>(Outbound));
+            _hub.RegisterEvent(SignaturePipeline, new Action<string, byte[]>(GetSignature));
+            _hub.RegisterEvent(InboundPipeline, new Action<string, byte[]>(Inbound));
+            _hub.RegisterEvent(OutboundPipeline, new Action<string, byte[]>(Outbound));
         }
 
         public void Push(string pipeline, int source, byte[] buffer)
         {
             if (source != new ServerId().Handle)
-                BaseScript.TriggerClientEvent(_eventDispatcher.GetPlayers[source], pipeline, buffer);
+                BaseScript.TriggerClientEvent(_hub.GetPlayers[source], pipeline, buffer);
             else
                 BaseScript.TriggerClientEvent(pipeline, buffer);
         }
@@ -50,7 +50,7 @@ namespace FxEvents.EventSystem
         public void PushLatent(string pipeline, int source, int bytePerSecond, byte[] buffer)
         {
             if (source != new ServerId().Handle)
-                BaseScript.TriggerLatentClientEvent(_eventDispatcher.GetPlayers[source], pipeline, bytePerSecond, buffer);
+                BaseScript.TriggerLatentClientEvent(_hub.GetPlayers[source], pipeline, bytePerSecond, buffer);
             else
                 BaseScript.TriggerLatentClientEvent(pipeline, bytePerSecond, buffer);
         }
@@ -72,7 +72,7 @@ namespace FxEvents.EventSystem
                 _signatures.Add(client, secret);
                 Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] Added signature {secret.BytesToString()}");
 
-                BaseScript.TriggerClientEvent(_eventDispatcher.GetPlayers[client], SignaturePipeline, curve25519.GetPublicKey());
+                BaseScript.TriggerClientEvent(_hub.GetPlayers[client], SignaturePipeline, curve25519.GetPublicKey());
             }
             catch (Exception ex)
             {

@@ -30,7 +30,7 @@ namespace FxEvents.Shared.Encryption
             byte[] rgbIV = GenerateIV();
             byte[] keyBytes = input switch
             {
-                int sourceId => EventDispatcher.Gateway.GetSecret(sourceId),
+                int sourceId => EventHub.Gateway.GetSecret(sourceId),
                 string strKey => ComputeHash(strKey),
                 _ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
             };
@@ -56,7 +56,7 @@ namespace FxEvents.Shared.Encryption
             byte[] rgbIV = data.Take(16).ToArray(); // Extract the IV from the beginning of the data
             byte[] keyBytes = input switch
             {
-                int sourceId => EventDispatcher.Gateway.GetSecret(sourceId),
+                int sourceId => EventHub.Gateway.GetSecret(sourceId),
                 string strKey => ComputeHash(strKey),
                 _ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
             };

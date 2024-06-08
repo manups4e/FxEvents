@@ -105,7 +105,7 @@ namespace FxEvents.Shared.EventSubsystem
                     }
                     else if (typeof(Player).IsAssignableFrom(type))
                     {
-                        parameters.Add(EventDispatcher.Instance.GetPlayers[source]);
+                        parameters.Add(EventHub.Instance.GetPlayers[source]);
                     }
                     else if (typeof(string).IsAssignableFrom(type))
                     {
@@ -292,7 +292,7 @@ namespace FxEvents.Shared.EventSubsystem
 
                 byte[] data = response.EncryptObject(source);
                 PushDelegate(OutboundPipeline, source, data);
-                if (EventDispatcher.Debug)
+                if (EventHub.Debug)
                     Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
             }
             else
@@ -350,7 +350,7 @@ namespace FxEvents.Shared.EventSubsystem
                 byte[] data = message.EncryptObject(source);
 
                 PushDelegate(InboundPipeline, source, data);
-                if (EventDispatcher.Debug)
+                if (EventHub.Debug)
                 {
 #if CLIENT
                     Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
@@ -398,7 +398,7 @@ namespace FxEvents.Shared.EventSubsystem
             byte[] data = message.EncryptObject(source);
 
             PushDelegateLatent(InboundPipeline, source, bytePerSecond, data);
-            if (EventDispatcher.Debug)
+            if (EventHub.Debug)
             {
 #if CLIENT
                 Logger.Debug($"[{endpoint} {flow}] Sent latent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
@@ -429,7 +429,7 @@ namespace FxEvents.Shared.EventSubsystem
             await TokenLoading.Task;
 
             double elapsed = stopwatch.Elapsed.TotalMilliseconds;
-            if (EventDispatcher.Debug)
+            if (EventHub.Debug)
             {
 #if CLIENT
                 Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
@@ -442,7 +442,7 @@ namespace FxEvents.Shared.EventSubsystem
 
         public void Mount(string endpoint, Delegate @delegate)
         {
-            if (EventDispatcher.Debug)
+            if (EventHub.Debug)
                 Logger.Debug($"Mounted: {endpoint}");
             _handlers.Add(endpoint, @delegate);
         }

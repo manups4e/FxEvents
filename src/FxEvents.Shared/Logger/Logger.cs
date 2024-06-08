@@ -25,7 +25,7 @@ namespace Logger
         /// <param name="text">Text of the message</param>
         public void Debug(string text)
         {
-            if (!EventDispatcher.Debug) return;
+            if (!EventHub.Debug) return;
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [DEBUG] -- ";
             string color = LoggerColors.LIGHT_BLUE;

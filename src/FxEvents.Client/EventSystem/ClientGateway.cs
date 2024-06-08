@@ -16,7 +16,7 @@ namespace FxEvents.EventSystem
     {
         protected override ISerialization Serialization { get; }
 
-        private EventDispatcher _eventDispatcher => EventDispatcher.Instance;
+        private EventHub _hub => EventHub.Instance;
         private Curve25519 _curve25519;
         private byte[] _secret = [];
 
@@ -34,7 +34,7 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            _eventDispatcher.AddEventHandler(InboundPipeline, new Action<byte[]>(async encrypted =>
+            _hub.AddEventHandler(InboundPipeline, new Action<byte[]>(async encrypted =>
             {
                 try
                 {
@@ -47,7 +47,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            _eventDispatcher.AddEventHandler(OutboundPipeline, new Action<byte[]>(serialized =>
+            _hub.AddEventHandler(OutboundPipeline, new Action<byte[]>(serialized =>
             {
                 try
                 {
@@ -59,7 +59,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            _eventDispatcher.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => {
+            _hub.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => {
                 Logger.Info($"Signature {signature} received from server");
                 _secret = _curve25519.GetSharedSecret(signature);
             }));
@@ -72,7 +72,7 @@ namespace FxEvents.EventSystem
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
                 while (_secret.Length == 0) await BaseScript.Delay(0);
-                if (EventDispatcher.Debug)
+                if (EventHub.Debug)
                 {
                     Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");
                 }

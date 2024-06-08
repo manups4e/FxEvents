@@ -18,7 +18,7 @@ public class Main : BaseScript
  {
   // The Event Dispatcher can now be initialized with your own inbound, outbound, and signatures.
   // This allows you to use FxEvents in more than one resource on the server without having signature collisions.
-  EventDispatcher.Initalize("inbound", "outbound", "signature", "encryption key");
+  EventHub.Initalize("inbound", "outbound", "signature");
  }
 }
 ```
@@ -26,32 +26,66 @@ public class Main : BaseScript
 ## To mount an event:
 - Events can be mounted like normal events, this example is made to show an event mounted in-line.
 ```c#
-EventDispatcher.Mount("eventName", new Action<ISource, type1, type2>(([FromSource] source, val1, val2) =>    
+EventHub.Mount("eventName", new Action<ISource, type1, type2>(([FromSource] source, val1, val2) =>    
 {
   // code to be used inside the event.
   // ISource is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
   // Clientside is the same thing without the ClientId parameter
 }));
 ```
+- Events can also be mounted by using the attribute [FxEvent("EventName")] or by EventHub.Events["EventName"] += new Action / new Func 
+⚠️ (Beware that in case of callbacks, only 1 method per attribute can be registered)
+- In version 3.0.0 and above, events are handled like in Mono V2 (thanks @Thorium for not abandoning us) for example
+```c#
+[FxEvent("myEvent")]
+public static async void GimmeAll(int a, string b)
+    => Logger.Info($"GimmeAll1 {a} {b}");
+
+public static async void GimmeAll(int a) 
+    => Logger.Info($"GimmeAll1 {a}");
+
+[FxEvent("myEvent")]
+public static async void GimmeAll(string a, int b)
+    => Logger.Info($"GimmeAll2 {a} {b}");
+
+[FxEvent("myEvent")]
+public static async void GimmeAll(string a, int b, string c = "Hey")
+    => Logger.Info($"GimmeAll3 {a} {b} {c}");
+
+[FxEvent("myEvent")]
+public static async void GimmeAll(int a, string b, string c = "Oh", int d = 678)
+    => Logger.Info($"GimmeAll4 {a} {b} {c} {d}");
+
+[FxEvent("myEvent")]
+public static async void GimmeAll(int a, PlayerClient b, string c = "Oh", int d = 678)
+    => Logger.Info($"GimmeAll5 {a} {b.Player.Name} {c} {d}");
+
+// Trigger the event
+EventHub.Send("myEvent", 1234, 1);
+```
+outputs
+![image](https://github.com/manups4e/fx-events/assets/4005518/4e42a6b8-e3eb-4337-99a0-22be5b5211b6)
+
+⚠️ Attributed methods MUST be static.
 
 ## To trigger an event
 The library only works in client <--> server communication.. for the moment same side events are not working but the feature will be added in the future!
 ```c#
 // clientside
-EventDispatcher.Send("eventName", params);
+EventHub.Send("eventName", params);
 
 // serverside
-EventDispatcher.Send(Player, "eventName", params);
-EventDispatcher.Send(List<Player>, "eventName", params);
-EventDispatcher.Send(ISource, "eventName", params);
-EventDispatcher.Send(List<ISource>, "eventName", params);
-EventDispatcher.Send("eventName", params); // For all Connected Players
+EventHub.Send(Player, "eventName", params);
+EventHub.Send(List<Player>, "eventName", params);
+EventHub.Send(ISource, "eventName", params);
+EventHub.Send(List<ISource>, "eventName", params);
+EventHub.Send("eventName", params); // For all Connected Players
 ```
 
 ## To trigger a callback
 ### Mounting it
 ```c#
-EventDispatcher.Mount("eventName", new Func<ISource, type1, type2, Task<returnType>>(async ([FromSource] source, val1, val2) =>    
+EventHub.Mount("eventName", new Func<ISource, type1, type2, Task<returnType>>(async ([FromSource] source, val1, val2) =>    
 {
   // code to be used inside the event.
   // ISource is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
@@ -62,11 +96,11 @@ EventDispatcher.Mount("eventName", new Func<ISource, type1, type2, Task<returnTy
 ### Calling it
 ```c#
 // clientside
-type param = await EventDispatcher.Get<type>("eventName", params);
+type param = await EventHub.Get<type>("eventName", params);
 
 // serverside
-type param = await EventDispatcher.Get<type>(ClientId, "eventName", params);
-type param = await EventDispatcher.Get<type>(Player, "eventName", params);
+type param = await EventHub.Get<type>(ClientId, "eventName", params);
+type param = await EventHub.Get<type>(Player, "eventName", params);
 ```
 Callbacks can be called serverside too because it might happen that the server needs info from certain clients and this will help you doing it.
 
