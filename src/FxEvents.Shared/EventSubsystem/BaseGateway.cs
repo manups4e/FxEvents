@@ -246,7 +246,6 @@ namespace FxEvents.Shared.EventSubsystem
                 EventEntry subscription = _handlers[message.Endpoint];
                 object result = InvokeDelegate(subscription.m_callbacks[0]);
 
-                Logger.Warning(result.GetType().IsGenericType.ToString());
                 if (result.GetType().IsGenericType)
                 {
                     if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
