@@ -179,7 +179,7 @@ namespace FxEvents.EventSystem
         internal byte[] GetSecret(int source)
         {
             if (!_signatures.ContainsKey(source))
-                throw new Exception("Shared Encryption Secret has not been generated yet");
+                Logger.Warning("Shared Encryption Secret has not been generated yet");
             return _signatures[source];
         }
     }
