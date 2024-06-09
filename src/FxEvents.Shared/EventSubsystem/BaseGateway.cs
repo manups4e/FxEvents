@@ -10,6 +10,7 @@ using Logger;
 using MsgPack;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -137,57 +138,88 @@ namespace FxEvents.Shared.EventSubsystem
                         MessagePackObject a = context.Deserialize<MessagePackObject>();
                         if (a.UnderlyingType != type)
                         {
-                            switch (Type.GetTypeCode(type))
+                            object obj = a.ToObject();
+
+                            TypeCode typeCode = Type.GetTypeCode(type);
+
+                            switch (typeCode)
                             {
+                                case TypeCode.String:
+                                    holder.Add(obj as string ?? string.Empty);
+                                    break;
                                 case TypeCode.Object:
+                                    try
+                                    {
+                                        holder.Add(Activator.CreateInstance(type, obj));
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        throw new Exception($"FxEvents - Cannot create instance of type {type.Name} with parameter {obj.ToJson()}, maybe a missing constructor?", e);
+                                    }
+                                    break;
                                 case TypeCode.DBNull:
                                 case TypeCode.DateTime:
-                                    holder.Add(Activator.CreateInstance(type, a.ToObject()));
+                                    holder.Add(obj);
                                     break;
                                 case TypeCode.Byte:
-                                    holder.Add(Convert.ToByte(a.ToObject()));
-                                    break;
                                 case TypeCode.SByte:
-                                    holder.Add(Convert.ToSByte(a.ToObject()));
-                                    break;
-                                case TypeCode.String:
-                                    holder.Add(Convert.ToString(a.ToObject()));
+                                case TypeCode.Int16:
+                                case TypeCode.Int32:
+                                case TypeCode.Int64:
+                                case TypeCode.UInt16:
+                                case TypeCode.UInt32:
+                                case TypeCode.UInt64:
+                                    if (obj is IConvertible convertible)
+                                    {
+                                        try
+                                        {
+                                            holder.Add(Convert.ChangeType(convertible, type));
+                                        }
+                                        catch (InvalidCastException)
+                                        {
+                                            holder.Add(GetDefaultForType(type));
+                                        }
+                                    }
+                                    else
+                                        holder.Add(GetDefaultForType(type));
                                     break;
                                 case TypeCode.Boolean:
-                                    holder.Add(Convert.ToBoolean(a.ToObject()));
+                                    bool booleanValue;
+                                    if (bool.TryParse(obj.ToString(), out booleanValue))
+                                        holder.Add(booleanValue);
+                                    else
+                                        holder.Add(false);
                                     break;
                                 case TypeCode.Char:
-                                    holder.Add(Convert.ToChar(a.ToObject()));
+                                    char charValue;
+                                    if (char.TryParse(obj.ToString(), out charValue))
+                                        holder.Add(charValue);
+                                    else
+                                        holder.Add('\0');
                                     break;
                                 case TypeCode.Decimal:
-                                    holder.Add(Convert.ToDecimal(a.ToObject()));
+                                    decimal decimalValue;
+                                    if (decimal.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
+                                        holder.Add(decimalValue);
+                                    else
+                                        holder.Add(0M);
                                     break;
                                 case TypeCode.Single:
-                                    holder.Add(Convert.ToSingle(a.ToObject()));
+                                    float floatValue;
+                                    if (float.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out floatValue))
+                                        holder.Add(floatValue);
+                                    else
+                                        holder.Add(0F);
                                     break;
                                 case TypeCode.Double:
-                                    holder.Add(Convert.ToDouble(a.ToObject()));
+                                    double doubleValue;
+                                    if (double.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out doubleValue))
+                                        holder.Add(doubleValue);
+                                    else
+                                        holder.Add(0D);
                                     break;
-                                case TypeCode.Int16:
-                                    holder.Add(Convert.ToInt16(a.ToObject()));
-                                    break;
-                                case TypeCode.Int32:
-                                    holder.Add(Convert.ToInt32(a.ToObject()));
-                                    break;
-                                case TypeCode.Int64:
-                                    holder.Add(Convert.ToInt64(a.ToObject()));
-                                    break;
-                                case TypeCode.UInt16:
-                                    holder.Add(Convert.ToUInt16(a.ToObject()));
-                                    break;
-                                case TypeCode.UInt32:
-                                    holder.Add(Convert.ToUInt32(a.ToObject()));
-                                    break;
-                                case TypeCode.UInt64:
-                                    holder.Add(Convert.ToUInt64(a.ToObject()));
-                                    break;
-                                case TypeCode.Empty:
-                                    holder.Add(string.Empty);
+                                default:
+                                    holder.Add(GetDefaultForType(type));
                                     break;
                             }
                         }
@@ -287,7 +319,7 @@ namespace FxEvents.Shared.EventSubsystem
                 }
                 else
                 {
-                    response.Data = new byte[] { };
+                    response.Data = [];
                 }
 
                 byte[] data = response.EncryptObject(source);
@@ -302,6 +334,27 @@ namespace FxEvents.Shared.EventSubsystem
                     InvokeDelegate(handler);
                 }
             }
+        }
+
+        private static object GetDefaultForType(Type type)
+        {
+            // Determine the default value for the given type
+            if (type == typeof(string)) return string.Empty;
+            if (type == typeof(byte)) return 0;
+            if (type == typeof(sbyte)) return 0;
+            if (type == typeof(bool)) return false;
+            if (type == typeof(char)) return '\0';
+            if (type == typeof(DateTime)) return DateTime.MinValue;
+            if (type == typeof(decimal)) return 0M;
+            if (type == typeof(float)) return 0F;
+            if (type == typeof(double)) return 0D;
+            if (type == typeof(short)) return 0;
+            if (type == typeof(int)) return 0;
+            if (type == typeof(long)) return 0L;
+            if (type == typeof(ushort)) return 0U;
+            if (type == typeof(uint)) return 0U;
+            if (type == typeof(ulong)) return 0UL;
+            return null; // Fallback to null for unsupported types
         }
 
         public void ProcessOutbound(byte[] serialized)
