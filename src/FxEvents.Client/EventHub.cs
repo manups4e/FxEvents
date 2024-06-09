@@ -93,7 +93,7 @@ namespace FxEvents
                     var actionType = Expression.GetDelegateType(parameters.Concat(new[] { method.ReturnType }).ToArray());
                     var attribute = method.GetCustomAttribute<FxEventAttribute>();
 
-                    if (method.ReturnType != null)
+                    if (method.ReturnType != typeof(void))
                     {
                         if (withReturnType.Contains(attribute.Name))
                         {

@@ -108,7 +108,7 @@ namespace FxEvents
                     var actionType = Expression.GetDelegateType(parameters.Concat(new[] { method.ReturnType }).ToArray());
                     var attribute = method.GetCustomAttribute<FxEventAttribute>();
 
-                    if (method.ReturnType != null)
+                    if (method.ReturnType != typeof(void))
                     {
                         if (withReturnType.Contains(attribute.Name))
                         {
@@ -241,24 +241,24 @@ namespace FxEvents
             Gateway.SendLatent(clients.Select(x => x.Handle).ToList(), endpoint, bytesPerSeconds, args);
         }
 
-        public static Task<T> Get<T>(Player player, string endpoint, params object[] args)
+        public static async Task<T> Get<T>(Player player, string endpoint, params object[] args)
         {
             if (!Initialized)
             {
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return default;
             }
-            return Gateway.Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
+            return await Gateway.Get<T>(Convert.ToInt32(player.Handle), endpoint, args);
         }
 
-        public static Task<T> Get<T>(ISource client, string endpoint, params object[] args)
+        public static async Task<T> Get<T>(ISource client, string endpoint, params object[] args)
         {
             if (!Initialized)
             {
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return default;
             }
-            return Gateway.Get<T>(client.Handle, endpoint, args);
+            return await Gateway.Get<T>(client.Handle, endpoint, args);
         }
 
         public static void Mount(string endpoint, Delegate @delegate)
