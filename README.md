@@ -2,7 +2,7 @@
 
 With FxEvents you can send and get values between client and server using an advanced event handling process. 
 Signatures are encrypted per each client and using the provided MsgPack binary serialization you can hide contents from malicious clients!
-To work you only need to add `FXEvents.Client.dll` or `FXEvents.Server.dll` and `Newtonsoft.Json.dll` (In case of json serialization) to your resource.
+To work you only need to add `FxEvents.Client.dll` or `FxEvents.Server.dll` and `Newtonsoft.Json.dll` (In case of json serialization) to your resource.
 No need of any external library for MsgPack, the event system uses the internal MsgPack dll provided internally by fivem itself!!
 
 [Discord Server Invite](https://discord.gg/KKN7kRT2vM)
@@ -10,7 +10,7 @@ No need of any external library for MsgPack, the event system uses the internal 
 Usage examples:
 
 ## Initialization
-- Encryption key **CANNOT** remain empty or null, you can generate encryption keys, passphrases, passwords online or use the provided serverside command `generagekey` to let the library generate a random passphrase both literal and encrtypted to be copied and stored in a safe place. __PLEASE NOTE__: FXEvents won't store nor save any passkey anywhere for security reasons, do not lose the key or your data won't be recovered.
+- Encryption key **CANNOT** remain empty or null, you can generate encryption keys, passphrases, passwords online or use the provided serverside command `generagekey` to let the library generate a random passphrase both literal and encrtypted to be copied and stored in a safe place. __PLEASE NOTE__: FxEvents won't store nor save any passkey anywhere for security reasons, do not lose the key or your data won't be recovered.
 ```c#
 public class Main : BaseScript
 {
