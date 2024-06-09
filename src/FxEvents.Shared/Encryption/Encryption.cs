@@ -19,19 +19,13 @@ namespace FxEvents.Shared.Encryption
             return rgbIV;
         }
 
-        private static byte[] ComputeHash(string input)
-        {
-            using SHA256Managed sha256 = new SHA256Managed();
-            return sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-        }
-
         private static byte[] EncryptBytes(byte[] data, object input)
         {
             byte[] rgbIV = GenerateIV();
             byte[] keyBytes = input switch
             {
                 int sourceId => EventHub.Gateway.GetSecret(sourceId),
-                string strKey => ComputeHash(strKey),
+                string strKey => GenerateHash(strKey),
                 _ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
             };
             using AesManaged aesAlg = new AesManaged
@@ -57,7 +51,7 @@ namespace FxEvents.Shared.Encryption
             byte[] keyBytes = input switch
             {
                 int sourceId => EventHub.Gateway.GetSecret(sourceId),
-                string strKey => ComputeHash(strKey),
+                string strKey => GenerateHash(strKey),
                 _ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
             };
             using AesManaged aesAlg = new AesManaged
@@ -117,6 +111,17 @@ namespace FxEvents.Shared.Encryption
             if (string.IsNullOrWhiteSpace(key))
                 throw new Exception("FXEvents: Encryption key cannot be empty!");
             return EncryptBytes(data, key).FromBytes<T>();
+        }
+
+        /// <summary>
+        /// Generate the Sha-256 hash of the given input string.
+        /// </summary>
+        /// <param name="input">The input string.</param>
+        /// <returns>The generated hash in byte[]</returns>
+        public static byte[] GenerateHash(string input)
+        {
+            using SHA256Managed sha256 = new SHA256Managed();
+            return sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
         }
 
         internal static async Task<Tuple<string, string>> GenerateKey()
