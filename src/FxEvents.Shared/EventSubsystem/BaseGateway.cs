@@ -145,7 +145,7 @@ namespace FxEvents.Shared.EventSubsystem
                             switch (typeCode)
                             {
                                 case TypeCode.String:
-                                    holder.Add(obj as string ?? string.Empty);
+                                    holder.Add(obj as string ?? (type.IsSimpleType()?obj.ToString():string.Empty));
                                     break;
                                 case TypeCode.Object:
                                     try
