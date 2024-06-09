@@ -1,42 +1,46 @@
-# FxEvents an advanced event subsystem for FiveM
+# FxEvents: An Advanced Event Subsystem for FiveM
 
-With FxEvents you can send and get values between client and server using an advanced event handling process. 
-Signatures are encrypted per each client and using the provided MsgPack binary serialization you can hide contents from malicious clients!
-To work you only need to add `FxEvents.Client.dll` or `FxEvents.Server.dll` and `Newtonsoft.Json.dll` (In case of json serialization) to your resource.
-No need of any external library for MsgPack, the event system uses the internal MsgPack dll provided internally by fivem itself!!
+FxEvents is a robust event handling system for FiveM, allowing secure and efficient communication between client and server. It features encrypted signatures and MsgPack binary serialization to protect against malicious clients. To integrate FxEvents into your project, simply add `FxEvents.Client.dll` or `FxEvents.Server.dll` along with `Newtonsoft.Json.dll` (if using JSON serialization). The MsgPack functionality is built into FiveM, so no additional libraries are required!
 
-[Discord Server Invite](https://discord.gg/KKN7kRT2vM)
+[Join Our Discord Server](https://discord.gg/KKN7kRT2vM)
 
-Usage examples:
+## Usage Examples
 
-## Initialization
-- Encryption key **CANNOT** remain empty or null, you can generate encryption keys, passphrases, passwords online or use the provided serverside command `generagekey` to let the library generate a random passphrase both literal and encrtypted to be copied and stored in a safe place. __PLEASE NOTE__: FxEvents won't store nor save any passkey anywhere for security reasons, do not lose the key or your data won't be recovered.
-```c#
+### Initialization
+
+- The encryption key **MUST NOT** be empty or null. You can generate encryption keys, passphrases, or passwords online, or use the server-side command `generatekey` to create a random passphrase. __IMPORTANT__: FxEvents does not store or save any passkey for security reasons. If you lose the key, your data cannot be recovered.
+
+```csharp
 public class Main : BaseScript
 {
  public Main()
  {
-  // The Event Dispatcher can now be initialized with your own inbound, outbound, and signatures.
-  // This allows you to use FxEvents in more than one resource on the server without having signature collisions.
-  EventHub.Initalize("inbound", "outbound", "signature");
+  // Initialize the Event Dispatcher with your custom inbound, outbound, and signatures.
+  // This allows you to use FxEvents across multiple resources on the server without signature collisions.
+  EventHub.Initialize("inbound", "outbound", "signature");
  }
 }
 ```
- 
-## To mount an event:
-- Events can be mounted like normal events, this example is made to show an event mounted in-line.
-```c#
+
+### Mounting an Event
+
+- Events can be mounted like standard events. Here’s an example of an event mounted in-line:
+
+```csharp
 EventHub.Mount("eventName", new Action<ISource, type1, type2>(([FromSource] source, val1, val2) =>    
 {
-  // code to be used inside the event.
-  // ISource is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
-  // Clientside is the same thing without the ClientId parameter
+  // Code to be executed inside the event.
+  // ISource is an optional class that handles clients triggering the event. It is similar to the "[FromSource] Player player" parameter but can be customized.
+  // On the client-side, the same principle applies without the ClientId parameter.
 }));
 ```
-- Events can also be mounted by using the attribute [FxEvent("EventName")] or by EventHub.Events["EventName"] += new Action / new Func 
-⚠️ (Beware that in case of callbacks, only 1 method per attribute can be registered)
-- In version 3.0.0 and above, events are handled like in Mono V2 (thanks @Thorium for not abandoning us) for example
-```c#
+
+- Events can also be mounted using the attribute [FxEvent("EventName")] or by `EventHub.Events["EventName"] += new Action / new Func`. 
+⚠️ Note: For callbacks, only one method per attribute can be registered.
+
+- Starting from version 3.0.0, events are handled similarly to Mono V2 (thanks to @Thorium for ongoing support). For example:
+
+```csharp
 [FxEvent("myEvent")]
 public static async void GimmeAll(int a, string b)
     => Logger.Info($"GimmeAll1 {a} {b}");
@@ -64,102 +68,110 @@ public static async void GimmeAll(int a, PlayerClient b, string c = "Oh", int d 
 // Trigger the event
 EventHub.Send("myEvent", 1234, 1);
 ```
-outputs
+
+Outputs:
 ![image](https://github.com/manups4e/fx-events/assets/4005518/4e42a6b8-e3eb-4337-99a0-22be5b5211b6)
 
 ⚠️ Attributed methods MUST be static.
 
-## To trigger an event
-The library only works in client <--> server communication.. for the moment same side events are not working but the feature will be added in the future!
-```c#
-// clientside
+### Triggering an Event
+
+FxEvents currently supports client-server communication only. Future updates will include support for same-side events.
+
+```csharp
+// Client-side
 EventHub.Send("eventName", params);
 
-// serverside
+// Server-side
 EventHub.Send(Player, "eventName", params);
 EventHub.Send(List<Player>, "eventName", params);
 EventHub.Send(ISource, "eventName", params);
 EventHub.Send(List<ISource>, "eventName", params);
-EventHub.Send("eventName", params); // For all Connected Players
+EventHub.Send("eventName", params); // For all connected players
 ```
 
-## To trigger a callback
-### Mounting it
-```c#
+### Triggering a Callback
+
+#### Mounting it
+
+```csharp
 EventHub.Mount("eventName", new Func<ISource, type1, type2, Task<returnType>>(async ([FromSource] source, val1, val2) =>    
 {
-  // code to be used inside the event.
-  // ISource is the optional insider class that handles clients triggering the event.. is like the "[FromSource] Player player" parameter but can be derived and handled as you want!!
-  // Clientside is the same thing without the ISource parameter
-  return val3
+  // Code to be executed inside the event.
+  // ISource is an optional class that handles clients triggering the event. It is similar to the "[FromSource] Player player" parameter but can be customized.
+  // On the client-side, the same principle applies without the ISource parameter.
+  return val3;
 }));
 ```
 
-- Callbacks can also be mounted using [FxEvent("EventName")] attribute ⚠️ ONLY 1 PER ENDPOINT. Example
-```c#
+- Callbacks can also be mounted using the [FxEvent("EventName")] attribute ⚠️ Only one per endpoint. Example:
+
+```csharp
 [FxEvent("myEvent")]
 public static string GimmeAll(int a, string b)
-    => "this is a test";
+    => "This is a test";
 ```
 
-### Calling it
-```c#
-// clientside
+#### Calling it
+
+```csharp
+// Client-side
 type param = await EventHub.Get<type>("eventName", params);
 
-// serverside
+// Server-side
 type param = await EventHub.Get<type>(ClientId, "eventName", params);
 type param = await EventHub.Get<type>(Player, "eventName", params);
 ```
-Callbacks can be called serverside too because it might happen that the server needs info from certain clients and this will help you doing it.
 
-The library comes with some goodies to help with customization and debugging serialization printing.
+Callbacks can also be triggered server-side when the server needs information from specific clients.
 
-## ToJson() 
+The library includes additional features for customization and debugging serialization:
+
+### ToJson()
 ![image](https://user-images.githubusercontent.com/4005518/188593550-48891947-fb41-4ec1-894c-b429ca890361.png)
 
-⚠️ You need Newtonsoft.Json to make this work!!
-```c#
+⚠️ Requires Newtonsoft.Json
+```csharp
 string text = param.ToJson();
 ```
 
-## FromJson()
-⚠️ You need Newtonsoft.Json to make this work!!
-```c#
+### FromJson()
+⚠️ Requires Newtonsoft.Json
+```csharp
 type value = jsonText.FromJson<type>();
 ```
 
-## ToBytes()
+### ToBytes()
 ![image](https://user-images.githubusercontent.com/4005518/188594841-3ea787d0-37f3-4b23-9ff7-cdb999d0d101.png)
-```c#
+```csharp
 byte[] bytes = param.ToBytes();
 ```
 
-## FromBytes()
-```c#
+### FromBytes()
+```csharp
 type value = bytes.FromBytes<type>();
 ```
 
-# EncryptObject(string passkey)
-- Binary serialization performed internally.
-```c#
+### EncryptObject(string passkey)
+- Binary serialization is performed internally.
+```csharp
 byte[] bytes = param.EncryptObject("passkey");
 ```
 
-# DecryptObject(string passkey)
-- Binary deserialization performed internally.
-```c#
+### DecryptObject(string passkey)
+- Binary deserialization is performed internally.
+```csharp
 T object = bytes.DecryptObject<T>("passkey");
 ```
 
-## BytesToString
-```c#
+### BytesToString
+```csharp
 byte[] bytes = param.ToBytes();
 string txt = bytes.BytesToString();
 ```
 
-## StringToBytes
-```c#
+### StringToBytes
+```csharp
 byte[] bytes = txt.StringToBytes();
 type value = bytes.FromBytes<type>();
 ```
