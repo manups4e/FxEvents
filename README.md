@@ -1,23 +1,24 @@
 # FxEvents: An Advanced Event Subsystem for FiveM
 
+[Join Our Discord Server](https://discord.gg/KKN7kRT2vM)
+
 FxEvents is a robust event handling system for FiveM, allowing secure and efficient communication between client and server. It features encrypted signatures and MsgPack binary serialization to protect against malicious clients. To integrate FxEvents into your project, simply add `FxEvents.Client.dll` or `FxEvents.Server.dll` along with `Newtonsoft.Json.dll` (if using JSON serialization). The MsgPack functionality is built into FiveM, so no additional libraries are required!
 
-[Join Our Discord Server](https://discord.gg/KKN7kRT2vM)
+Beginning from Version 3.0.0, the library won't need initialization of events as its internal events are SHA-256 generated starting from the resource name itself + a random seed.
+This means that initialization is mainly used to register events with [FxEvent] attribute that wouldn't be registered without a mandatory call from the requesting script.
+
 
 ## Usage Examples
 
 ### Initialization
-
-- The encryption key **MUST NOT** be empty or null. You can generate encryption keys, passphrases, or passwords online, or use the server-side command `generatekey` to create a random passphrase. __IMPORTANT__: FxEvents does not store or save any passkey for security reasons. If you lose the key, your data cannot be recovered.
 
 ```csharp
 public class Main : BaseScript
 {
  public Main()
  {
-  // Initialize the Event Dispatcher with your custom inbound, outbound, and signatures.
-  // This allows you to use FxEvents across multiple resources on the server without signature collisions.
-  EventHub.Initialize("inbound", "outbound", "signature");
+    // Initialize the FxEvents library
+    EventHub.Initialize();
  }
 }
 ```
@@ -162,6 +163,12 @@ byte[] bytes = param.EncryptObject("passkey");
 - Binary deserialization is performed internally.
 ```csharp
 T object = bytes.DecryptObject<T>("passkey");
+```
+
+### GenerateHash(string input)
+- Generate the Sha-256 hash of the given input string.
+```csharp
+byte[] hash = Encryption.GenerateHash(string input)
 ```
 
 ### BytesToString
