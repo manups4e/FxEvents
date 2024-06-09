@@ -2,6 +2,7 @@
 global using CitizenFX.Core.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
+using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.EventSubsystem.Attributes;
 using Logger;
@@ -28,53 +29,21 @@ namespace FxEvents
         {
             Logger = new Log();
             Instance = this;
-            string debugMode = API.GetResourceMetadata(API.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            var resName = API.GetCurrentResourceName();
+            string debugMode = API.GetResourceMetadata(resName, "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || int.TryParse(debugMode, out int num) && num > 0;
-        }
 
-        private static string SetSignaturePipelineString(string signatureString)
-        {
-            byte[] bytes = signatureString.ToBytes();
-            string @event = bytes.BytesToString();
-            return @event;
-        }
-        private static string SetInboundPipelineString(string inboundString)
-        {
-            byte[] bytes = inboundString.ToBytes();
-            string @event = bytes.BytesToString();
-            return @event;
-        }
-        private static string SetOutboundPipelineString(string outboundString)
-        {
-            byte[] bytes = outboundString.ToBytes();
-            string @event = bytes.BytesToString();
-            return @event;
-        }
-
-        public static void Initalize(string inboundEvent, string outboundEvent, string signatureEvent)
-        {
-            if (string.IsNullOrWhiteSpace(signatureEvent))
-            {
-                Logger.Error("SignaturePipeline cannot be null, empty or whitespace");
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(inboundEvent))
-            {
-                Logger.Error("InboundPipeline cannot be null, empty or whitespace");
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(outboundEvent))
-            {
-                Logger.Error("OutboundPipeline cannot be null, empty or whitespace");
-                return;
-            }
-            string _sig = SetSignaturePipelineString(signatureEvent);
-            string _in = SetInboundPipelineString(inboundEvent);
-            string _out = SetOutboundPipelineString(outboundEvent);
+            byte[] inbound = Encryption.GenerateHash(resName + "_inbound");
+            byte[] outbound = Encryption.GenerateHash(resName + "_outbound");
+            byte[] signature = Encryption.GenerateHash(resName + "_signature");
             Gateway = new ClientGateway();
-            Gateway.SignaturePipeline = _sig;
-            Gateway.InboundPipeline = _in;
-            Gateway.OutboundPipeline = _out;
+            Gateway.SignaturePipeline = signature.BytesToString();
+            Gateway.InboundPipeline = inbound.BytesToString();
+            Gateway.OutboundPipeline = outbound.BytesToString();
+        }
+
+        public static void Initialize()
+        {
             Initialized = true;
             Gateway.AddEvents();
 

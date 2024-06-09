@@ -29,7 +29,7 @@ namespace FxEvents
 
         public static void Initalize(string inboundEvent, string outboundEvent, string signatureEvent)
         {
-            EventHub.Initalize(inboundEvent, outboundEvent, signatureEvent);
+            EventHub.Initialize();
         }
 
         internal async void RegisterEvent(string eventName, Delegate action)
