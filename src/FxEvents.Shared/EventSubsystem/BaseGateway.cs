@@ -145,7 +145,7 @@ namespace FxEvents.Shared.EventSubsystem
                             switch (typeCode)
                             {
                                 case TypeCode.String:
-                                    holder.Add(obj as string ?? throw new Exception($"Cannot convert {a.UnderlyingType} to String"));
+                                    holder.Add(obj as string ?? string.Empty);
                                     break;
                                 case TypeCode.Object:
                                     try
@@ -177,7 +177,7 @@ namespace FxEvents.Shared.EventSubsystem
                                         }
                                         catch (InvalidCastException)
                                         {
-                                            throw new Exception($"Cannot convert {a.UnderlyingType} to {type.Name}");
+                                            holder.Add(GetDefaultForType(type));
                                         }
                                     }
                                     else
@@ -188,35 +188,35 @@ namespace FxEvents.Shared.EventSubsystem
                                     if (bool.TryParse(obj.ToString(), out booleanValue))
                                         holder.Add(booleanValue);
                                     else
-                                        throw new Exception($"Cannot convert {a.UnderlyingType} to {type.Name}");
+                                        holder.Add(false);
                                     break;
                                 case TypeCode.Char:
                                     char charValue;
                                     if (char.TryParse(obj.ToString(), out charValue))
                                         holder.Add(charValue);
                                     else
-                                        throw new Exception($"Cannot convert {a.UnderlyingType} to {type.Name}");
+                                        holder.Add('\0');
                                     break;
                                 case TypeCode.Decimal:
                                     decimal decimalValue;
                                     if (decimal.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
                                         holder.Add(decimalValue);
                                     else
-                                        throw new Exception($"Cannot convert {a.UnderlyingType} to {type.Name}");
+                                        holder.Add(0M);
                                     break;
                                 case TypeCode.Single:
                                     float floatValue;
                                     if (float.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out floatValue))
                                         holder.Add(floatValue);
                                     else
-                                        throw new Exception($"Cannot convert {a.UnderlyingType} to {type.Name}");
+                                        holder.Add(0F);
                                     break;
                                 case TypeCode.Double:
                                     double doubleValue;
                                     if (double.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out doubleValue))
                                         holder.Add(doubleValue);
                                     else
-                                        throw new Exception($"Cannot convert {a.UnderlyingType} to {type.Name}");
+                                        holder.Add(0D);
                                     break;
                                 default:
                                     holder.Add(GetDefaultForType(type));
