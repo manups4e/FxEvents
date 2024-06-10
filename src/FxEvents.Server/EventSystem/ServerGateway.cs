@@ -92,7 +92,7 @@ namespace FxEvents.EventSystem
 
                 try
                 {
-                    await ProcessInboundAsync(message, client);
+                    await ProcessInvokeAsync(message, client);
                 }
                 catch (TimeoutException)
                 {
@@ -115,7 +115,7 @@ namespace FxEvents.EventSystem
 
                 EventResponseMessage response = encrypted.DecryptObject<EventResponseMessage>(client);
 
-                ProcessOutbound(response);
+                ProcessReply(response);
             }
             catch (Exception ex)
             {
@@ -141,7 +141,7 @@ namespace FxEvents.EventSystem
 
         public async void Send(int target, string endpoint, params object[] args)
         {
-            await SendInternal(EventFlowType.Straight, target, endpoint, args);
+            await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, args);
         }
 
         public void SendLatent(Player player, string endpoint, int bytesxSecond, params object[] args) => SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesxSecond, args);
@@ -162,7 +162,7 @@ namespace FxEvents.EventSystem
 
         public async void SendLatent(int target, string endpoint, int bytesxSecond, params object[] args)
         {
-            await SendInternalLatent(EventFlowType.Straight, target, endpoint, bytesxSecond, args);
+            await CreateAndSendLatentAsync(EventFlowType.Straight, target, endpoint, bytesxSecond, args);
         }
 
         public Task<T> Get<T>(Player player, string endpoint, params object[] args) =>

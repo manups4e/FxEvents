@@ -44,10 +44,10 @@ namespace FxEvents.Shared.EventSubsystem
         public async Task ProcessInboundAsync(int source, byte[] serialized)
         {
             EventMessage message = serialized.DecryptObject<EventMessage>(source);
-            await ProcessInboundAsync(message, source);
+            await ProcessInvokeAsync(message, source);
         }
 
-        public async Task ProcessInboundAsync(EventMessage message, int source)
+        public async Task ProcessInvokeAsync(EventMessage message, int source)
         {
             object InvokeDelegate(Delegate @delegate)
             {
@@ -356,13 +356,13 @@ namespace FxEvents.Shared.EventSubsystem
             return null; // Fallback to null for unsupported types
         }
 
-        public void ProcessOutbound(byte[] serialized)
+        public void ProcessReply(byte[] serialized)
         {
             EventResponseMessage response = serialized.DecryptObject<EventResponseMessage>();
-            ProcessOutbound(response);
+            ProcessReply(response);
         }
 
-        public void ProcessOutbound(EventResponseMessage response)
+        public void ProcessReply(EventResponseMessage response)
         {
             EventObservable waiting = _queue.SingleOrDefault(self => self.Message.Id == response.Id) ?? throw new Exception($"No request matching {response.Id} was found.");
 
@@ -370,7 +370,7 @@ namespace FxEvents.Shared.EventSubsystem
             waiting.Callback.Invoke(response.Data);
         }
 
-        protected async Task<EventMessage> SendInternal(EventFlowType flow, int source, string endpoint, params object[] args)
+        protected async Task<EventMessage> CreateAndSendAsync(EventFlowType flow, int source, string endpoint, params object[] args)
         {
             try
             {
@@ -420,7 +420,7 @@ namespace FxEvents.Shared.EventSubsystem
             }
         }
 
-        protected async Task<EventMessage> SendInternalLatent(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
+        protected async Task<EventMessage> CreateAndSendLatentAsync(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
         {
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
             List<EventParameter> parameters = [];
@@ -464,7 +464,7 @@ namespace FxEvents.Shared.EventSubsystem
         protected async Task<T> GetInternal<T>(int source, string endpoint, params object[] args)
         {
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-            EventMessage message = await SendInternal(EventFlowType.Circular, source, endpoint, args);
+            EventMessage message = await CreateAndSendAsync(EventFlowType.Circular, source, endpoint, args);
             EventValueHolder<T> holder = new EventValueHolder<T>();
             TaskCompletionSource<bool> TokenLoading = new();
 

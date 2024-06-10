@@ -51,7 +51,7 @@ namespace FxEvents.EventSystem
             {
                 try
                 {
-                    ProcessOutbound(serialized);
+                    ProcessReply(serialized);
                 }
                 catch (Exception ex)
                 {
@@ -93,11 +93,11 @@ namespace FxEvents.EventSystem
 
         public async void Send(string endpoint, params object[] args)
         {
-            await SendInternal(EventFlowType.Straight, new ServerId().Handle, endpoint, args);
+            await CreateAndSendAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, args);
         }
         public async void SendLatent(string endpoint, int bytePerSecond, params object[] args)
         {
-            await SendInternalLatent(EventFlowType.Straight, new ServerId().Handle, endpoint, bytePerSecond, args);
+            await CreateAndSendLatentAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, bytePerSecond, args);
         }
 
         public async Task<T> Get<T>(string endpoint, params object[] args)
