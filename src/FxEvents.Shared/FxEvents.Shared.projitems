@@ -30,7 +30,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventMessage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventParameter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventResponseMessage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\NetworkEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventObservable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventValueHolder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\BinarySerialization.cs" />
