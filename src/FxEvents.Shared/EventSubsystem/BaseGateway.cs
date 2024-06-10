@@ -14,7 +14,6 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -77,12 +76,12 @@ namespace FxEvents.Shared.EventSubsystem
 
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
                                                                         typeof(Player).IsAssignableFrom(self.ParameterType) ||
-                                                                        typeof(string).IsAssignableFrom(self.ParameterType) || 
+                                                                        typeof(string).IsAssignableFrom(self.ParameterType) ||
                                                                         typeof(int).IsAssignableFrom(self.ParameterType));
                     Type type = param.ParameterType;
                     if (typeof(ISource).IsAssignableFrom(type))
                     {
-                        ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int))) 
+                        ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)))
                             ?? throw new Exception("no constructor to initialize the ISource class");
 
                         ParameterExpression parameter = Expression.Parameter(typeof(int), "handle");
@@ -145,7 +144,7 @@ namespace FxEvents.Shared.EventSubsystem
                             switch (typeCode)
                             {
                                 case TypeCode.String:
-                                    holder.Add(obj as string ?? (type.IsSimpleType()?obj.ToString():string.Empty));
+                                    holder.Add(obj as string ?? (type.IsSimpleType() ? obj.ToString() : string.Empty));
                                     break;
                                 case TypeCode.Object:
                                     try
@@ -235,7 +234,7 @@ namespace FxEvents.Shared.EventSubsystem
                     {
                         if (TypeCache.IsSimpleType(type))
                         {
-                            if(parameterInfo.DefaultValue != null)
+                            if (parameterInfo.DefaultValue != null)
                                 holder.Add(parameterInfo.DefaultValue);
                             else
                                 holder.Add(default);
