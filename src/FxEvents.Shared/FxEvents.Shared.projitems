@@ -38,6 +38,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\QuaternionResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\SnowflakeResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\TupleResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)eventsubsystem\serialization\implementations\msgpackresolvers\ValueTupleResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\VectorResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackSerialization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\ISerialization.cs" />
@@ -66,5 +67,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\StringExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\TaskExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\TypeCache.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)typeextensions\ValueTuple.cs" />
   </ItemGroup>
 </Project>

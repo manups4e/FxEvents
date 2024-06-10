@@ -33,6 +33,15 @@ namespace FxEvents.Shared.Serialization.Implementations
             TupleResolver<object, object, object, object, object> tuple5 = new(_context);
             TupleResolver<object, object, object, object, object, object> tuple6 = new(_context);
             TupleResolver<object, object, object, object, object, object, object> tuple7 = new(_context);
+
+            ValueTupleResolver<object> valuetuple1 = new(_context);
+            ValueTupleResolver<object, object> valuetuple2 = new(_context);
+            ValueTupleResolver<object, object, object> valuetuple3 = new(_context);
+            ValueTupleResolver<object, object, object, object> valuetuple4 = new(_context);
+            ValueTupleResolver<object, object, object, object, object> valuetuple5 = new(_context);
+            ValueTupleResolver<object, object, object, object, object, object> valuetuple6 = new(_context);
+            ValueTupleResolver<object, object, object, object, object, object, object> valuetuple7 = new(_context);
+
             _context.Serializers.RegisterOverride(vector2);
             _context.Serializers.RegisterOverride(vector3);
             _context.Serializers.RegisterOverride(vector4);
@@ -46,6 +55,13 @@ namespace FxEvents.Shared.Serialization.Implementations
             _context.Serializers.RegisterOverride(tuple5);
             _context.Serializers.RegisterOverride(tuple6);
             _context.Serializers.RegisterOverride(tuple7);
+            _context.Serializers.RegisterOverride(valuetuple1);
+            _context.Serializers.RegisterOverride(valuetuple2);
+            _context.Serializers.RegisterOverride(valuetuple3);
+            _context.Serializers.RegisterOverride(valuetuple4);
+            _context.Serializers.RegisterOverride(valuetuple5);
+            _context.Serializers.RegisterOverride(valuetuple6);
+            _context.Serializers.RegisterOverride(valuetuple7);
         }
 
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
@@ -78,40 +94,6 @@ namespace FxEvents.Shared.Serialization.Implementations
             else
                 SerializeObject(type, value, context);
         }
-        private void SerializeKeyValuePair(Type type, object value, SerializationContext context)
-        {
-            Type[] generics = type.GetGenericArguments();
-            MethodInfo method = GetType().GetMethod("Serialize", new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
-
-            ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
-            ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
-            ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
-            ParameterExpression pairParam = Expression.Parameter(type, "pair");
-            ParameterExpression valueParam = Expression.Parameter(typeof(object), "value");
-
-            MethodCallExpression call = Expression.Call(instanceParam, method, typeParam, valueParam, contextParam);
-
-            void CallSerialization(Type genericType, string property)
-            {
-                Action action = Expression.Lambda<Action>(
-                    Expression.Block(
-                        new[] { instanceParam, typeParam, contextParam, pairParam, valueParam },
-                        Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
-                        Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
-                        Expression.Assign(typeParam, Expression.Constant(genericType, typeof(Type))),
-                        Expression.Assign(pairParam, Expression.Constant(value, type)),
-                        Expression.Assign(valueParam, Expression.Convert(Expression.Property(pairParam, property), typeof(object))),
-                        call
-                    )
-                ).Compile();
-
-                action.Invoke();
-            }
-
-            CallSerialization(generics[0], "Key");
-            CallSerialization(generics[1], "Value");
-        }
-
         private void SerializeTuple(Type type, object value, SerializationContext context)
         {
             Type[] generics = type.GetGenericArguments();
@@ -181,26 +163,12 @@ namespace FxEvents.Shared.Serialization.Implementations
             return DeserializeObject<T>(type, context);
         }
 
-        private T DeserializeKeyValuePair<T>(Type type, SerializationContext context)
-        {
-            Type[] generics = type.GetGenericArguments();
-            System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ?? throw new SerializationException(context, type, $"Could not find suitable constructor for type: {type.Name}");
-
-
-            object key = DeserializeAnonymously(generics[0], context);
-            object value = DeserializeAnonymously(generics[1], context);
-
-            object kpv = Activator.CreateInstance(type, key, value);
-
-            return (T)kpv;
-        }
-
         private T DeserializeTuple<T>(Type type, SerializationContext context)
         {
             Type[] generics = type.GetGenericArguments();
             System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ??
-                              throw new SerializationException(context, type,
-                                  $"Could not find suitable constructor for type: {type.Name}");
+                                throw new SerializationException(context, type,
+                                    $"Could not find suitable constructor for type: {type.Name}");
             List<object> parameters = new List<object>();
 
             foreach (Type generic in generics)

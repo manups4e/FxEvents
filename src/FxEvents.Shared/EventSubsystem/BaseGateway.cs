@@ -137,97 +137,102 @@ namespace FxEvents.Shared.EventSubsystem
                         MessagePackObject a = context.Deserialize<MessagePackObject>();
                         if (a.UnderlyingType != type)
                         {
-                            object obj = a.ToObject();
-
                             TypeCode typeCode = Type.GetTypeCode(type);
-
-                            switch (typeCode)
+                            object GetHolder(MessagePackObject msgpkObj, Type type)
                             {
-                                case TypeCode.String:
-                                    holder.Add(obj as string ?? (type.IsSimpleType() ? obj.ToString() : string.Empty));
-                                    break;
-                                case TypeCode.Object:
-                                    try
-                                    {
-                                        holder.Add(Activator.CreateInstance(type, obj));
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        throw new Exception($"FxEvents - Cannot create instance of type {type.Name} with parameter {obj.ToJson()}, maybe a missing constructor?", e);
-                                    }
-                                    break;
-                                case TypeCode.DBNull:
-                                case TypeCode.DateTime:
-                                    holder.Add(obj);
-                                    break;
-                                case TypeCode.Byte:
-                                case TypeCode.SByte:
-                                case TypeCode.Int16:
-                                case TypeCode.Int32:
-                                case TypeCode.Int64:
-                                case TypeCode.UInt16:
-                                case TypeCode.UInt32:
-                                case TypeCode.UInt64:
-                                    if (obj is IConvertible convertible)
-                                    {
+                                object obj = msgpkObj.ToObject();
+                                TypeCode typeCode = Type.GetTypeCode(type);
+
+                                switch (typeCode)
+                                {
+                                    case TypeCode.String:
+                                        return obj as string ?? (type.IsSimpleType() ? obj.ToString() : string.Empty);
+                                    case TypeCode.Byte:
+                                    case TypeCode.SByte:
+                                    case TypeCode.Int16:
+                                    case TypeCode.Int32:
+                                    case TypeCode.Int64:
+                                    case TypeCode.UInt16:
+                                    case TypeCode.UInt32:
+                                    case TypeCode.UInt64:
+                                        if (obj is IConvertible convertible)
+                                        {
+                                            try
+                                            {
+                                                return Convert.ChangeType(convertible, type);
+                                            }
+                                            catch (InvalidCastException)
+                                            {
+                                                return GetDefaultForType(type);
+                                            }
+                                        }
+                                        else
+                                            return GetDefaultForType(type);
+                                    case TypeCode.Boolean:
+                                        bool booleanValue;
+                                        if (bool.TryParse(obj.ToString(), out booleanValue))
+                                            return booleanValue;
+                                        else
+                                            return false;
+                                    case TypeCode.Char:
+                                        char charValue;
+                                        if (char.TryParse(obj.ToString(), out charValue))
+                                            return charValue;
+                                        else
+                                            return '\0';
+                                    case TypeCode.Decimal:
+                                        decimal decimalValue;
+                                        if (decimal.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
+                                            return decimalValue;
+                                        else
+                                            return 0M;
+                                    case TypeCode.Single:
+                                        float floatValue;
+                                        if (float.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out floatValue))
+                                            return floatValue;
+                                        else
+                                            return 0F;
+                                    case TypeCode.Double:
+                                        double doubleValue;
+                                        if (double.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out doubleValue))
+                                            return doubleValue;
+                                        else
+                                            return 0D;
+                                    case TypeCode.Object:
                                         try
                                         {
-                                            holder.Add(Convert.ChangeType(convertible, type));
+                                            if (msgpkObj.UnderlyingType == typeof(MessagePackObjectDictionary) && type.Name.StartsWith("ValueTuple"))
+                                            {
+                                                List<object> list = new List<object>();
+                                                foreach (var o in ((MessagePackObjectDictionary)a.ToObject()).Values)
+                                                {
+                                                    list.Add(GetHolder(o, o.UnderlyingType));
+                                                }
+                                                return Activator.CreateInstance(type, list.ToArray());
+                                            }
+                                            else
+                                                return Activator.CreateInstance(type, obj);
                                         }
-                                        catch (InvalidCastException)
+                                        catch (Exception e)
                                         {
-                                            holder.Add(GetDefaultForType(type));
+                                            throw new Exception($"FxEvents - Cannot create instance of type {type.Name} with parameter {obj.ToJson()}, maybe a missing constructor?", e);
                                         }
-                                    }
-                                    else
-                                        holder.Add(GetDefaultForType(type));
-                                    break;
-                                case TypeCode.Boolean:
-                                    bool booleanValue;
-                                    if (bool.TryParse(obj.ToString(), out booleanValue))
-                                        holder.Add(booleanValue);
-                                    else
-                                        holder.Add(false);
-                                    break;
-                                case TypeCode.Char:
-                                    char charValue;
-                                    if (char.TryParse(obj.ToString(), out charValue))
-                                        holder.Add(charValue);
-                                    else
-                                        holder.Add('\0');
-                                    break;
-                                case TypeCode.Decimal:
-                                    decimal decimalValue;
-                                    if (decimal.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
-                                        holder.Add(decimalValue);
-                                    else
-                                        holder.Add(0M);
-                                    break;
-                                case TypeCode.Single:
-                                    float floatValue;
-                                    if (float.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out floatValue))
-                                        holder.Add(floatValue);
-                                    else
-                                        holder.Add(0F);
-                                    break;
-                                case TypeCode.Double:
-                                    double doubleValue;
-                                    if (double.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out doubleValue))
-                                        holder.Add(doubleValue);
-                                    else
-                                        holder.Add(0D);
-                                    break;
-                                default:
-                                    holder.Add(GetDefaultForType(type));
-                                    break;
+                                    case TypeCode.DBNull:
+                                    case TypeCode.DateTime:
+                                        return obj;
+                                    default:
+                                        return GetDefaultForType(type);
+                                }
                             }
+
+                            holder.Add(GetHolder(a, type));
                         }
                         else
                         {
                             if (TypeCache.IsSimpleType(type))
-                                holder.Add(a.ToObject());
+                                return a.ToObject();
                             else
-                                holder.Add(Activator.CreateInstance(type, a.ToObject()));
+                                return Activator.CreateInstance(type, a.ToObject());
                         }
                     }
                     else
