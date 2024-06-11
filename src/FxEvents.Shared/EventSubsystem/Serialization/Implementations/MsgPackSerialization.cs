@@ -4,8 +4,10 @@ using FxEvents.Shared.TypeExtensions;
 using Logger;
 using MsgPack;
 using MsgPack.Serialization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -26,42 +28,12 @@ namespace FxEvents.Shared.Serialization.Implementations
             SnowflakeResolver snowflake = new(_context);
             QuaternionResolver quaternion = new(_context);
             KeyValuePairResolver<object, object> kvp = new(_context);
-            TupleResolver<object> tuple1 = new(_context);
-            TupleResolver<object, object> tuple2 = new(_context);
-            TupleResolver<object, object, object> tuple3 = new(_context);
-            TupleResolver<object, object, object, object> tuple4 = new(_context);
-            TupleResolver<object, object, object, object, object> tuple5 = new(_context);
-            TupleResolver<object, object, object, object, object, object> tuple6 = new(_context);
-            TupleResolver<object, object, object, object, object, object, object> tuple7 = new(_context);
-
-            ValueTupleResolver<object> valuetuple1 = new(_context);
-            ValueTupleResolver<object, object> valuetuple2 = new(_context);
-            ValueTupleResolver<object, object, object> valuetuple3 = new(_context);
-            ValueTupleResolver<object, object, object, object> valuetuple4 = new(_context);
-            ValueTupleResolver<object, object, object, object, object> valuetuple5 = new(_context);
-            ValueTupleResolver<object, object, object, object, object, object> valuetuple6 = new(_context);
-            ValueTupleResolver<object, object, object, object, object, object, object> valuetuple7 = new(_context);
-
             _context.Serializers.RegisterOverride(vector2);
             _context.Serializers.RegisterOverride(vector3);
             _context.Serializers.RegisterOverride(vector4);
             _context.Serializers.RegisterOverride(quaternion);
             _context.Serializers.RegisterOverride(snowflake);
             _context.Serializers.RegisterOverride(kvp);
-            _context.Serializers.RegisterOverride(tuple1);
-            _context.Serializers.RegisterOverride(tuple2);
-            _context.Serializers.RegisterOverride(tuple3);
-            _context.Serializers.RegisterOverride(tuple4);
-            _context.Serializers.RegisterOverride(tuple5);
-            _context.Serializers.RegisterOverride(tuple6);
-            _context.Serializers.RegisterOverride(tuple7);
-            _context.Serializers.RegisterOverride(valuetuple1);
-            _context.Serializers.RegisterOverride(valuetuple2);
-            _context.Serializers.RegisterOverride(valuetuple3);
-            _context.Serializers.RegisterOverride(valuetuple4);
-            _context.Serializers.RegisterOverride(valuetuple5);
-            _context.Serializers.RegisterOverride(valuetuple6);
-            _context.Serializers.RegisterOverride(valuetuple7);
         }
 
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
@@ -96,33 +68,12 @@ namespace FxEvents.Shared.Serialization.Implementations
         }
         private void SerializeTuple(Type type, object value, SerializationContext context)
         {
-            Type[] generics = type.GetGenericArguments();
-            MethodInfo method = GetType().GetMethod("Serialize", new[] { typeof(Type), typeof(object), typeof(SerializationContext) });
+            PropertyInfo[] properties = value.GetType().GetProperties();
 
-            ParameterExpression instanceParam = Expression.Parameter(typeof(MsgPackSerialization), "instance");
-            ParameterExpression typeParam = Expression.Parameter(typeof(Type), "type");
-            ParameterExpression valueParam = Expression.Parameter(type, "value");
-            ParameterExpression contextParam = Expression.Parameter(typeof(SerializationContext), "context");
-
-            for (int idx = 0; idx < generics.Length; idx++)
+            foreach (PropertyInfo property in properties)
             {
-                Type generic = generics[idx];
-                MethodCallExpression call = Expression.Call(instanceParam, method, typeParam,
-                    Expression.Convert(Expression.Property(valueParam, $"Item{idx + 1}"), typeof(object)),
-                    contextParam);
-
-                Action action = Expression.Lambda<Action>(
-                    Expression.Block(
-                        new[] { instanceParam, typeParam, contextParam, valueParam },
-                        Expression.Assign(instanceParam, Expression.Constant(this, typeof(MsgPackSerialization))),
-                        Expression.Assign(contextParam, Expression.Constant(context, typeof(SerializationContext))),
-                        Expression.Assign(typeParam, Expression.Constant(generic, typeof(Type))),
-                        Expression.Assign(valueParam, Expression.Constant(value, type)),
-                        call
-                    )
-                ).Compile();
-
-                action.Invoke();
+                object propertyValue = property.GetValue(value, null);
+                Serialize(propertyValue, context);
             }
         }
 
@@ -165,6 +116,7 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         private T DeserializeTuple<T>(Type type, SerializationContext context)
         {
+
             Type[] generics = type.GetGenericArguments();
             System.Reflection.ConstructorInfo constructor = type.GetConstructor(generics) ??
                                 throw new SerializationException(context, type,
