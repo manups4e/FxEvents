@@ -1,9 +1,11 @@
+using Logger;
 using MsgPack;
 using MsgPack.Serialization;
 using System;
 
 namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
 {
+    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
     public class ValueTupleResolver<A> : MessagePackSerializer<ValueTuple<A>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -22,8 +24,10 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
+    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
     public class ValueTupleResolver<A, B> : MessagePackSerializer<ValueTuple<A, B>>
     {
+        Log logger = new Log();
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
         {
 
@@ -31,6 +35,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
 
         protected override void PackToCore(Packer packer, ValueTuple<A, B> objectTree)
         {
+            logger.Info("sono chiamato");
             packer.Pack(new object[] { objectTree.Item1, objectTree.Item2 });
         }
 
@@ -41,6 +46,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
+    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C> : MessagePackSerializer<ValueTuple<A, B, C>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -59,6 +65,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
+    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C, D> : MessagePackSerializer<ValueTuple<A, B, C, D>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -77,6 +84,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
+    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C, D, E> : MessagePackSerializer<ValueTuple<A, B, C, D, E>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -95,6 +103,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
+    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C, D, E, F> : MessagePackSerializer<ValueTuple<A, B, C, D, E, F>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -113,6 +122,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
+    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C, D, E, F, G> : MessagePackSerializer<ValueTuple<A, B, C, D, E, F, G>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)

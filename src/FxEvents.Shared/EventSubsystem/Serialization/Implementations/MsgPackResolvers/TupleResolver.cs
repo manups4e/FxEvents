@@ -4,7 +4,8 @@ using System;
 
 namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
 {
-    public class TupleResolver<T1> : MessagePackSerializer<Tuple<T1>>
+        [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+public class TupleResolver<T1> : MessagePackSerializer<Tuple<T1>>
     {
         public TupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
         {
@@ -18,11 +19,12 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         protected override Tuple<T1> UnpackFromCore(Unpacker unpacker)
         {
             object[] obj = (object[])unpacker.LastReadData.ToObject();
-            return new Tuple<T1>((T1)obj[0]);
+            return Tuple.Create((T1)obj[0]);
         }
     }
 
-    public class TupleResolver<T1, T2> : MessagePackSerializer<Tuple<T1, T2>>
+        [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+public class TupleResolver<T1, T2> : MessagePackSerializer<Tuple<T1, T2>>
     {
         public TupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
         {
@@ -37,11 +39,12 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         protected override Tuple<T1, T2> UnpackFromCore(Unpacker unpacker)
         {
             object[] obj = (object[])unpacker.LastReadData.ToObject();
-            return new Tuple<T1, T2>((T1)obj[0], (T2)obj[1]);
+            return Tuple.Create((T1)obj[0], (T2)obj[1]);
         }
     }
 
-    public class TupleResolver<T1, T2, T3> : MessagePackSerializer<Tuple<T1, T2, T3>>
+        [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+public class TupleResolver<T1, T2, T3> : MessagePackSerializer<Tuple<T1, T2, T3>>
     {
         public TupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
         {
@@ -55,11 +58,12 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         protected override Tuple<T1, T2, T3> UnpackFromCore(Unpacker unpacker)
         {
             object[] obj = (object[])unpacker.LastReadData.ToObject();
-            return new Tuple<T1, T2, T3>((T1)obj[0], (T2)obj[1], (T3)obj[2]);
+            return Tuple.Create((T1)obj[0], (T2)obj[1], (T3)obj[2]);
         }
     }
 
-    public class TupleResolver<T1, T2, T3, T4> : MessagePackSerializer<Tuple<T1, T2, T3, T4>>
+        [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+public class TupleResolver<T1, T2, T3, T4> : MessagePackSerializer<Tuple<T1, T2, T3, T4>>
     {
         public TupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
         {
@@ -73,11 +77,12 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         protected override Tuple<T1, T2, T3, T4> UnpackFromCore(Unpacker unpacker)
         {
             object[] obj = (object[])unpacker.LastReadData.ToObject();
-            return new Tuple<T1, T2, T3, T4>((T1)obj[0], (T2)obj[1], (T3)obj[2], (T4)obj[3]);
+            return Tuple.Create((T1)obj[0], (T2)obj[1], (T3)obj[2], (T4)obj[3]);
         }
     }
 
-    public class TupleResolver<T1, T2, T3, T4, T5> : MessagePackSerializer<Tuple<T1, T2, T3, T4, T5>>
+        [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+public class TupleResolver<T1, T2, T3, T4, T5> : MessagePackSerializer<Tuple<T1, T2, T3, T4, T5>>
     {
         public TupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
         {
@@ -91,11 +96,12 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         protected override Tuple<T1, T2, T3, T4, T5> UnpackFromCore(Unpacker unpacker)
         {
             object[] obj = (object[])unpacker.LastReadData.ToObject();
-            return new Tuple<T1, T2, T3, T4, T5>((T1)obj[0], (T2)obj[1], (T3)obj[2], (T4)obj[3], (T5)obj[4]);
+            return Tuple.Create((T1)obj[0], (T2)obj[1], (T3)obj[2], (T4)obj[3], (T5)obj[4]);
         }
     }
 
-    public class TupleResolver<T1, T2, T3, T4, T5, T6> : MessagePackSerializer<Tuple<T1, T2, T3, T4, T5, T6>>
+        [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+public class TupleResolver<T1, T2, T3, T4, T5, T6> : MessagePackSerializer<Tuple<T1, T2, T3, T4, T5, T6>>
     {
         public TupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
         {
@@ -109,10 +115,11 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         protected override Tuple<T1, T2, T3, T4, T5, T6> UnpackFromCore(Unpacker unpacker)
         {
             object[] obj = (object[])unpacker.LastReadData.ToObject();
-            return new Tuple<T1, T2, T3, T4, T5, T6>((T1)obj[0], (T2)obj[1], (T3)obj[2], (T4)obj[3], (T5)obj[4], (T6)obj[5]);
+            return Tuple.Create((T1)obj[0], (T2)obj[1], (T3)obj[2], (T4)obj[3], (T5)obj[4], (T6)obj[5]);
         }
     }
 
+    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
     public class TupleResolver<T1, T2, T3, T4, T5, T6, T7> : MessagePackSerializer<Tuple<T1, T2, T3, T4, T5, T6, T7>>
     {
         public TupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -127,7 +134,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         protected override Tuple<T1, T2, T3, T4, T5, T6, T7> UnpackFromCore(Unpacker unpacker)
         {
             object[] obj = (object[])unpacker.LastReadData.ToObject();
-            return new Tuple<T1, T2, T3, T4, T5, T6, T7>((T1)obj[0], (T2)obj[1], (T3)obj[2], (T4)obj[3], (T5)obj[4], (T6)obj[5], (T7)obj[6]);
+            return Tuple.Create((T1)obj[0], (T2)obj[1], (T3)obj[2], (T4)obj[3], (T5)obj[4], (T6)obj[5], (T7)obj[6]);
         }
     }
 }
