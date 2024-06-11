@@ -137,95 +137,13 @@ namespace FxEvents.Shared.EventSubsystem
                         MessagePackObject a = context.Deserialize<MessagePackObject>();
                         if (a.UnderlyingType != type)
                         {
-                            TypeCode typeCode = Type.GetTypeCode(type);
-                            object GetHolder(MessagePackObject msgpkObj, Type type)
+                            if (type.Name.StartsWith("List") || type.Name.StartsWith("Dictionary") || type.Name.StartsWith("Tuple"))
                             {
-                                object obj = msgpkObj.ToObject();
-                                TypeCode typeCode = Type.GetTypeCode(type);
-
-                                switch (typeCode)
-                                {
-                                    case TypeCode.String:
-                                        return obj as string ?? (type.IsSimpleType() ? obj.ToString() : string.Empty);
-                                    case TypeCode.Byte:
-                                    case TypeCode.SByte:
-                                    case TypeCode.Int16:
-                                    case TypeCode.Int32:
-                                    case TypeCode.Int64:
-                                    case TypeCode.UInt16:
-                                    case TypeCode.UInt32:
-                                    case TypeCode.UInt64:
-                                        if (obj is IConvertible convertible)
-                                        {
-                                            try
-                                            {
-                                                return Convert.ChangeType(convertible, type);
-                                            }
-                                            catch (InvalidCastException)
-                                            {
-                                                return GetDefaultForType(type);
-                                            }
-                                        }
-                                        else
-                                            return GetDefaultForType(type);
-                                    case TypeCode.Boolean:
-                                        bool booleanValue;
-                                        if (bool.TryParse(obj.ToString(), out booleanValue))
-                                            return booleanValue;
-                                        else
-                                            return false;
-                                    case TypeCode.Char:
-                                        char charValue;
-                                        if (char.TryParse(obj.ToString(), out charValue))
-                                            return charValue;
-                                        else
-                                            return '\0';
-                                    case TypeCode.Decimal:
-                                        decimal decimalValue;
-                                        if (decimal.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
-                                            return decimalValue;
-                                        else
-                                            return 0M;
-                                    case TypeCode.Single:
-                                        float floatValue;
-                                        if (float.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out floatValue))
-                                            return floatValue;
-                                        else
-                                            return 0F;
-                                    case TypeCode.Double:
-                                        double doubleValue;
-                                        if (double.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out doubleValue))
-                                            return doubleValue;
-                                        else
-                                            return 0D;
-                                    case TypeCode.Object:
-                                        try
-                                        {
-                                            if (msgpkObj.UnderlyingType == typeof(MessagePackObjectDictionary) && type.Name.StartsWith("ValueTuple"))
-                                            {
-                                                List<object> list = new List<object>();
-                                                foreach (var o in ((MessagePackObjectDictionary)a.ToObject()).Values)
-                                                {
-                                                    list.Add(GetHolder(o, o.UnderlyingType));
-                                                }
-                                                return Activator.CreateInstance(type, list.ToArray());
-                                            }
-                                            else
-                                                return Activator.CreateInstance(type, obj);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            throw new Exception($"FxEvents - Cannot create instance of type {type.Name} with parameter {obj.ToJson()}, maybe a missing constructor?", e);
-                                        }
-                                    case TypeCode.DBNull:
-                                    case TypeCode.DateTime:
-                                        return obj;
-                                    default:
-                                        return GetDefaultForType(type);
-                                }
+                                context.Reader.BaseStream.Position = 0;
+                                holder.Add(context.Deserialize(type));
                             }
-
-                            holder.Add(GetHolder(a, type));
+                            else
+                                holder.Add(GetHolder(a, type));
                         }
                         else
                         {
@@ -340,6 +258,101 @@ namespace FxEvents.Shared.EventSubsystem
             }
         }
 
+        private object GetHolder(MessagePackObject msgpkObj, Type type)
+        {
+            object obj = msgpkObj.ToObject();
+            TypeCode typeCode = Type.GetTypeCode(type);
+
+            switch (typeCode)
+            {
+                case TypeCode.String:
+                    return obj as string ?? (type.IsSimpleType() ? obj.ToString() : string.Empty);
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                    if (obj is IConvertible convertible)
+                    {
+                        try
+                        {
+                            return Convert.ChangeType(convertible, type);
+                        }
+                        catch (InvalidCastException)
+                        {
+                            return GetDefaultForType(type);
+                        }
+                    }
+                    else
+                        return GetDefaultForType(type);
+                case TypeCode.Boolean:
+                    bool booleanValue;
+                    if (bool.TryParse(obj.ToString(), out booleanValue))
+                        return booleanValue;
+                    else
+                        return false;
+                case TypeCode.Char:
+                    char charValue;
+                    if (char.TryParse(obj.ToString(), out charValue))
+                        return charValue;
+                    else
+                        return '\0';
+                case TypeCode.Decimal:
+                    decimal decimalValue;
+                    if (decimal.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
+                        return decimalValue;
+                    else
+                        return 0M;
+                case TypeCode.Single:
+                    float floatValue;
+                    if (float.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out floatValue))
+                        return floatValue;
+                    else
+                        return 0F;
+                case TypeCode.Double:
+                    double doubleValue;
+                    if (double.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out doubleValue))
+                        return doubleValue;
+                    else
+                        return 0D;
+                case TypeCode.Object:
+                    try
+                    {
+                        List<object> list = new List<object>();
+                        if (msgpkObj.UnderlyingType == typeof(MessagePackObjectDictionary) && type.Name.StartsWith("ValueTuple"))
+                        {
+                            foreach (MessagePackObject o in ((MessagePackObjectDictionary)msgpkObj.ToObject()).Values)
+                            {
+                                list.Add(GetHolder(o, o.UnderlyingType));
+                            }
+                            return Activator.CreateInstance(type, list.ToArray());
+                        }
+                        else if (type.Name.StartsWith("List"))
+                        {
+                            var arr = msgpkObj.ToObject() as MessagePackObject[];
+                            foreach (var item in arr)
+                            {
+                                list.Add(GetHolder(item, type.GetGenericArguments()[0]));
+                            }
+                            return list;
+                        }
+                        else
+                            return Activator.CreateInstance(type, obj);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new Exception($"FxEvents - Cannot create instance of type {type.Name} with parameter {obj.ToJson()}, maybe a missing constructor?", e);
+                    }
+                case TypeCode.DBNull:
+                case TypeCode.DateTime:
+                    return obj;
+                default:
+                    return GetDefaultForType(type);
+            }
+        }
         private static object GetDefaultForType(Type type)
         {
             // Determine the default value for the given type
