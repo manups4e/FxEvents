@@ -6,8 +6,15 @@ To work you only need to add `FXEvents.Client.dll` or `FXEvents.Server.dll` and 
 No need of any external library for MsgPack, the event system uses the internal MsgPack dll provided with fivem itself!!
 
 [Discord Server Invite](https://discord.gg/KKN7kRT2vM)
+---
 
-Usage examples:
+### Support
+
+If you like my work please consider supporting me via PayPal.
+You can [buy me a coffee or donut, some banana, a shirt, BMW i4 or Taycan, the stars or whatever you want here](https://www.paypal.com/donate/?hosted_button_id=A5FJK5M94EFQE).
+
+---
+### Usage examples:
 
 ## Initialization
 - Encryption key **CANNOT** remain empty or null, you can generate encryption keys, passphrases, passwords online or use the provided serverside command `generagekey` to let the library generate a random passphrase both literal and encrtypted to be copied and stored in a safe place. __PLEASE NOTE__: FXEvents won't store nor save any passkey anywhere for security reasons, do not lose the key or your data won't be recovered.
