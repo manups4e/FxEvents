@@ -5,7 +5,7 @@ using System;
 
 namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
 {
-    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+    [Obsolete("Ignored by messagepack apparently due to its non generic behaviour, kept for reference and other uses")]
     public class ValueTupleResolver<A> : MessagePackSerializer<ValueTuple<A>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -24,7 +24,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
-    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+    [Obsolete("Ignored by messagepack apparently due to its non generic behaviour, kept for reference and other uses")]
     public class ValueTupleResolver<A, B> : MessagePackSerializer<ValueTuple<A, B>>
     {
         Log logger = new Log();
@@ -46,7 +46,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
-    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+    [Obsolete("Ignored by messagepack apparently due to its non generic behaviour, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C> : MessagePackSerializer<ValueTuple<A, B, C>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -65,7 +65,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
-    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+    [Obsolete("Ignored by messagepack apparently due to its non generic behaviour, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C, D> : MessagePackSerializer<ValueTuple<A, B, C, D>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -84,7 +84,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
-    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+    [Obsolete("Ignored by messagepack apparently due to its non generic behaviour, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C, D, E> : MessagePackSerializer<ValueTuple<A, B, C, D, E>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -103,7 +103,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
-    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+    [Obsolete("Ignored by messagepack apparently due to its non generic behaviour, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C, D, E, F> : MessagePackSerializer<ValueTuple<A, B, C, D, E, F>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
@@ -122,7 +122,7 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
         }
     }
 
-    [Obsolete("Ignored by messagepack apparently, kept for reference and other uses")]
+    [Obsolete("Ignored by messagepack apparently due to its non generic behaviour, kept for reference and other uses")]
     public class ValueTupleResolver<A, B, C, D, E, F, G> : MessagePackSerializer<ValueTuple<A, B, C, D, E, F, G>>
     {
         public ValueTupleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
