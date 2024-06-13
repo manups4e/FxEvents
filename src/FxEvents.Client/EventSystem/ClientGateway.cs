@@ -59,10 +59,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            _hub.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => {
-                Logger.Info($"Signature {signature} received from server");
-                _secret = _curve25519.GetSharedSecret(signature);
-            }));
+            _hub.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => _secret = _curve25519.GetSharedSecret(signature)));
             BaseScript.TriggerServerEvent(SignaturePipeline, _curve25519.GetPublicKey());
         }
 
