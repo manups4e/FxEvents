@@ -6,9 +6,15 @@ FxEvents is a robust event handling system for FiveM, allowing secure and effici
 
 Beginning from Version 3.0.0, the library won't need initialization of events as its internal events are SHA-256 generated starting from the resource name itself + a random seed.
 This means that initialization is mainly used to register events with [FxEvent] attribute that wouldn't be registered without a mandatory call from the requesting script.
+---
 
+## Support
 
-## Usage Examples
+If you like my work please consider supporting me via PayPal.
+You can [buy me a coffee or donut, some banana, a shirt, BMW i4 or Taycan, the stars or whatever you want here](https://www.paypal.com/donate/?hosted_button_id=A5FJK5M94EFQE).
+
+---
+## Usage examples:
 
 ### Initialization
 
