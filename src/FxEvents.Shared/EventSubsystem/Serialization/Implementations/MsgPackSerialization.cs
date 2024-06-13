@@ -1,3 +1,4 @@
+using FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackResolvers;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.Serialization.Implementations.MsgPackResolvers;
 using FxEvents.Shared.TypeExtensions;
@@ -16,8 +17,6 @@ namespace FxEvents.Shared.Serialization.Implementations
 {
     public class MsgPackSerialization : ISerialization
     {
-        private delegate T ObjectActivator<out T>();
-        private delegate void VoidMethod();
         private Log logger = new();
         private MsgPack.Serialization.SerializationContext _context = new(MsgPack.PackerCompatibilityOptions.None) { SerializationMethod = SerializationMethod.Map, GeneratorOption = SerializationMethodGeneratorOption.Fast };
         public MsgPackSerialization()
@@ -25,18 +24,43 @@ namespace FxEvents.Shared.Serialization.Implementations
             Vector2Resolver vector2 = new(_context);
             Vector3Resolver vector3 = new(_context);
             Vector4Resolver vector4 = new(_context);
-            SnowflakeResolver snowflake = new(_context);
             QuaternionResolver quaternion = new(_context);
+            SnowflakeResolver snowflake = new(_context);
             KeyValuePairResolver<object, object> kvp = new(_context);
+            PlayerResolver player = new(_context);
+            ISourceResolver source = new(_context);
+            EntityResolver entity = new(_context);
+            PedResolver ped = new(_context);
+            PropResolver prop = new(_context);
+            VehicleResolver vehicle = new(_context);
+
             _context.Serializers.RegisterOverride(vector2);
             _context.Serializers.RegisterOverride(vector3);
             _context.Serializers.RegisterOverride(vector4);
             _context.Serializers.RegisterOverride(quaternion);
             _context.Serializers.RegisterOverride(snowflake);
             _context.Serializers.RegisterOverride(kvp);
+            _context.Serializers.RegisterOverride(player);
+            _context.Serializers.RegisterOverride(source);
+            _context.Serializers.RegisterOverride(entity);
+            _context.Serializers.RegisterOverride(ped);
+            _context.Serializers.RegisterOverride(prop);
+            _context.Serializers.RegisterOverride(vehicle);
         }
 
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
+        private bool IsTuple(Type t) => t.Name.StartsWith("Tuple");
+        private bool ContainsTuple(Type t) => t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Any(x=>x.Name.StartsWith("Tuple"))||
+            t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Any(x => x.Name.StartsWith("Tuple"));
+        private Type[] GetTupleTypes(Type t)
+        {
+            List<Type> types = [];
+            var fields = t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Where(x => x.Name.StartsWith("Tuple"));
+            var properties = t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Where(x => x.Name.StartsWith("Tuple"));
+
+
+            return types.ToArray();
+        }
         private static string GetTypeIdentifier(Type type)
         {
             StringBuilder builder = new StringBuilder();
@@ -61,11 +85,13 @@ namespace FxEvents.Shared.Serialization.Implementations
         #region Serialization
         public void Serialize(Type type, object value, SerializationContext context)
         {
-            if (type.Name.StartsWith("Tuple"))
+            if (IsTuple(type))
+            {
                 SerializeTuple(type, value, context);
-            else
-                SerializeObject(type, value, context);
+            }
+            SerializeObject(type, value, context);
         }
+
         private void SerializeTuple(Type type, object value, SerializationContext context)
         {
             PropertyInfo[] properties = value.GetType().GetProperties();
@@ -107,7 +133,7 @@ namespace FxEvents.Shared.Serialization.Implementations
                 if (primitive != null) return (T)primitive;
             }
 
-            if (type.Name.StartsWith("Tuple"))
+            if (IsTuple(type))
             {
                 return DeserializeTuple<T>(type, context);
             }
@@ -135,14 +161,17 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         private T DeserializeObject<T>(Type type, SerializationContext context)
         {
-            bool canInstance = CanCreateInstanceUsingDefaultConstructor(type);
-            if (!canInstance)
+            try
             {
-                throw new SerializationException(context, type, $"Type {type.Name} is missing its emtpy constructor");
+                MessagePackSerializer<T> ser = MessagePackSerializer.Get<T>(_context);
+                T @return = ser.Unpack(context.Reader.BaseStream);
+                return @return;
             }
-            MessagePackSerializer<T> ser = MessagePackSerializer.Get<T>(_context);
-            T @return = ser.Unpack(context.Reader.BaseStream);
-            return @return;
+            catch (Exception ex)
+            {
+                logger.Error(ex.ToString());
+                return default(T);
+            }
         }
 
         public object DeserializeAnonymously(Type type, SerializationContext context) =>

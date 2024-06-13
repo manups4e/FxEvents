@@ -34,7 +34,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventValueHolder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\BinarySerialization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\JsonSerialization.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\EntityResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\ISourceResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\KeyValuePairResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\PlayerResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\QuaternionResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\SnowflakeResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\TupleResolver.cs" />
