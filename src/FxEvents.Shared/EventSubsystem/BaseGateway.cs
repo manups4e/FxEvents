@@ -258,7 +258,7 @@ namespace FxEvents.Shared.EventSubsystem
             }
         }
 
-        private object GetHolder(MessagePackObject msgpkObj, Type type)
+        internal static object GetHolder(MessagePackObject msgpkObj, Type type)
         {
             object obj = msgpkObj.ToObject();
             TypeCode typeCode = Type.GetTypeCode(type);
@@ -321,8 +321,8 @@ namespace FxEvents.Shared.EventSubsystem
                 case TypeCode.Object:
                     try
                     {
-                        List<object> list = new List<object>();
-                        if (msgpkObj.UnderlyingType == typeof(MessagePackObjectDictionary) && type.Name.StartsWith("ValueTuple"))
+                        List<object> list = [];
+                        if (msgpkObj.UnderlyingType == typeof(MessagePackObjectDictionary) && (type.Name.StartsWith("ValueTuple") || type.Name.StartsWith("Tuple")))
                         {
                             foreach (MessagePackObject o in ((MessagePackObjectDictionary)msgpkObj.ToObject()).Values)
                             {
@@ -339,6 +339,16 @@ namespace FxEvents.Shared.EventSubsystem
                             }
                             return list;
                         }
+                        else if (type == typeof(Player))
+                            return EventHub.Instance.GetPlayers[msgpkObj.AsInt32()];
+                        else if (type == typeof(Entity))
+                            return Entity.FromNetworkId(msgpkObj.AsInt32());
+                        else if (type == typeof(Ped))
+                            return (Ped)Entity.FromNetworkId(msgpkObj.AsInt32());
+                        else if (type == typeof(Prop))
+                            return (Prop)Entity.FromNetworkId(msgpkObj.AsInt32());
+                        else if (type == typeof(Vehicle))
+                            return (Vehicle)Entity.FromNetworkId(msgpkObj.AsInt32());
                         else
                             return Activator.CreateInstance(type, obj);
                     }
