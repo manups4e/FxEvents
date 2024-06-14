@@ -5,11 +5,9 @@ using FxEvents.Shared.TypeExtensions;
 using Logger;
 using MsgPack;
 using MsgPack.Serialization;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -87,6 +85,7 @@ namespace FxEvents.Shared.Serialization.Implementations
         {
             if (IsTuple(type))
             {
+                logger.Warning("Using Tuple is not advised due to differences between client and server environments and the unavailability of resolvers. Consider using ValueTuple instead.");
                 SerializeTuple(type, value, context);
             }
             SerializeObject(type, value, context);
@@ -135,6 +134,7 @@ namespace FxEvents.Shared.Serialization.Implementations
 
             if (IsTuple(type))
             {
+                logger.Warning("Using Tuple is not advised due to differences between client and server environments and the unavailability of resolvers. Consider using ValueTuple instead.");
                 return DeserializeTuple<T>(type, context);
             }
             return DeserializeObject<T>(type, context);
