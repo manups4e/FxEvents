@@ -322,22 +322,52 @@ namespace FxEvents.Shared.EventSubsystem
                     try
                     {
                         List<object> list = [];
-                        if (msgpkObj.UnderlyingType == typeof(MessagePackObjectDictionary) && (type.Name.StartsWith("ValueTuple") || type.Name.StartsWith("Tuple")))
+                        if (type.Name.StartsWith("ValueTuple") || type.Name.StartsWith("Tuple"))
                         {
-                            foreach (MessagePackObject o in ((MessagePackObjectDictionary)msgpkObj.ToObject()).Values)
+                            if (msgpkObj.UnderlyingType == typeof(MessagePackObjectDictionary))
                             {
-                                list.Add(GetHolder(o, o.UnderlyingType));
+                                foreach (MessagePackObject o in ((MessagePackObjectDictionary)msgpkObj.ToObject()).Values)
+                                {
+                                    list.Add(GetHolder(o, o.UnderlyingType));
+                                }
+                                return Activator.CreateInstance(type, list.ToArray());
                             }
-                            return Activator.CreateInstance(type, list.ToArray());
+                            else
+                            {
+                                // if(msgpkObj.IsList) 
+                                foreach (MessagePackObject o in msgpkObj.AsEnumerable())
+                                {
+                                    list.Add(GetHolder(o, o.UnderlyingType));
+                                }
+                                return Activator.CreateInstance(type, list.ToArray());
+                            }
                         }
                         else if (type.Name.StartsWith("List"))
                         {
-                            var arr = msgpkObj.ToObject() as MessagePackObject[];
-                            foreach (var item in arr)
+                            var arr = msgpkObj.AsEnumerable();
+                            var argument = type.GetGenericArguments()[0];
+                            if (argument.IsSimpleType())
                             {
-                                list.Add(GetHolder(item, type.GetGenericArguments()[0]));
+                                foreach (var item in arr)
+                                {
+                                    list.Add(GetHolder(item, type.GetGenericArguments()[0]));
+                                }
+                            }
+                            else
+                            {
+                                list.Add(GetHolder(msgpkObj, argument));
                             }
                             return list;
+                        }
+                        else if (type.IsArray)
+                        {
+                            var arr = msgpkObj.AsEnumerable();
+                            new Logger.Log().Info($"{type.Name}, {arr.ToJson()}");
+                            foreach (var item in arr)
+                            {
+                                list.Add(GetHolder(item, type));
+                            }
+                            return list.ToArray();
                         }
                         else if (type == typeof(Player))
                             return EventHub.Instance.GetPlayers[msgpkObj.AsInt32()];
@@ -350,7 +380,17 @@ namespace FxEvents.Shared.EventSubsystem
                         else if (type == typeof(Vehicle))
                             return (Vehicle)Entity.FromNetworkId(msgpkObj.AsInt32());
                         else
+                        {
+                            if (msgpkObj.IsArray)
+                            {
+                                foreach(var item in msgpkObj.AsEnumerable())
+                                {
+                                    list.Add(GetHolder(item, item.UnderlyingType));
+                                }
+                                return Activator.CreateInstance(type, list.ToArray());
+                            }
                             return Activator.CreateInstance(type, obj);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -442,7 +482,7 @@ namespace FxEvents.Shared.EventSubsystem
             }
             catch (Exception ex)
             {
-                Logger.Error($"{endpoint} - {ex.ToString()}");
+                Logger.Error($"{endpoint} - {ex.ToString()}, {ex.StackTrace}");
                 EventMessage message = new(endpoint, flow, new List<EventParameter>());
                 return message;
             }
