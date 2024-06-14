@@ -482,7 +482,7 @@ namespace FxEvents.Shared.EventSubsystem
             }
             catch (Exception ex)
             {
-                Logger.Error($"{endpoint} - {ex.ToString()}, {ex.StackTrace}");
+                Logger.Error($"{endpoint} - {ex.ToString()}");
                 EventMessage message = new(endpoint, flow, new List<EventParameter>());
                 return message;
             }
