@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace FxEvents
 {
-    public class EventHub : BaseScript
+    public class EventHub : ClientScript
     {
         internal static Log Logger;
         internal PlayerList GetPlayers => Players;

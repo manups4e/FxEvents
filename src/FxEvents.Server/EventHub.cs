@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace FxEvents
 {
-    public class EventHub : BaseScript
+    public class EventHub : ServerScript
     {
         internal static Log Logger { get; set; }
         internal ExportDictionary GetExports => Exports;
