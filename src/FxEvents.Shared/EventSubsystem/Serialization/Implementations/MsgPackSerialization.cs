@@ -178,9 +178,6 @@ namespace FxEvents.Shared.Serialization.Implementations
                 return default(T);
             }
         }
-
-        public object DeserializeAnonymously(Type type, SerializationContext context) =>
-            Deserialize<object>(type, context);
         #endregion
     }
 }
