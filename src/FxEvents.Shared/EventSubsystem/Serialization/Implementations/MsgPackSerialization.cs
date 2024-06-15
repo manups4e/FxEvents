@@ -23,6 +23,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             Vector3Resolver vector3 = new(_context);
             Vector4Resolver vector4 = new(_context);
             QuaternionResolver quaternion = new(_context);
+            Matrix3x3Resolver matrix3x3 = new(_context);
             SnowflakeResolver snowflake = new(_context);
             KeyValuePairResolver<object, object> kvp = new(_context);
             PlayerResolver player = new(_context);
@@ -36,6 +37,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             _context.Serializers.RegisterOverride(vector3);
             _context.Serializers.RegisterOverride(vector4);
             _context.Serializers.RegisterOverride(quaternion);
+            _context.Serializers.RegisterOverride(matrix3x3);
             _context.Serializers.RegisterOverride(snowflake);
             _context.Serializers.RegisterOverride(kvp);
             _context.Serializers.RegisterOverride(player);
@@ -44,6 +46,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             _context.Serializers.RegisterOverride(ped);
             _context.Serializers.RegisterOverride(prop);
             _context.Serializers.RegisterOverride(vehicle);
+
         }
 
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;

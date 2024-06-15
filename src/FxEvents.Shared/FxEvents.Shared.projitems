@@ -37,6 +37,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\EntityResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\ISourceResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\KeyValuePairResolver.cs" />
+    <Compile Include="..\FxEvents.Shared\EventSubsystem\Serialization\Implementations\MsgPackResolvers\Matrix3x3Resolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\PlayerResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\QuaternionResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\SnowflakeResolver.cs" />
