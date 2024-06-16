@@ -125,7 +125,7 @@ namespace FxEvents.EventSystem
 
         public void Send(Player player, string endpoint, params object[] args) => Send(Convert.ToInt32(player.Handle), endpoint, args);
         public void Send(ISource client, string endpoint, params object[] args) => Send(client.Handle, endpoint, args);
-        public void Send(List<Player> players, string endpoint, params object[] args) => Send(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, args);
+        public void Send(List<Player> players, string endpoint, params object[] args) => Send(players.Select(x => int.Parse(x.Handle)).ToList(), endpoint, args);
         public void Send(List<ISource> clients, string endpoint, params object[] args) => Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
 
         public async void Send(List<int> targets, string endpoint, params object[] args)
@@ -141,7 +141,8 @@ namespace FxEvents.EventSystem
 
         public async void Send(int target, string endpoint, params object[] args)
         {
-            await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, args);
+            if (!string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target].Name))
+                await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, args);
         }
 
         public void SendLatent(Player player, string endpoint, int bytesxSecond, params object[] args) => SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesxSecond, args);
