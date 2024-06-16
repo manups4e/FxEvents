@@ -163,7 +163,8 @@ namespace FxEvents.EventSystem
 
         public async void SendLatent(int target, string endpoint, int bytesxSecond, params object[] args)
         {
-            await CreateAndSendLatentAsync(EventFlowType.Straight, target, endpoint, bytesxSecond, args);
+            if (!string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target].Name))
+                await CreateAndSendLatentAsync(EventFlowType.Straight, target, endpoint, bytesxSecond, args);
         }
 
         public Task<T> Get<T>(Player player, string endpoint, params object[] args) =>
