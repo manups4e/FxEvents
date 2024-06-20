@@ -5,6 +5,7 @@ using FxEvents.Shared.Message;
 using FxEvents.Shared.Models;
 using FxEvents.Shared.Payload;
 using FxEvents.Shared.Serialization;
+using FxEvents.Shared.Snowflakes;
 using FxEvents.Shared.TypeExtensions;
 using Logger;
 using MsgPack;
@@ -13,7 +14,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,8 +25,8 @@ namespace FxEvents.Shared.EventSubsystem
     // TODO: Concurrency, block a request simliar to a already processed one unless tagged with the [Concurrent] method attribute to combat force spamming events to achieve some kind of bug.
     public delegate Task EventDelayMethod(int ms = 0);
     public delegate Task EventMessagePreparation(string pipeline, int source, IMessage message);
-    public delegate void EventMessagePush(string pipeline, int source, byte[] buffer);
-    public delegate void EventMessagePushLatent(string pipeline, int source, int bytePerSecond, byte[] buffer);
+    public delegate void EventMessagePush(string pipeline, int source, string endpoint, byte[] buffer);
+    public delegate void EventMessagePushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer);
     public delegate ISource ConstructorCustomActivator<T>(int handle);
     public abstract class BaseGateway
     {
@@ -33,6 +36,7 @@ namespace FxEvents.Shared.EventSubsystem
         internal string SignaturePipeline;
         protected abstract ISerialization Serialization { get; }
 
+        private List<Snowflake> eventIds = new List<Snowflake>();
         private List<EventObservable> _queue = new();
         internal EventsDictionary _handlers = new();
 
@@ -41,13 +45,45 @@ namespace FxEvents.Shared.EventSubsystem
         public EventMessagePush? PushDelegate { get; set; }
         public EventMessagePushLatent? PushDelegateLatent { get; set; }
 
-        public async Task ProcessInboundAsync(int source, byte[] serialized)
+        public async Task ProcessInboundAsync(int source, string endpoint, byte[] serialized)
         {
-            EventMessage message = serialized.DecryptObject<EventMessage>(source);
+            EventMessage message;
+            try
+            {
+                message = serialized.DecryptObject<EventMessage>(source);
+                if (eventIds.Contains(message.Id))
+                {
+#if CLIENT
+                    BaseScript.TriggerServerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.REPEATED_MESSAGE_ID);
+                    Logger.Warning($"Possible tampering detected, the event \"{endpoint}]\" sent by player {API.GetPlayerName(source)} [{source}] has an used ID");
+#elif SERVER
+                    BaseScript.TriggerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.REPEATED_MESSAGE_ID);
+                    Logger.Warning($"Possible tampering detected, the event \"{endpoint}]\" sent by player {API.GetPlayerName("" + source)} [{source}] has an used ID");
+#endif
+                }
+                else
+                {
+                    if (eventIds.Count >= 500)
+                        eventIds.RemoveAt(0);
+                    eventIds.Add(message.Id);
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                // failed decryption.. possible tampering?
+#if CLIENT
+                BaseScript.TriggerServerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.EDITED_ENCRYPTED_DATA);
+                Logger.Warning($"Possible tampering detected, impossible to decrypt event message \"{endpoint}]\" sent by player {API.GetPlayerName(source)} [{source}]");
+#elif SERVER
+                BaseScript.TriggerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.EDITED_ENCRYPTED_DATA);
+                Logger.Warning($"Possible tampering detected, impossible to decrypt event message \"{endpoint}]\" sent by player {API.GetPlayerName(""+source)} [{source}]");
+#endif
+                return;
+            }
             await ProcessInvokeAsync(message, source);
         }
 
-        public async Task ProcessInvokeAsync(EventMessage message, int source)
+        internal async Task ProcessInvokeAsync(EventMessage message, int source)
         {
             object InvokeDelegate(Delegate @delegate)
             {
@@ -245,7 +281,7 @@ namespace FxEvents.Shared.EventSubsystem
                 }
 
                 byte[] data = response.EncryptObject(source);
-                PushDelegate(OutboundPipeline, source, data);
+                PushDelegate(OutboundPipeline, source, message.Endpoint, data);
                 if (EventHub.Debug)
                     Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
             }
@@ -438,7 +474,7 @@ namespace FxEvents.Shared.EventSubsystem
             waiting.Callback.Invoke(response.Data);
         }
 
-        protected async Task<EventMessage> CreateAndSendAsync(EventFlowType flow, int source, string endpoint, params object[] args)
+        internal async Task<EventMessage> CreateAndSendAsync(EventFlowType flow, int source, string endpoint, params object[] args)
         {
             try
             {
@@ -469,7 +505,7 @@ namespace FxEvents.Shared.EventSubsystem
 
                 byte[] data = message.EncryptObject(source);
 
-                PushDelegate(InboundPipeline, source, data);
+                PushDelegate(InboundPipeline, source, endpoint, data);
                 if (EventHub.Debug)
                 {
 #if CLIENT
@@ -488,7 +524,7 @@ namespace FxEvents.Shared.EventSubsystem
             }
         }
 
-        protected async Task<EventMessage> CreateAndSendLatentAsync(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
+        internal async Task<EventMessage> CreateAndSendLatentAsync(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
         {
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
             List<EventParameter> parameters = [];
@@ -517,7 +553,7 @@ namespace FxEvents.Shared.EventSubsystem
 
             byte[] data = message.EncryptObject(source);
 
-            PushDelegateLatent(InboundPipeline, source, bytePerSecond, data);
+            PushDelegateLatent(InboundPipeline, source, bytePerSecond, message.Endpoint, data);
             if (EventHub.Debug)
             {
 #if CLIENT

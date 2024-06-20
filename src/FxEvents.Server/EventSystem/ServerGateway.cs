@@ -10,6 +10,7 @@ using FxEvents.Shared.TypeExtensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -35,24 +36,24 @@ namespace FxEvents.EventSystem
         internal void AddEvents()
         {
             _hub.RegisterEvent(SignaturePipeline, new Action<string, byte[]>(GetSignature));
-            _hub.RegisterEvent(InboundPipeline, new Action<string, byte[]>(Inbound));
-            _hub.RegisterEvent(OutboundPipeline, new Action<string, byte[]>(Outbound));
+            _hub.RegisterEvent(InboundPipeline, new Action<string, string, byte[]>(Inbound));
+            _hub.RegisterEvent(OutboundPipeline, new Action<string, string, byte[]>(Outbound));
         }
 
-        public void Push(string pipeline, int source, byte[] buffer)
+        internal void Push(string pipeline, int source, string endpoint, byte[] buffer)
         {
             if (source != new ServerId().Handle)
-                BaseScript.TriggerClientEvent(_hub.GetPlayers[source], pipeline, buffer);
+                BaseScript.TriggerClientEvent(_hub.GetPlayers[source], pipeline, endpoint, buffer);
             else
-                BaseScript.TriggerClientEvent(pipeline, buffer);
+                BaseScript.TriggerClientEvent(pipeline, endpoint, buffer);
         }
 
-        public void PushLatent(string pipeline, int source, int bytePerSecond, byte[] buffer)
+        internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
         {
             if (source != new ServerId().Handle)
-                BaseScript.TriggerLatentClientEvent(_hub.GetPlayers[source], pipeline, bytePerSecond, buffer);
+                BaseScript.TriggerLatentClientEvent(_hub.GetPlayers[source], pipeline, bytePerSecond, endpoint, buffer);
             else
-                BaseScript.TriggerLatentClientEvent(pipeline, bytePerSecond, buffer);
+                BaseScript.TriggerLatentClientEvent(pipeline, bytePerSecond, endpoint, buffer);
         }
 
         private void GetSignature([FromSource] string source, byte[] clientPubKey)
@@ -63,6 +64,7 @@ namespace FxEvents.EventSystem
                 if (_signatures.ContainsKey(client))
                 {
                     Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
+                    BaseScript.TriggerEvent("fxevents:tamperingprotection", source, "signature retrival", TamperType.REQUESTED_NEW_PUBLIC_KEY);
                     return;
                 }
 
@@ -80,23 +82,21 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private async void Inbound([FromSource] string source, byte[] encrypted)
+        private async void Inbound([FromSource] string source, string endpoint, byte[] encrypted)
         {
             try
             {
                 int client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (!_signatures.TryGetValue(client, out byte[] signature)) return;
-
-                EventMessage message = encrypted.DecryptObject<EventMessage>(client);
-
+                if (!_signatures.TryGetValue(client, out byte[] signature))
+                    return;
                 try
                 {
-                    await ProcessInvokeAsync(message, client);
+                    await ProcessInboundAsync(client, endpoint, encrypted);
                 }
                 catch (TimeoutException)
                 {
-                    API.DropPlayer(client.ToString(), $"Operation timed out: {message.Endpoint.ToBase64()}");
+                    API.DropPlayer(client.ToString(), $"Operation timed out: {endpoint.ToBase64()}");
                 }
             }
             catch (Exception ex)
@@ -105,7 +105,7 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private void Outbound([FromSource] string source, byte[] encrypted)
+        private void Outbound([FromSource] string source, string endpoint, byte[] encrypted)
         {
             try
             {

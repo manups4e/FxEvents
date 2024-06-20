@@ -34,11 +34,11 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            _hub.AddEventHandler(InboundPipeline, new Action<byte[]>(async encrypted =>
+            _hub.AddEventHandler(InboundPipeline, new Action<string, byte[]>(async (endpoint, encrypted) =>
             {
                 try
                 {
-                    await ProcessInboundAsync(new ServerId().Handle, encrypted);
+                    await ProcessInboundAsync(new ServerId().Handle, endpoint, encrypted);
                 }
                 catch (Exception ex)
                 {
@@ -47,7 +47,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            _hub.AddEventHandler(OutboundPipeline, new Action<byte[]>(serialized =>
+            _hub.AddEventHandler(OutboundPipeline, new Action<string, byte[]>((endpoint, serialized) =>
             {
                 try
                 {
@@ -63,7 +63,7 @@ namespace FxEvents.EventSystem
             BaseScript.TriggerServerEvent(SignaturePipeline, _curve25519.GetPublicKey());
         }
 
-        public async Task PrepareAsync(string pipeline, int source, IMessage message)
+        internal async Task PrepareAsync(string pipeline, int source, IMessage message)
         {
             if (_secret.Length == 0)
             {
@@ -76,16 +76,16 @@ namespace FxEvents.EventSystem
             }
         }
 
-        public void Push(string pipeline, int source, byte[] buffer)
+        internal void Push(string pipeline, int source, string endpoint, byte[] buffer)
         {
             if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-            BaseScript.TriggerServerEvent(pipeline, buffer);
+            BaseScript.TriggerServerEvent(pipeline, endpoint, buffer);
         }
 
-        public void PushLatent(string pipeline, int source, int bytePerSecond, byte[] buffer)
+        internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
         {
             if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-            BaseScript.TriggerLatentServerEvent(pipeline, bytePerSecond, buffer);
+            BaseScript.TriggerLatentServerEvent(pipeline, bytePerSecond, endpoint, buffer);
         }
 
         public async void Send(string endpoint, params object[] args)

@@ -31,7 +31,8 @@ namespace FxEvents
         {
             Logger = new Log();
             Instance = this;
-            string debugMode = API.GetResourceMetadata(API.GetCurrentResourceName(), "fxevents_debug_mode", 0);
+            var resName = API.GetCurrentResourceName();
+            string debugMode = API.GetResourceMetadata(resName, "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || int.TryParse(debugMode, out int num) && num > 0;
             API.RegisterCommand("generatekey", new Action<int, List<object>, string>(async (a, b, c) =>
             {
@@ -44,9 +45,9 @@ namespace FxEvents
                 Logger.Info(print);
             }), false);
             Logger.Debug("resource started");
-            byte[] inbound = Encryption.GenerateHash(API.GetCurrentResourceName() + "_inbound");
-            byte[] outbound = Encryption.GenerateHash(API.GetCurrentResourceName() + "_outbound");
-            byte[] signature = Encryption.GenerateHash(API.GetCurrentResourceName() + "_signature");
+            byte[] inbound = Encryption.GenerateHash(resName + "_inbound");
+            byte[] outbound = Encryption.GenerateHash(resName + "_outbound");
+            byte[] signature = Encryption.GenerateHash(resName + "_signature");
             Gateway = new ServerGateway();
             Gateway.SignaturePipeline = signature.BytesToString();
             Gateway.InboundPipeline = inbound.BytesToString();

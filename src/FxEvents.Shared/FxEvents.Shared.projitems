@@ -18,6 +18,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ForceAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\BaseGateway.cs" />
+    <Compile Include="..\FxEvents.Shared\EventSubsystem\TamperType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\IEventLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ClientStopwatch.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ServerStopwatch.cs" />

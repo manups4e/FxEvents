@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace FxEvents.Shared.Message
 {
-    public class EventMessage : IMessage
+    internal class EventMessage : IMessage
     {
         public Snowflake Id { get; set; }
         public string? Endpoint { get; set; }
@@ -14,7 +14,7 @@ namespace FxEvents.Shared.Message
         public EventMessage() { }
         public EventMessage(string endpoint, EventFlowType flow, IEnumerable<EventParameter> parameters)
         {
-            Id = Snowflake.Next();
+            Id = Snowflake.Next(); // this ensure all events have different id.. if someone tries to send an already sent event it means tampering
             Endpoint = endpoint;
             Flow = flow;
             Parameters = parameters;
