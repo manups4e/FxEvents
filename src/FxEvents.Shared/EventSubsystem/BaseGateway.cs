@@ -173,20 +173,23 @@ namespace FxEvents.Shared.EventSubsystem
                         MessagePackObject a = context.Deserialize<MessagePackObject>();
                         if (a.UnderlyingType != type)
                         {
-                            if (type.Name.StartsWith("List") || type.Name.StartsWith("Dictionary") || type.Name.StartsWith("Tuple"))
+                            if (type.Name.StartsWith("List") || type.Name.StartsWith("Dictionary") || type.Name.StartsWith("Tuple") || a.IsMap || a.IsDictionary || a.IsArray)
                             {
                                 context.Reader.BaseStream.Position = 0;
-                                holder.Add(context.Deserialize(type));
+                                var des = context.Deserialize(type);
+                                holder.Add(des);
                             }
                             else
+                            {
                                 holder.Add(GetHolder(a, type));
+                            }
                         }
                         else
                         {
                             if (TypeCache.IsSimpleType(type))
-                                return a.ToObject();
+                                holder.Add(a.ToObject());
                             else
-                                return Activator.CreateInstance(type, a.ToObject());
+                                holder.Add(Activator.CreateInstance(type, a.ToObject()));
                         }
                     }
                     else
@@ -298,10 +301,11 @@ namespace FxEvents.Shared.EventSubsystem
         {
             object obj = msgpkObj.ToObject();
             TypeCode typeCode = Type.GetTypeCode(type);
-
             switch (typeCode)
             {
                 case TypeCode.String:
+                    if (msgpkObj.IsNil)
+                        return string.Empty;
                     return obj as string ?? (type.IsSimpleType() ? obj.ToString() : string.Empty);
                 case TypeCode.Byte:
                 case TypeCode.SByte:
@@ -354,84 +358,6 @@ namespace FxEvents.Shared.EventSubsystem
                         return doubleValue;
                     else
                         return 0D;
-                case TypeCode.Object:
-                    try
-                    {
-                        List<object> list = [];
-                        if (type.Name.StartsWith("ValueTuple") || type.Name.StartsWith("Tuple"))
-                        {
-                            if (msgpkObj.UnderlyingType == typeof(MessagePackObjectDictionary))
-                            {
-                                foreach (MessagePackObject o in ((MessagePackObjectDictionary)msgpkObj.ToObject()).Values)
-                                {
-                                    list.Add(GetHolder(o, o.UnderlyingType));
-                                }
-                                return Activator.CreateInstance(type, list.ToArray());
-                            }
-                            else
-                            {
-                                // if(msgpkObj.IsList) 
-                                foreach (MessagePackObject o in msgpkObj.AsEnumerable())
-                                {
-                                    list.Add(GetHolder(o, o.UnderlyingType));
-                                }
-                                return Activator.CreateInstance(type, list.ToArray());
-                            }
-                        }
-                        else if (type.Name.StartsWith("List"))
-                        {
-                            var arr = msgpkObj.AsEnumerable();
-                            var argument = type.GetGenericArguments()[0];
-                            if (argument.IsSimpleType())
-                            {
-                                foreach (var item in arr)
-                                {
-                                    list.Add(GetHolder(item, type.GetGenericArguments()[0]));
-                                }
-                            }
-                            else
-                            {
-                                list.Add(GetHolder(msgpkObj, argument));
-                            }
-                            return list;
-                        }
-                        else if (type.IsArray)
-                        {
-                            var arr = msgpkObj.AsEnumerable();
-                            new Logger.Log().Info($"{type.Name}, {arr.ToJson()}");
-                            foreach (var item in arr)
-                            {
-                                list.Add(GetHolder(item, type));
-                            }
-                            return list.ToArray();
-                        }
-                        else if (type == typeof(Player))
-                            return EventHub.Instance.GetPlayers[msgpkObj.AsInt32()];
-                        else if (type == typeof(Entity))
-                            return Entity.FromNetworkId(msgpkObj.AsInt32());
-                        else if (type == typeof(Ped))
-                            return (Ped)Entity.FromNetworkId(msgpkObj.AsInt32());
-                        else if (type == typeof(Prop))
-                            return (Prop)Entity.FromNetworkId(msgpkObj.AsInt32());
-                        else if (type == typeof(Vehicle))
-                            return (Vehicle)Entity.FromNetworkId(msgpkObj.AsInt32());
-                        else
-                        {
-                            if (msgpkObj.IsArray)
-                            {
-                                foreach(var item in msgpkObj.AsEnumerable())
-                                {
-                                    list.Add(GetHolder(item, item.UnderlyingType));
-                                }
-                                return Activator.CreateInstance(type, list.ToArray());
-                            }
-                            return Activator.CreateInstance(type, obj);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new Exception($"FxEvents - Cannot create instance of type {type.Name} with parameter {obj.ToJson()}, maybe a missing constructor?", e);
-                    }
                 case TypeCode.DBNull:
                 case TypeCode.DateTime:
                     return obj;
