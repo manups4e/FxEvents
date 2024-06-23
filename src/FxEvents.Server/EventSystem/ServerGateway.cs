@@ -72,7 +72,6 @@ namespace FxEvents.EventSystem
                 byte[] secret = curve25519.GetSharedSecret(clientPubKey);
 
                 _signatures.Add(client, secret);
-                Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] Added signature {secret.BytesToString()}");
 
                 BaseScript.TriggerClientEvent(_hub.GetPlayers[client], SignaturePipeline, curve25519.GetPublicKey());
             }
