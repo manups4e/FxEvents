@@ -18,7 +18,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ForceAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\BaseGateway.cs" />
-    <Compile Include="..\FxEvents.Shared\EventSubsystem\TamperType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\TamperType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\IEventLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ClientStopwatch.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ServerStopwatch.cs" />
@@ -39,7 +39,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\ISourceResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\KeyValuePairResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\MatrixResolver.cs" />
-    <Compile Include="..\FxEvents.Shared\EventSubsystem\Serialization\Implementations\MsgPackResolvers\Matrix3x3Resolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\Matrix3x3Resolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\PlayerResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\QuaternionResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\SnowflakeResolver.cs" />
