@@ -189,7 +189,11 @@ namespace FxEvents.Shared.EventSubsystem
                             if (TypeCache.IsSimpleType(type))
                                 holder.Add(a.ToObject());
                             else
-                                holder.Add(Activator.CreateInstance(type, a.ToObject()));
+                            {
+                                context.Reader.BaseStream.Position = 0;
+                                var des = context.Deserialize(type);
+                                holder.Add(des);
+                            }
                         }
                     }
                     else
@@ -203,8 +207,7 @@ namespace FxEvents.Shared.EventSubsystem
                         }
                         else
                         {
-                            object a = Activator.CreateInstance(type);
-                            holder.Add(a);
+                            holder.Add(default);
                         }
                     }
                 }
