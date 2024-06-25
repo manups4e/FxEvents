@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace FxEvents.EventSystem
 {
-    public class ClientGateway : BaseGateway
+    internal class ClientGateway : BaseGateway
     {
         protected override ISerialization Serialization { get; }
 
@@ -34,11 +34,11 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            _hub.AddEventHandler(InboundPipeline, new Action<string, byte[]>(async (endpoint, encrypted) =>
+            _hub.AddEventHandler(InboundPipeline, new Action<string, Binding, byte[]>(async (endpoint, binding, encrypted) =>
             {
                 try
                 {
-                    await ProcessInboundAsync(new ServerId().Handle, endpoint, encrypted);
+                    await ProcessInboundAsync(new ServerId().Handle, endpoint, binding, encrypted);
                 }
                 catch (Exception ex)
                 {
@@ -76,10 +76,18 @@ namespace FxEvents.EventSystem
             }
         }
 
-        internal void Push(string pipeline, int source, string endpoint, byte[] buffer)
+        internal void Push(string pipeline, int source, string endpoint, Binding binding, byte[] buffer)
         {
-            if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-            BaseScript.TriggerServerEvent(pipeline, endpoint, buffer);
+            if(binding == Binding.All || binding == Binding.Remote)
+            {
+                if(binding != Binding.Remote)
+                    if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
+                BaseScript.TriggerServerEvent(pipeline, endpoint, binding, buffer);
+            }
+            else
+            {
+                BaseScript.TriggerEvent(pipeline, endpoint, binding, buffer);
+            }
         }
 
         internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
@@ -88,10 +96,11 @@ namespace FxEvents.EventSystem
             BaseScript.TriggerLatentServerEvent(pipeline, bytePerSecond, endpoint, buffer);
         }
 
-        public async void Send(string endpoint, params object[] args)
+        public async void Send(string endpoint, Binding binding, params object[] args)
         {
-            await CreateAndSendAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, args);
+            await CreateAndSendAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, binding, args);
         }
+
         public async void SendLatent(string endpoint, int bytePerSecond, params object[] args)
         {
             await CreateAndSendLatentAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, bytePerSecond, args);
@@ -99,7 +108,12 @@ namespace FxEvents.EventSystem
 
         public async Task<T> Get<T>(string endpoint, params object[] args)
         {
-            return await GetInternal<T>(new ServerId().Handle, endpoint, args);
+            return await GetInternal<T>(new ServerId().Handle, endpoint, Binding.Remote, args);
+        }
+
+        public async Task<T> GetLocal<T>(string endpoint, params object[] args)
+        {
+            return await GetInternal<T>(new ServerId().Handle, endpoint, Binding.Local, args);
         }
 
         internal byte[] GetSecret(int _)

@@ -1,4 +1,5 @@
-﻿using FxEvents.Shared.Exceptions;
+﻿
+using FxEvents.Shared.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,16 +30,16 @@ namespace FxEvents.Shared.EventSubsystem
             set { }
         }
 
-        public void Add(string key, Delegate value)
+        public void Add(string key, Binding binding, Delegate value)
         {
-            this[key] += value;
+            this[key] += new Tuple<Delegate, Binding>(value,binding);
         }
     }
 
     public class EventEntry
     {
         internal readonly string m_eventName;
-        internal readonly List<Delegate> m_callbacks = new List<Delegate>();
+        internal readonly List<Tuple<Delegate, Binding>> m_callbacks = new();
         internal string name => m_eventName;
 
         public EventEntry(string eventName)
@@ -46,14 +47,14 @@ namespace FxEvents.Shared.EventSubsystem
             m_eventName = eventName;
         }
 
-        public static EventEntry operator +(EventEntry entry, Delegate deleg)
+        public static EventEntry operator +(EventEntry entry, Tuple<Delegate, Binding> deleg)
         {
             entry.m_callbacks.Add(deleg);
 
             return entry;
         }
 
-        public static EventEntry operator -(EventEntry entry, Delegate deleg)
+        public static EventEntry operator -(EventEntry entry, Tuple<Delegate, Binding> deleg)
         {
             entry.m_callbacks.Remove(deleg);
 

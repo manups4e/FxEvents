@@ -36,16 +36,23 @@ namespace FxEvents.EventSystem
         internal void AddEvents()
         {
             _hub.RegisterEvent(SignaturePipeline, new Action<string, byte[]>(GetSignature));
-            _hub.RegisterEvent(InboundPipeline, new Action<string, string, byte[]>(Inbound));
+            _hub.RegisterEvent(InboundPipeline, new Action<string, string, Binding, byte[]>(Inbound));
             _hub.RegisterEvent(OutboundPipeline, new Action<string, string, byte[]>(Outbound));
         }
 
-        internal void Push(string pipeline, int source, string endpoint, byte[] buffer)
+        internal void Push(string pipeline, int source, string endpoint, Binding binding, byte[] buffer)
         {
-            if (source != new ServerId().Handle)
-                BaseScript.TriggerClientEvent(_hub.GetPlayers[source], pipeline, endpoint, buffer);
+            if (binding == Binding.Remote)
+            {
+                if (source != new ServerId().Handle)
+                    BaseScript.TriggerClientEvent(_hub.GetPlayers[source], pipeline, endpoint, binding, buffer);
+                else
+                    BaseScript.TriggerClientEvent(pipeline, endpoint, binding, buffer);
+            }
             else
-                BaseScript.TriggerClientEvent(pipeline, endpoint, buffer);
+            {
+                BaseScript.TriggerEvent(pipeline, endpoint, binding, buffer);
+            }
         }
 
         internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
@@ -81,17 +88,22 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private async void Inbound([FromSource] string source, string endpoint, byte[] encrypted)
+        private async void Inbound([FromSource] string source, string endpoint, Binding binding, byte[] encrypted)
         {
             try
             {
-                int client = int.Parse(source.Replace("net:", string.Empty));
+                int client = -1;
+                if(source != null) 
+                {
+                    client = int.Parse(source.Replace("net:", string.Empty));
 
-                if (!_signatures.TryGetValue(client, out byte[] signature))
-                    return;
+                    if (!_signatures.TryGetValue(client, out byte[] signature))
+                        return;
+                }
+
                 try
                 {
-                    await ProcessInboundAsync(client, endpoint, encrypted);
+                    await ProcessInboundAsync(client, endpoint, binding, encrypted);
                 }
                 catch (TimeoutException)
                 {
@@ -122,26 +134,34 @@ namespace FxEvents.EventSystem
             }
         }
 
-        public void Send(Player player, string endpoint, params object[] args) => Send(Convert.ToInt32(player.Handle), endpoint, args);
-        public void Send(ISource client, string endpoint, params object[] args) => Send(client.Handle, endpoint, args);
-        public void Send(List<Player> players, string endpoint, params object[] args) => Send(players.Select(x => int.Parse(x.Handle)).ToList(), endpoint, args);
-        public void Send(List<ISource> clients, string endpoint, params object[] args) => Send(clients.Select(x => x.Handle).ToList(), endpoint, args);
+        public void Send(Player player, string endpoint, params object[] args) => Send(Convert.ToInt32(player.Handle), endpoint, Binding.Remote, args);
+        public void Send(ISource client, string endpoint, params object[] args) => Send(client.Handle, endpoint, Binding.Remote, args);
+        public void Send(List<Player> players, string endpoint, params object[] args) => Send(players.Select(x => int.Parse(x.Handle)).ToList(), endpoint, Binding.Remote, args);
+        public void Send(List<ISource> clients, string endpoint, params object[] args) => Send(clients.Select(x => x.Handle).ToList(), endpoint, Binding.Remote, args);
+        public void Send(string endpoint, params object[] args) => Send([], endpoint, Binding.Local, args);
 
-        public async void Send(List<int> targets, string endpoint, params object[] args)
+        public async void Send(List<int> targets, string endpoint, Binding binding, params object[] args)
         {
-            int i = 0;
-            while (i < targets.Count)
+            if (binding == Binding.Remote)
             {
-                await BaseScript.Delay(0);
-                Send(targets[i], endpoint, args);
-                i++;
+                int i = 0;
+                while (i < targets.Count)
+                {
+                    await BaseScript.Delay(0);
+                    Send(targets[i], endpoint, binding, args);
+                    i++;
+                }
+            }
+            else if (binding == Binding.Local)
+            {
+                Send(-1, endpoint, binding, args);
             }
         }
 
-        public async void Send(int target, string endpoint, params object[] args)
+        public async void Send(int target, string endpoint, Binding binding, params object[] args)
         {
-            if (!string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target].Name))
-                await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, args);
+            if (!string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target].Name) || (binding == Binding.Local))
+                await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, binding, args);
         }
 
         public void SendLatent(Player player, string endpoint, int bytesxSecond, params object[] args) => SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesxSecond, args);
@@ -174,13 +194,21 @@ namespace FxEvents.EventSystem
 
         public async Task<T> Get<T>(int target, string endpoint, params object[] args)
         {
-            return await GetInternal<T>(target, endpoint, args);
+            return await GetInternal<T>(target, endpoint, Binding.Remote, args);
+        }
+
+        public async Task<T> GetLocal<T>(string endpoint, params object[] args)
+        {
+            return await GetInternal<T>(-1, endpoint, Binding.Local, args);
         }
 
         internal byte[] GetSecret(int source)
         {
-            if (!_signatures.ContainsKey(source))
-                Logger.Warning("Shared Encryption Secret has not been generated yet");
+            if (!_signatures.ContainsKey(source)) {
+                Curve25519 curve25519 = Curve25519.Create();
+                byte[] secret = curve25519.GetSharedSecret(curve25519.GetPublicKey());
+                return secret;
+            }
             return _signatures[source];
         }
     }

@@ -4,7 +4,7 @@ using FxEvents.EventSystem;
 using FxEvents.Shared;
 using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem;
-using FxEvents.Shared.EventSubsystem.Attributes;
+
 using Logger;
 using System;
 using System.Collections.Generic;
@@ -76,7 +76,7 @@ namespace FxEvents
                     }
 
                     if (method.IsStatic)
-                        Mount(attribute.Name, Delegate.CreateDelegate(actionType, method));
+                        Mount(attribute.Name, attribute.Binding, Delegate.CreateDelegate(actionType, method));
                     else
                         Logger.Error($"Error registering method {method.Name} - FxEvents supports only Static methods for its [FxEvent] attribute!");
                 }
@@ -101,7 +101,17 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Gateway.Send(endpoint, args);
+            Gateway.Send(endpoint, Binding.Remote, args);
+        }
+
+        public static void SendLocal(string endpoint, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Gateway.Send(endpoint, Binding.Local, args);
         }
 
         public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
@@ -123,14 +133,14 @@ namespace FxEvents
             }
             return await Gateway.Get<T>(endpoint, args);
         }
-        public static void Mount(string endpoint, Delegate @delegate)
+        public static void Mount(string endpoint, Binding binding, Delegate @delegate)
         {
             if (!Initialized)
             {
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Gateway.Mount(endpoint, @delegate);
+            Gateway.Mount(endpoint, binding, @delegate);
         }
         public static void Unmount(string endpoint)
         {

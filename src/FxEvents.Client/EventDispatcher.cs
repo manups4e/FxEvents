@@ -3,7 +3,7 @@ global using CitizenFX.Core.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using FxEvents.Shared.EventSubsystem;
-using FxEvents.Shared.EventSubsystem.Attributes;
+
 using Logger;
 using System;
 using System.Collections.Generic;
@@ -50,7 +50,7 @@ namespace FxEvents
         }
         public static void Mount(string endpoint, Delegate @delegate)
         {
-            EventHub.Mount(endpoint, @delegate);
+            EventHub.Mount(endpoint, Binding.Remote, @delegate);
         }
         public static void Unmount(string endpoint)
         {

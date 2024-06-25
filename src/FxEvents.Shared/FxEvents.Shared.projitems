@@ -18,6 +18,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ForceAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\BaseGateway.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventRemote.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\MsgPackCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\TypeConvert.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\TamperType.cs" />
