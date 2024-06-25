@@ -18,6 +18,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ForceAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\BaseGateway.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\MsgPackCode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\TypeConvert.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\TamperType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\IEventLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Diagnostics\Impl\ClientStopwatch.cs" />
@@ -35,17 +37,17 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventValueHolder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\BinarySerialization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\JsonSerialization.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\EntityResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\ISourceResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\KeyValuePairResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\MatrixResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\Matrix3x3Resolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\PlayerResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\QuaternionResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\SnowflakeResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\TupleResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)eventsubsystem\serialization\implementations\msgpackresolvers\ValueTupleResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackResolvers\VectorResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\EntityResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\ISourceResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\KeyValuePairResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\MatrixResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\Matrix3x3Resolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\PlayerResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\QuaternionResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\SnowflakeResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\TupleResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\ValueTupleResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\VectorResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPackSerialization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\ISerialization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\SerializationContext.cs" />
@@ -74,5 +76,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\TaskExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\TypeCache.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)typeextensions\ValueTuple.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\" />
   </ItemGroup>
 </Project>

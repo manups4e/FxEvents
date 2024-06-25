@@ -1,3 +1,4 @@
+using FxEvents.Shared.EventSubsystem.Serialization;
 using FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackResolvers;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.Serialization.Implementations.MsgPackResolvers;
@@ -131,12 +132,6 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         public T Deserialize<T>(Type type, SerializationContext context)
         {
-            if (TypeCache<T>.IsSimpleType)
-            {
-                object primitive = Deserialize(type, context);
-                if (primitive != null) return (T)primitive;
-            }
-
             if (IsTuple(type))
             {
                 logger.Warning("Using Tuple is not advised due to differences between client and server environments and the unavailability of resolvers. Consider using ValueTuple instead.");
@@ -166,17 +161,7 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         private T DeserializeObject<T>(Type type, SerializationContext context)
         {
-            try
-            {
-                MessagePackSerializer<T> ser = MessagePackSerializer.Get<T>(_context);
-                T @return = ser.Unpack(context.Reader.BaseStream);
-                return @return;
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex.ToString());
-                return default(T);
-            }
+            return (T)TypeConvert.GetNewHolder(context, type);
         }
         #endregion
     }
