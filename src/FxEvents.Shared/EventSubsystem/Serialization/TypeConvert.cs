@@ -1,11 +1,14 @@
 ﻿using FxEvents.Shared.Serialization;
+using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.TypeExtensions;
 using Logger;
 using MsgPack;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
 namespace FxEvents.Shared.EventSubsystem.Serialization
@@ -19,55 +22,42 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
     {
         internal static object GetNewHolder(SerializationContext context, Type type)
         {
-            byte[] data = context.GetData();
+            MemoryStream _memory = context.GetMemory();
+            _memory.Position = 0;
+
+
             TypeCode typeCode = Type.GetTypeCode(type);
             return typeCode switch
             {
-                TypeCode.Char or TypeCode.String => DeserializeAsString(data),
-                TypeCode.Byte => (byte)DeserializeAsInt32(data),
-                TypeCode.SByte => (sbyte)DeserializeAsInt32(data),
-                TypeCode.Int16 => DeserializeAsInt32(data),
-                TypeCode.Int32 => DeserializeAsInt32(data),
-                TypeCode.Int64 => DeserializeAsInt64(data),
-                TypeCode.UInt16 or TypeCode.UInt32 => DeserializeAsUInt32(data),
-                TypeCode.UInt64 => DeserializeAsUInt64(data),
-                TypeCode.Boolean => DeserializeAsBool(data),
-                TypeCode.Decimal or TypeCode.Double => DeserializeAsReal64(data),
-                TypeCode.Single => DeserializeAsReal32(data),
+                TypeCode.Char or TypeCode.String => DeserializeAsString(_memory),
+                TypeCode.Byte => (byte)DeserializeAsInt32(_memory),
+                TypeCode.SByte => (sbyte)DeserializeAsInt32(_memory),
+                TypeCode.Int16 => DeserializeAsInt32(_memory),
+                TypeCode.Int32 => DeserializeAsInt32(_memory),
+                TypeCode.Int64 => DeserializeAsInt64(_memory),
+                TypeCode.UInt16 or TypeCode.UInt32 => DeserializeAsUInt32(_memory),
+                TypeCode.UInt64 => DeserializeAsUInt64(_memory),
+                TypeCode.Boolean => DeserializeAsBool(_memory),
+                TypeCode.Decimal or TypeCode.Double => DeserializeAsReal64(_memory),
+                TypeCode.Single => DeserializeAsReal32(_memory),
                 _ => context.Deserialize(type),
             };
         }
 
-        private static byte[] ExtractBytes(byte[] array, uint start, uint count)
+        private static byte ReadByte(MemoryStream data)
         {
-            Debug.WriteLine($"{start} + {count} > {(uint)array.Length} ");
-            if (start + count > (uint)array.Length)
-            {
-                throw new ArgumentException("Not enough bytes left in the array to extract the requested amount.");
-            }
-
-            byte[] result = new byte[count];
-            Array.Copy(array, start, result, 0, count);
-
-            return result;
+            return (byte)data.ReadByte();
         }
 
-
-        private static byte ReadByte(byte[] data)
+        internal static MsgPackCode ReadType(ref MemoryStream data)
         {
-            return data[0];
-        }
-
-        internal static MsgPackCode ReadType(ref byte[] data)
-        {
-            var code = (MsgPackCode)data[0];
-            data = ExtractBytes(data, 1, (uint)data.Length - 1);
+            var code = (MsgPackCode)ReadByte(data);
             return code;
         }
 
         #region Basic types
 
-        internal static bool DeserializeAsBool(byte[] data)
+        internal static bool DeserializeAsBool(MemoryStream data)
         {
             MsgPackCode type = ReadType(ref data);
             if (type <= MsgPackCode.FixIntPositiveMax) // positive fixint
@@ -81,10 +71,10 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             {
                 MsgPackCode.NilValue or MsgPackCode.FalseValue => false,
                 MsgPackCode.TrueValue => true,
-                MsgPackCode.SignedInt8 or MsgPackCode.UnsignedInt8 => ExtractBytes(data, 0, 1).Length != 0,
-                MsgPackCode.SignedInt16 or MsgPackCode.UnsignedInt16 => ExtractBytes(data, 0, 2).Length != 0,
-                MsgPackCode.SignedInt32 or MsgPackCode.UnsignedInt32 or MsgPackCode.Real32 => ExtractBytes(data, 0, 4).Length != 0,
-                MsgPackCode.SignedInt64 or MsgPackCode.UnsignedInt64 or MsgPackCode.Real64 => ExtractBytes(data, 0, 8).Length != 0,
+                MsgPackCode.SignedInt8 or MsgPackCode.UnsignedInt8 => AdvancePointer(ref data, 1) != 0,
+                MsgPackCode.SignedInt16 or MsgPackCode.UnsignedInt16 => AdvancePointer(ref data, 2) != 0,
+                MsgPackCode.SignedInt32 or MsgPackCode.UnsignedInt32 or MsgPackCode.Real32 => AdvancePointer(ref data, 4) != 0,
+                MsgPackCode.SignedInt64 or MsgPackCode.UnsignedInt64 or MsgPackCode.Real64 => AdvancePointer(ref data, 8) != 0,
                 MsgPackCode.Str8 => ReadStringAsTrueish(data, ReadUInt8(data)),
                 MsgPackCode.Raw16 => ReadStringAsTrueish(data, ReadUInt16(data)),
                 MsgPackCode.Raw32 => ReadStringAsTrueish(data, ReadUInt32(data)),
@@ -92,7 +82,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             };
         }
 
-        internal static uint DeserializeAsUInt32(byte[] data)
+        internal static uint DeserializeAsUInt32(MemoryStream data)
         {
             MsgPackCode type = ReadType(ref data);
             if (type <= MsgPackCode.FixIntPositiveMax) // positive fixint
@@ -128,7 +118,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             throw new InvalidCastException($"MsgPack type {type} could not be deserialized into type {typeof(uint)}");
         }
 
-        internal static ulong DeserializeAsUInt64(byte[] data)
+        internal static ulong DeserializeAsUInt64(MemoryStream data)
         {
             MsgPackCode type = ReadType(ref data);
             if (type <= MsgPackCode.FixIntPositiveMax) // positive fixint
@@ -164,7 +154,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             throw new InvalidCastException($"MsgPack type {type} could not be deserialized into type {typeof(ulong)}");
         }
 
-        internal static int DeserializeAsInt32(byte[] data)
+        internal static int DeserializeAsInt32(MemoryStream data)
         {
             MsgPackCode type = ReadType(ref data);
             if (type <= MsgPackCode.FixIntPositiveMax) // positive fixint
@@ -198,7 +188,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             };
         }
 
-        internal static long DeserializeAsInt64(byte[] data)
+        internal static long DeserializeAsInt64(MemoryStream data)
         {
             MsgPackCode type = ReadType(ref data);
             if (type <= MsgPackCode.FixIntPositiveMax) // positive fixint
@@ -233,7 +223,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             };
         }
 
-        internal static float DeserializeAsReal32(byte[] data)
+        internal static float DeserializeAsReal32(MemoryStream data)
         {
             MsgPackCode type = ReadType(ref data);
             if (type <= MsgPackCode.FixIntPositiveMax) // positive fixint
@@ -268,7 +258,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             };
         }
 
-        internal static double DeserializeAsReal64(byte[] data)
+        internal static double DeserializeAsReal64(MemoryStream data)
         {
             MsgPackCode type = ReadType(ref data);
             if (type <= MsgPackCode.FixIntPositiveMax) // positive fixint
@@ -303,11 +293,9 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             };
         }
 
-        internal static string DeserializeAsString(byte[] data)
+        internal static string DeserializeAsString(MemoryStream data)
         {
             MsgPackCode type = ReadType(ref data);
-            Debug.WriteLine("type:" + type.ToString());
-            Debug.WriteLine("type <= MsgPackCode.MaximumFixedRaw:" + (type <= MsgPackCode.MaximumFixedRaw));
             if (type <= MsgPackCode.MaximumFixedRaw)
             {
                 if (type <= MsgPackCode.FixIntPositiveMax)
@@ -353,16 +341,18 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
 
         #region Methods
 
-        internal static string ReadString(byte[] data, uint length)
+        internal static string ReadString(MemoryStream data, uint length)
         {
-            byte[] v = ExtractBytes(data, 0, length); // se avanza di uno funziona
-            //new Log().Warning(Encoding.UTF8.GetString(v, 0, (int)length));
-            return Encoding.UTF8.GetString(v, 0, (int)length);
+            AdvancePointer(ref data, length);
+            using SerializationContext context = new("string des", $"exactly for string", new MsgPackSerialization(), data.ToArray());
+            return context.Deserialize(typeof(string)).ToString();
         }
 
-        internal static bool ReadStringAsTrueish(byte[] data, uint amount)
+
+        internal static bool ReadStringAsTrueish(MemoryStream data, uint amount)
         {
-            var buffer = ExtractBytes(data, 0, amount);
+            AdvancePointer(ref data, amount);
+            var buffer = data.ToArray();
 
             switch (buffer.Length)
             {
@@ -380,150 +370,108 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
             }
         }
 
-        private static byte[] AdvancePointer(byte[] array, uint amount)
+        private static long AdvancePointer(ref MemoryStream array, uint amount)
         {
             if (amount > (uint)array.Length)
             {
                 throw new ArgumentException("Not enough bytes left in the array to advance by the requested amount.");
             }
 
-            byte[] result = new byte[array.Length - (int)amount]; // Create a new array excluding the advanced bytes
-            Array.Copy(array, amount, result, 0, result.Length); // Copy the remaining bytes to the result array
-
-            return result;
+            array.Position += amount;
+            return array.Position;
         }
 
-        public static float ReadSingle(byte[] data)
+        public static float ReadSingle(MemoryStream data)
         {
             if (data.Length < sizeof(float))
             {
                 throw new ArgumentException("Input byte array is too short to contain a float.");
             }
 
-            byte[] floatBytes = new byte[sizeof(float)];
-            Buffer.BlockCopy(data, 0, floatBytes, 0, sizeof(float));
+            byte[] buffer = new byte[sizeof(float)];
+            data.Read(buffer, 0, buffer.Length);
             if (BitConverter.IsLittleEndian)
-                floatBytes = floatBytes.Reverse().ToArray();
-            return BitConverter.ToSingle(floatBytes, 0);
+                buffer = buffer.Reverse().ToArray();
+            return BitConverter.ToSingle(buffer, 0);
         }
 
-        public static double ReadDouble(byte[] data)
+        public static double ReadDouble(MemoryStream data)
         {
             if (data.Length < sizeof(double))
             {
                 throw new ArgumentException("Input byte array is too short to contain a double.");
             }
 
-            byte[] doubleBytes = new byte[sizeof(double)];
-            Buffer.BlockCopy(data, 0, doubleBytes, 0, sizeof(double));
-            if (BitConverter.IsLittleEndian)
-                doubleBytes = doubleBytes.Reverse().ToArray();
-            return BitConverter.ToDouble(doubleBytes, 0);
+            double result = (double)ReadSingle(data);
+            return result;
         }
 
-        public static byte ReadUInt8(byte[] data)
+        public static byte ReadUInt8(MemoryStream data)
         {
             if (data.Length < sizeof(byte))
             {
                 throw new ArgumentException("Input byte array is too short to contain a byte.");
             }
 
-            return data[0];
+            return ReadByte(data);
         }
 
-        public static ushort ReadUInt16(byte[] data)
+        public static ushort ReadUInt16(MemoryStream data)
         {
             if (data.Length < sizeof(ushort))
             {
                 throw new ArgumentException("Input byte array is too short to contain a ushort.");
             }
 
-            byte[] ushortBytes = new byte[sizeof(ushort)];
-            Buffer.BlockCopy(data, 0, ushortBytes, 0, sizeof(ushort));
+            BinaryReader reader = new BinaryReader(data, Encoding.UTF8); // Specify encoding if needed
+            ushort v = reader.ReadUInt16(); // Read a 16-bit unsigned integer
             if (BitConverter.IsLittleEndian)
-                ushortBytes = ushortBytes.Reverse().ToArray();
-            return BitConverter.ToUInt16(ushortBytes, 0);
+                v = unchecked((ushort)((v >> 8) | (v << 8))); // swap adjacent 8-bit blocks
+            return v;
         }
 
-        public static uint ReadUInt32(byte[] data)
+        public static uint ReadUInt32(MemoryStream data)
         {
             if (data.Length < sizeof(uint))
             {
                 throw new ArgumentException("Input byte array is too short to contain a uint.");
             }
 
-            byte[] uintBytes = new byte[sizeof(uint)];
-            Buffer.BlockCopy(data, 0, uintBytes, 0, sizeof(uint));
+            BinaryReader reader = new BinaryReader(data, Encoding.UTF8); // Specify encoding if needed
+            uint v = reader.ReadUInt32(); // Read a 16-bit unsigned integer
             if (BitConverter.IsLittleEndian)
-                uintBytes = uintBytes.Reverse().ToArray();
-            return BitConverter.ToUInt32(uintBytes, 0);
+            {
+                v = unchecked((v >> 16) | (v << 16)); // swap adjacent 16-bit blocks
+                v = unchecked(((v & 0xFF00FF00u) >> 8) | ((v & 0x00FF00FFu) << 8)); // swap adjacent 8-bit blocks
+            }
+            return v;
         }
 
-        public static ulong ReadUInt64(byte[] data)
+        public static ulong ReadUInt64(MemoryStream data)
         {
             if (data.Length < sizeof(ulong))
             {
                 throw new ArgumentException("Input byte array is too short to contain a ulong.");
             }
 
-            byte[] ulongBytes = new byte[sizeof(ulong)];
-            Buffer.BlockCopy(data, 0, ulongBytes, 0, sizeof(ulong));
+            BinaryReader reader = new BinaryReader(data, Encoding.UTF8); // Specify encoding if needed
+            ulong v = reader.ReadUInt64(); // Read a 16-bit unsigned integer
             if (BitConverter.IsLittleEndian)
-                ulongBytes = ulongBytes.Reverse().ToArray();
-            return BitConverter.ToUInt64(ulongBytes, 0);
-        }
-
-        public static sbyte ReadInt8(byte[] data)
-        {
-            if (data.Length < sizeof(sbyte))
             {
-                throw new ArgumentException("Input byte array is too short to contain a sbyte.");
+                v = unchecked((v >> 32) | (v << 32)); // swap adjacent 32-bit blocks
+                v = unchecked(((v & 0xFFFF0000FFFF0000u) >> 16) | ((v & 0x0000FFFF0000FFFFu) << 16)); // swap adjacent 16-bit blocks
+                v = unchecked(((v & 0xFF00FF00FF00FF00u) >> 8) | ((v & 0x00FF00FF00FF00FFu) << 8)); // swap adjacent 8-bit blocks
             }
-
-            return (sbyte)data[0];
+            return v;
         }
 
-        public static short ReadInt16(byte[] data)
-        {
-            if (data.Length < sizeof(short))
-            {
-                throw new ArgumentException("Input byte array is too short to contain a short.");
-            }
+        public static sbyte ReadInt8(MemoryStream data) => (sbyte)ReadUInt8(data);
 
-            byte[] shortBytes = new byte[sizeof(short)];
-            Buffer.BlockCopy(data, 0, shortBytes, 0, sizeof(short));
-            if (BitConverter.IsLittleEndian)
-                shortBytes = shortBytes.Reverse().ToArray();
-            return BitConverter.ToInt16(shortBytes, 0);
-        }
+        public static short ReadInt16(MemoryStream data) => (short)ReadUInt16(data);
 
-        public static int ReadInt32(byte[] data)
-        {
-            if (data.Length < sizeof(int))
-            {
-                throw new ArgumentException("Input byte array is too short to contain an int.");
-            }
+        public static int ReadInt32(MemoryStream data) => (int)ReadUInt32(data);
 
-            byte[] intBytes = new byte[sizeof(int)];
-            Buffer.BlockCopy(data, 0, intBytes, 0, sizeof(int));
-            if (BitConverter.IsLittleEndian)
-                intBytes = intBytes.Reverse().ToArray();
-            return BitConverter.ToInt32(intBytes, 0);
-        }
-
-        public static long ReadInt64(byte[] data)
-        {
-            if (data.Length < sizeof(long))
-            {
-                throw new ArgumentException("Input byte array is too short to contain a long.");
-            }
-
-            byte[] longBytes = new byte[sizeof(long)];
-            Buffer.BlockCopy(data, 0, longBytes, 0, sizeof(long));
-            if (BitConverter.IsLittleEndian)
-                longBytes = longBytes.Reverse().ToArray();
-            return BitConverter.ToInt64(longBytes, 0);
-        }
+        public static long ReadInt64(MemoryStream data) => (long)ReadUInt64(data);
 
 
         #endregion

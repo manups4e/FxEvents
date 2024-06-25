@@ -5,9 +5,9 @@ namespace FxEvents.Shared.Serialization
 {
     public class SerializationContext : IDisposable
     {
-        public string Source { get; set; }
-        public string Details { get; set; }
-        public BinaryWriter? Writer
+        internal string Source { get; set; }
+        internal string Details { get; set; }
+        internal BinaryWriter? Writer
         {
             get => _writer;
             set
@@ -17,7 +17,7 @@ namespace FxEvents.Shared.Serialization
             }
         }
 
-        public BinaryReader? Reader
+        internal BinaryReader? Reader
         {
             get => _reader;
             set
@@ -27,19 +27,24 @@ namespace FxEvents.Shared.Serialization
             }
         }
 
-        public byte[]? Original { get; set; }
+        internal byte[]? Original { get; set; }
 
         private ISerialization _serialization;
         private MemoryStream _memory;
         private BinaryReader? _reader;
         private BinaryWriter? _writer;
 
-        public byte[] GetData()
+        internal byte[] GetData()
         {
             return _memory.ToArray();
         }
 
-        public SerializationContext(string source, string details, ISerialization serialization, byte[]? data = null)
+        internal MemoryStream GetMemory()
+        {
+            return _memory;
+        }
+
+        internal SerializationContext(string source, string details, ISerialization serialization, byte[]? data = null)
         {
             Source = source;
             Details = details;
@@ -60,9 +65,9 @@ namespace FxEvents.Shared.Serialization
             Reader?.Dispose();
         }
 
-        public void Serialize(Type type, object value) => _serialization.Serialize(type, value, this);
-        public void Serialize<T>(T value) => _serialization.Serialize(value, this);
-        public object Deserialize(Type type) => _serialization.Deserialize(type, this);
-        public T Deserialize<T>() => _serialization.Deserialize<T>(this);
+        internal void Serialize(Type type, object value) => _serialization.Serialize(type, value, this);
+        internal void Serialize<T>(T value) => _serialization.Serialize(value, this);
+        internal object Deserialize(Type type) => _serialization.Deserialize(type, this);
+        internal T Deserialize<T>() => _serialization.Deserialize<T>(this);
     }
 }
