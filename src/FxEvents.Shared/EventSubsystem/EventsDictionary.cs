@@ -30,9 +30,9 @@ namespace FxEvents.Shared.EventSubsystem
             set { }
         }
 
-        public void Add(string key, Binding binding, Delegate value)
+        public void Add(string endpoint, Binding binding, Delegate callback)
         {
-            this[key] += new Tuple<Delegate, Binding>(value,binding);
+            this[endpoint] += new Tuple<Delegate, Binding>(callback,binding);
         }
     }
 

@@ -37,7 +37,7 @@ namespace FxEvents.EventSystem
         {
             _hub.RegisterEvent(SignaturePipeline, new Action<string, byte[]>(GetSignature));
             _hub.RegisterEvent(InboundPipeline, new Action<string, string, Binding, byte[]>(Inbound));
-            _hub.RegisterEvent(OutboundPipeline, new Action<string, string, byte[]>(Outbound));
+            _hub.RegisterEvent(OutboundPipeline, new Action<string, string, Binding, byte[]>(Outbound));
         }
 
         internal void Push(string pipeline, int source, string endpoint, Binding binding, byte[] buffer)
@@ -116,7 +116,7 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private void Outbound([FromSource] string source, string endpoint, byte[] encrypted)
+        private void Outbound([FromSource] string source, string endpoint, Binding binding, byte[] encrypted)
         {
             try
             {

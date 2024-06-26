@@ -47,7 +47,7 @@ namespace FxEvents.EventSystem
                 }
             }));
 
-            _hub.AddEventHandler(OutboundPipeline, new Action<string, byte[]>((endpoint, serialized) =>
+            _hub.AddEventHandler(OutboundPipeline, new Action<string, Binding, byte[]>((endpoint, binding, serialized) =>
             {
                 try
                 {
