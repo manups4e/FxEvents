@@ -44,7 +44,7 @@ namespace FxEvents.Shared.Snowflakes
 
         public Snowflake(string value)
         {
-            _value = (ulong)long.Parse(value);
+            ulong.TryParse(value, out _value);
         }
 
         public override string ToString()
