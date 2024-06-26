@@ -1,4 +1,5 @@
-﻿using MsgPack;
+﻿using FxEvents.Shared.TypeExtensions;
+using MsgPack;
 using MsgPack.Serialization;
 using System;
 
@@ -21,7 +22,12 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
 
         protected override Player UnpackFromCore(Unpacker unpacker)
         {
-            return EventHub.Instance.GetPlayers[unpacker.LastReadData.AsInt32()];
+            var data = unpacker.LastReadData;
+            if (!TypeCache.IsSimpleType(data.UnderlyingType))
+                throw new Exception($"Cannot deserialize type {data.UnderlyingType.Name} into Player type");
+            string last = data.ToObject().ToString();
+            int.TryParse(last, out int handle);
+            return EventHub.Instance.GetPlayers[handle];
         }
     }
 }

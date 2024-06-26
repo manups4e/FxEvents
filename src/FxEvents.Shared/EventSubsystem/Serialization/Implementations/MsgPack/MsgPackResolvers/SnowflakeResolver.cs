@@ -1,6 +1,8 @@
 using FxEvents.Shared.Snowflakes;
+using FxEvents.Shared.TypeExtensions;
 using MsgPack;
 using MsgPack.Serialization;
+using System;
 
 namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
 {
@@ -17,7 +19,15 @@ namespace FxEvents.Shared.Serialization.Implementations.MsgPackResolvers
 
         protected override Snowflake UnpackFromCore(Unpacker unpacker)
         {
-            return new Snowflake(unpacker.LastReadData.AsUInt64());
+            var data = unpacker.LastReadData;
+            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
+                throw new Exception($"FxEvents Snowflake - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(ulong).FullName}");
+            if (unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Snowflake - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(ulong).FullName}");
+
+            ulong.TryParse(data.ToObject().ToString(), out ulong item);
+
+            return new Snowflake(item);
         }
 
     }

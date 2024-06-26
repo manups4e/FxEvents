@@ -1,5 +1,7 @@
-﻿using MsgPack;
+﻿using FxEvents.Shared.TypeExtensions;
+using MsgPack;
 using MsgPack.Serialization;
+using System;
 
 namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackResolvers
 {
@@ -19,7 +21,14 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
 
         protected override Entity UnpackFromCore(Unpacker unpacker)
         {
-            return Entity.FromNetworkId(unpacker.LastReadData.AsInt32());
+            var data = unpacker.LastReadData;
+            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
+                throw new Exception($"FxEvents Entity - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
+            if (unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Entity - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+
+            int.TryParse(data.ToObject().ToString(), out int item);
+            return Entity.FromNetworkId(item);
         }
     }
 
@@ -36,7 +45,14 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
 
         protected override Ped UnpackFromCore(Unpacker unpacker)
         {
-            return (Ped)Entity.FromNetworkId(unpacker.LastReadData.AsInt32());
+            var data = unpacker.LastReadData;
+            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
+                throw new Exception($"FxEvents Ped - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
+            if (unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Ped - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+
+            int.TryParse(data.ToObject().ToString(), out int item);
+            return (Ped)Entity.FromNetworkId(item);
         }
     }
 
@@ -53,7 +69,14 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
 
         protected override Vehicle UnpackFromCore(Unpacker unpacker)
         {
-            return (Vehicle)Entity.FromNetworkId(unpacker.LastReadData.AsInt32());
+            var data = unpacker.LastReadData;
+            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
+                throw new Exception($"FxEvents Vehicle - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
+            if (unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Vehicle - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+
+            int.TryParse(data.ToObject().ToString(), out int item);
+            return (Vehicle)Entity.FromNetworkId(item);
         }
     }
 
@@ -70,7 +93,14 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
 
         protected override Prop UnpackFromCore(Unpacker unpacker)
         {
-            return (Prop)Entity.FromNetworkId(unpacker.LastReadData.AsInt32());
+            var data = unpacker.LastReadData;
+            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
+                throw new Exception($"FxEvents Prop - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
+            if (unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Prop - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+
+            int.TryParse(data.ToObject().ToString(), out int item);
+            return (Prop)Entity.FromNetworkId(item);
         }
     }    
 }
