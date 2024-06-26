@@ -17,7 +17,7 @@ namespace FxEvents.Shared.Message
         public EventMessage() { }
         public EventMessage(string endpoint, EventFlowType flow, IEnumerable<EventParameter> parameters, EventRemote sender)
         {
-            Id = Snowflake.Next(); // this ensure all events have different id.. if someone tries to send an already sent event it means tampering
+            Id = Snowflake.Next();
             Endpoint = endpoint;
             Flow = flow;
             Parameters = parameters;
