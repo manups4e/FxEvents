@@ -58,10 +58,10 @@ namespace FxEvents.Shared.EventSubsystem
             EventMessage message;
             try
             {
-                if (isServer && binding == Binding.Remote)
-                    message = serialized.DecryptObject<EventMessage>(source);
-                else
+                if (isServer && binding == Binding.Local)
                     message = serialized.FromBytes<EventMessage>();
+                else
+                    message = serialized.DecryptObject<EventMessage>(source);
                 if (eventIds.Contains(message.Id))
                 {
 #if CLIENT
@@ -253,7 +253,9 @@ namespace FxEvents.Shared.EventSubsystem
             if (message.Flow == EventFlowType.Circular)
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                int hasSingle = _handlers[message.Endpoint].m_callbacks.Count;
+                EventEntry subscription = _handlers[message.Endpoint];
+
+                int hasSingle = subscription.m_callbacks.Count;
                 if (hasSingle != 1)
                 {
                     if (hasSingle > 1)
@@ -262,7 +264,6 @@ namespace FxEvents.Shared.EventSubsystem
                         throw new EventException($"Callback handler for event {message.Endpoint} not found.");
                 }
 
-                EventEntry subscription = _handlers[message.Endpoint];
                 Tuple<Delegate, Binding> @event = subscription.m_callbacks[0];
                 if (!CanExecuteEvent(@event.Item2, message.Sender, isServer))
                     return;
