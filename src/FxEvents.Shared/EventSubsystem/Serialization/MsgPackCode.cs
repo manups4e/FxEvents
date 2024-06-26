@@ -4,7 +4,6 @@ using System.Text;
 
 namespace FxEvents.Shared.EventSubsystem.Serialization
 {
-
     internal enum MsgPackCode : byte
     {
         FixIntPositiveMin = 0,

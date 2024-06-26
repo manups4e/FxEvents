@@ -1,14 +1,13 @@
 ﻿using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.TypeExtensions;
-using Logger;
 using MsgPack;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
 namespace FxEvents.Shared.EventSubsystem.Serialization
@@ -16,8 +15,9 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
     /*
      * CODE TAKEN FROM FIVEM'S MONO V2 MSGPACK PROJECT.
      * THANKS THORIUM FOR YOUR IMMENSE HELP AND DEDICATION 
-     * TOWARDS OUR COMMUNITY. YOU ARE A TRUE HERO AND A BELOVED FRIEND!
+     * TOWARDS OUR COMMUNITY. YOU ARE A TRUE HERO AND A BELOVED FRIEND! 
     */
+
     internal static class TypeConvert
     {
         internal static object GetNewHolder(SerializationContext context, Type type)
@@ -56,6 +56,66 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
         }
 
         #region Basic types
+
+        public static object DeserializeAsObject(MemoryStream data)
+        {
+            MsgPackCode type = ReadType(ref data);
+
+            if (type <= MsgPackCode.MaximumFixedRaw)
+            {
+                if (type <= MsgPackCode.FixIntPositiveMax)
+                    return type;
+                else if (type <= MsgPackCode.MaximumFixedMap)
+                    return ReadMapAsExpando(data, (uint)type % 16u);
+                else if (type < MsgPackCode.MaximumFixedArray)
+                    return ReadObjectArray(data, (uint)type % 16u);
+
+                return ReadString(data, (uint)type % 32u);
+            }
+            else if (type >= MsgPackCode.FixIntNegativeMin) // anything at the end of our byte
+            {
+                return unchecked((sbyte)type);
+            }
+
+            return type switch
+            {
+                MsgPackCode.NilValue => null,
+                MsgPackCode.FalseValue => (object)false,
+                MsgPackCode.TrueValue => (object)true,
+                MsgPackCode.Bin8 => ReadBytes(data, ReadUInt8(data)),
+                MsgPackCode.Bin16 => ReadBytes(data, ReadUInt16(data)),
+                MsgPackCode.Bin32 => ReadBytes(data, ReadUInt32(data)),
+                MsgPackCode.Real32 => ReadSingle(data),
+                MsgPackCode.Real64 => ReadDouble(data),
+                MsgPackCode.UnsignedInt8 => ReadUInt8(data),
+                MsgPackCode.UnsignedInt16 => ReadUInt16(data),
+                MsgPackCode.UnsignedInt32 => ReadUInt32(data),
+                MsgPackCode.UnsignedInt64 => ReadUInt64(data),
+                MsgPackCode.SignedInt8 => ReadInt8(data),
+                MsgPackCode.SignedInt16 => ReadInt16(data),
+                MsgPackCode.SignedInt32 => ReadInt32(data),
+                MsgPackCode.SignedInt64 => ReadInt64(data),
+                MsgPackCode.Str8 => ReadString(data, ReadUInt8(data)),
+                MsgPackCode.Raw16 => ReadString(data, ReadUInt16(data)),
+                MsgPackCode.Raw32 => ReadString(data, ReadUInt32(data)),
+                MsgPackCode.Array16 => ReadObjectArray(data, ReadUInt16(data)),
+                MsgPackCode.Array32 => ReadObjectArray(data, ReadUInt32(data)),
+                MsgPackCode.Map16 => ReadMapAsExpando(data, ReadUInt16(data)),
+                MsgPackCode.Map32 => ReadMapAsExpando(data, ReadUInt32(data)),
+                _ => throw new InvalidOperationException($"Tried to decode invalid MsgPack type {type}"),
+            };
+        }
+
+
+        internal static byte[] ReadBytes(MemoryStream data, uint count)
+        {
+            var position = AdvancePointer(ref data, count);
+            byte[] result = new byte[count];
+            Array.Copy(data.ToArray(), position, result, 0, count);
+
+            return result;
+        }
+
 
         internal static bool DeserializeAsBool(MemoryStream data)
         {
@@ -472,6 +532,29 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
         public static int ReadInt32(MemoryStream data) => (int)ReadUInt32(data);
 
         public static long ReadInt64(MemoryStream data) => (long)ReadUInt64(data);
+
+        public static ExpandoObject ReadMapAsExpando(MemoryStream data, uint length)
+        {
+            ExpandoObject expandoObject = new ExpandoObject();
+
+            var dict = expandoObject as IDictionary<string, object>;
+            for (var i = 0; i < length; ++i)
+                dict[DeserializeAsString(data)] = DeserializeAsObject(data);
+
+            return expandoObject;
+        }
+
+        internal static object[] ReadObjectArray(MemoryStream data, uint length)
+        {
+            object[] retobject = new object[length];
+
+            for (var i = 0; i < length; i++)
+            {
+                retobject[i] = DeserializeAsObject(data);
+            }
+
+            return retobject;
+        }
 
 
         #endregion
