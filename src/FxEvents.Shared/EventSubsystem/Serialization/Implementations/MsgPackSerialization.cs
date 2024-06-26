@@ -27,9 +27,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             MatrixResolver matrix = new(_context);
             Matrix3x3Resolver matrix3x3 = new(_context);
             SnowflakeResolver snowflake = new(_context);
-            KeyValuePairResolver<object, object> kvp = new(_context);
             PlayerResolver player = new(_context);
-            ISourceResolver source = new(_context);
             EntityResolver entity = new(_context);
             PedResolver ped = new(_context);
             PropResolver prop = new(_context);
@@ -42,14 +40,11 @@ namespace FxEvents.Shared.Serialization.Implementations
             _context.Serializers.RegisterOverride(matrix);
             _context.Serializers.RegisterOverride(matrix3x3);
             _context.Serializers.RegisterOverride(snowflake);
-            _context.Serializers.RegisterOverride(kvp);
             _context.Serializers.RegisterOverride(player);
-            _context.Serializers.RegisterOverride(source);
             _context.Serializers.RegisterOverride(entity);
             _context.Serializers.RegisterOverride(ped);
             _context.Serializers.RegisterOverride(prop);
             _context.Serializers.RegisterOverride(vehicle);
-
         }
 
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
@@ -161,7 +156,14 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         private T DeserializeObject<T>(Type type, SerializationContext context)
         {
-            return (T)TypeConvert.GetNewHolder(context, type);
+            if(TypeCache<T>.IsSimpleType)
+                return (T)TypeConvert.GetNewHolder(context, type);
+            else
+            {
+                MessagePackSerializer<T> ser = MessagePackSerializer.Get<T>(_context);
+                T @return = ser.Unpack(context.Reader.BaseStream);
+                return @return;
+            }
         }
         #endregion
     }
