@@ -58,9 +58,9 @@ namespace FxEvents.EventSystem
         internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
         {
             if (source != new ServerId().Handle)
-                BaseScript.TriggerLatentClientEvent(_hub.GetPlayers[source], pipeline, bytePerSecond, endpoint, buffer);
+                BaseScript.TriggerLatentClientEvent(_hub.GetPlayers[source], pipeline, bytePerSecond, endpoint, Binding.Remote, buffer);
             else
-                BaseScript.TriggerLatentClientEvent(pipeline, bytePerSecond, endpoint, buffer);
+                BaseScript.TriggerLatentClientEvent(pipeline, bytePerSecond, endpoint, Binding.Remote, buffer);
         }
 
         private void GetSignature([FromSource] string source, byte[] clientPubKey)

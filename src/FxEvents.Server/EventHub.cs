@@ -44,7 +44,6 @@ namespace FxEvents
                 $"Passfrase: {ret.Item1}\nEncrypted Passfrase: {ret.Item2}";
                 Logger.Info(print);
             }), false);
-            Logger.Debug("resource started");
             byte[] inbound = Encryption.GenerateHash(resName + "_inbound");
             byte[] outbound = Encryption.GenerateHash(resName + "_outbound");
             byte[] signature = Encryption.GenerateHash(resName + "_signature");
@@ -114,7 +113,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Gateway.Send(player.Handle, endpoint, args);
+            Gateway.Send(player, endpoint, args);
         }
         public static void Send(ISource client, string endpoint, params object[] args)
         {

@@ -93,7 +93,7 @@ namespace FxEvents.EventSystem
         internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
         {
             if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-            BaseScript.TriggerLatentServerEvent(pipeline, bytePerSecond, endpoint, buffer);
+            BaseScript.TriggerLatentServerEvent(pipeline, bytePerSecond, endpoint, Binding.Remote, buffer);
         }
 
         public async void Send(string endpoint, Binding binding, params object[] args)
