@@ -37,6 +37,12 @@ namespace FxEvents.Shared.EventSubsystem
         internal string InboundPipeline;
         internal string OutboundPipeline;
         internal string SignaturePipeline;
+        internal bool takesSource = false;
+#if CLIENT
+        internal bool isServer = false;
+#elif SERVER
+        internal bool isServer = true;
+#endif
         protected abstract ISerialization Serialization { get; }
 
         private List<Snowflake> eventIds = new List<Snowflake>();
@@ -50,11 +56,6 @@ namespace FxEvents.Shared.EventSubsystem
 
         public async Task ProcessInboundAsync(int source, string endpoint, Binding binding, byte[] serialized)
         {
-#if CLIENT
-            bool isServer = false;
-#elif SERVER
-            bool isServer = true;
-#endif
             EventMessage message;
             try
             {
@@ -96,18 +97,11 @@ namespace FxEvents.Shared.EventSubsystem
 
         internal async Task ProcessInvokeAsync(EventMessage message, int source)
         {
-#if CLIENT
-            bool isServer = false;
-#elif SERVER
-            bool isServer = true;
-#endif
             object InvokeDelegate(Delegate @delegate)
             {
                 List<object> parameters = new List<object>();
                 MethodInfo method = @delegate.Method;
-#if CLIENT
-                bool takesSource = false;
-#elif SERVER
+#if SERVER
                 bool takesSource = method.GetParameters().Any(self => self.GetCustomAttribute<FromSourceAttribute>() != null);
 #endif
                 int startingIndex = takesSource && isServer ? 1 : 0;
@@ -265,7 +259,7 @@ namespace FxEvents.Shared.EventSubsystem
                 }
 
                 Tuple<Delegate, Binding> @event = subscription.m_callbacks[0];
-                if (!CanExecuteEvent(@event.Item2, message.Sender, isServer))
+                if (!CanExecuteEvent(@event.Item2, message.Sender))
                     return;
 
                 object result = InvokeDelegate(@event.Item1);
@@ -323,13 +317,13 @@ namespace FxEvents.Shared.EventSubsystem
             {
                 foreach (Tuple<Delegate, Binding> handler in _handlers[message.Endpoint].m_callbacks)
                 {
-                    if (CanExecuteEvent(handler.Item2, message.Sender, isServer))
+                    if (CanExecuteEvent(handler.Item2, message.Sender))
                         InvokeDelegate(handler.Item1);
                 }
             }
         }
 
-        private bool CanExecuteEvent(Binding handler, EventRemote sender, bool isServer)
+        private bool CanExecuteEvent(Binding handler, EventRemote sender)
         {
             return ((handler == Binding.Remote && sender == EventRemote.Client && isServer) ||
                    (handler == Binding.Remote && sender == EventRemote.Server && !isServer) ||
@@ -355,11 +349,6 @@ namespace FxEvents.Shared.EventSubsystem
 
         internal async Task<EventMessage> CreateAndSendAsync(EventFlowType flow, int source, string endpoint, Binding binding, params object[] args)
         {
-#if CLIENT
-            bool isServer = false;
-#elif SERVER
-            bool isServer = true;
-#endif
             try
             {
                 if (EventHub.Gateway.GetSecret(source).Length == 0)
@@ -424,11 +413,6 @@ namespace FxEvents.Shared.EventSubsystem
 
         internal async Task<EventMessage> CreateAndSendLatentAsync(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
         {
-#if CLIENT
-            bool isServer = false;
-#elif SERVER
-            bool isServer = true;
-#endif
             if (EventHub.Gateway.GetSecret(source).Length == 0)
             {
                 Logger.Info("Client secret not yet available.. waiting for the client to connect");
