@@ -353,9 +353,12 @@ namespace FxEvents.Shared.EventSubsystem
             {
                 if (EventHub.Gateway.GetSecret(source).Length == 0)
                 {
-                    Logger.Info("Client secret not yet available.. waiting for the client to connect");
-                    while (EventHub.Gateway.GetSecret(source).Length == 0)
-                        await BaseScript.Delay(0);
+#if SERVER
+                    Logger.Warning($"Cannot send {endpoint} event to player {API.GetPlayerName("" + source)} they're still connecting or script is not loaded yet on their client");
+#elif CLIENT
+                    Logger.Warning($"Cannot send {endpoint} event to server script is not loaded yet");
+#endif
+                    return null;
                 }
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
                 List<EventParameter> parameters = [];
@@ -415,9 +418,12 @@ namespace FxEvents.Shared.EventSubsystem
         {
             if (EventHub.Gateway.GetSecret(source).Length == 0)
             {
-                Logger.Info("Client secret not yet available.. waiting for the client to connect");
-                while (EventHub.Gateway.GetSecret(source).Length == 0)
-                    await BaseScript.Delay(0);
+#if SERVER
+                Logger.Warning($"Cannot send {endpoint} event to player {API.GetPlayerName("" + source)} they're still connecting or script is not loaded yet on their client");
+#elif CLIENT
+                    Logger.Warning($"Cannot send {endpoint} event to server script is not loaded yet");
+#endif
+                return null;
             }
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
             List<EventParameter> parameters = [];
@@ -460,6 +466,15 @@ namespace FxEvents.Shared.EventSubsystem
 
         protected async Task<T> GetInternal<T>(int source, string endpoint, Binding binding, params object[] args)
         {
+            if (EventHub.Gateway.GetSecret(source).Length == 0)
+            {
+#if SERVER
+                Logger.Warning($"Cannot send {endpoint} event to player {API.GetPlayerName("" + source)} they're still connecting or script is not loaded yet on their client");
+#elif CLIENT
+                    Logger.Warning($"Cannot send {endpoint} event to server script is not loaded yet");
+#endif
+                return default;
+            }
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
             EventMessage message = await CreateAndSendAsync(EventFlowType.Circular, source, endpoint, binding, args);
             EventValueHolder<T> holder = new EventValueHolder<T>();
