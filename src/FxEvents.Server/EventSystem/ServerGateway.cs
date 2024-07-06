@@ -1,5 +1,6 @@
 ﻿using CitizenFX.Core;
 using FxEvents.Shared;
+using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.Message;
@@ -28,6 +29,7 @@ namespace FxEvents.EventSystem
             SnowflakeGenerator.Create((short)new Random().Next(200, 399));
             Serialization = new MsgPackSerialization();
             DelayDelegate = async delay => await BaseScript.Delay(delay);
+            PrepareDelegate = PrepareAsync;
             PushDelegate = Push;
             PushDelegateLatent = PushLatent;
             _signatures = new();
@@ -42,14 +44,14 @@ namespace FxEvents.EventSystem
 
         internal void Push(string pipeline, int source, string endpoint, Binding binding, byte[] buffer)
         {
-            if (binding == Binding.Remote)
+            if (binding == Binding.All || binding == Binding.Remote)
             {
                 if (source != new ServerId().Handle)
                     BaseScript.TriggerClientEvent(_hub.GetPlayers[source], pipeline, endpoint, binding, buffer);
                 else
                     BaseScript.TriggerClientEvent(pipeline, endpoint, binding, buffer);
             }
-            else
+            if (binding == Binding.All || binding == Binding.Local)
             {
                 BaseScript.TriggerEvent(pipeline, endpoint, binding, buffer);
             }
@@ -120,6 +122,7 @@ namespace FxEvents.EventSystem
         {
             try
             {
+                Logger.Warning("source:" + source);
                 int client = int.Parse(source.Replace("net:", string.Empty));
 
                 if (!_signatures.TryGetValue(client, out byte[] signature)) return;
@@ -201,6 +204,20 @@ namespace FxEvents.EventSystem
         {
             return await GetInternal<T>(-1, endpoint, Binding.Local, args);
         }
+
+        internal async Task PrepareAsync(string pipeline, int source, IMessage message)
+        {
+            if (GetSecret(source).Length == 0)
+            {
+                StopwatchUtil stopwatch = StopwatchUtil.StartNew();
+                while (GetSecret(source).Length == 0) await BaseScript.Delay(0);
+                if (EventHub.Debug)
+                {
+                    Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");
+                }
+            }
+        }
+
 
         internal byte[] GetSecret(int source)
         {
