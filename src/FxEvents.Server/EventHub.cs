@@ -96,10 +96,10 @@ namespace FxEvents
         }
 
         /// <summary>
-        /// registra un evento (TriggerEvent)
+        /// Register an event (TriggerEvent)
         /// </summary>
-        /// <param name="name">Nome evento</param>
-        /// <param name="action">Azione legata all'evento</param>
+        /// <param name="name">Event name</param>
+        /// <param name="action">Action bound to the event</param>
         internal async void RegisterEvent(string eventName, Delegate action)
         {
             while (!Initialized) await BaseScript.Delay(0);

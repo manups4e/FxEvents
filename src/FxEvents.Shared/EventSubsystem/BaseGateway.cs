@@ -330,7 +330,6 @@ namespace FxEvents.Shared.EventSubsystem
                    (handler == Binding.Local && sender == EventRemote.Client && !isServer) ||
                    (handler == Binding.Local && sender == EventRemote.Server && !isServer) ||
                    handler == Binding.All) && handler != Binding.None;
-
         }
 
         public void ProcessReply(byte[] serialized)
@@ -351,15 +350,6 @@ namespace FxEvents.Shared.EventSubsystem
         {
             try
             {
-                if (EventHub.Gateway.GetSecret(source).Length == 0)
-                {
-#if SERVER
-                    Logger.Warning($"Cannot send {endpoint} event to player {API.GetPlayerName("" + source)} they're still connecting or script is not loaded yet on their client");
-#elif CLIENT
-                    Logger.Warning($"Cannot send {endpoint} event to server script is not loaded yet");
-#endif
-                    return null;
-                }
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
                 List<EventParameter> parameters = [];
 
@@ -416,15 +406,6 @@ namespace FxEvents.Shared.EventSubsystem
 
         internal async Task<EventMessage> CreateAndSendLatentAsync(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
         {
-            if (EventHub.Gateway.GetSecret(source).Length == 0)
-            {
-#if SERVER
-                Logger.Warning($"Cannot send {endpoint} event to player {API.GetPlayerName("" + source)} they're still connecting or script is not loaded yet on their client");
-#elif CLIENT
-                    Logger.Warning($"Cannot send {endpoint} event to server script is not loaded yet");
-#endif
-                return null;
-            }
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
             List<EventParameter> parameters = [];
 
@@ -471,7 +452,7 @@ namespace FxEvents.Shared.EventSubsystem
 #if SERVER
                 Logger.Warning($"Cannot send {endpoint} event to player {API.GetPlayerName("" + source)} they're still connecting or script is not loaded yet on their client");
 #elif CLIENT
-                    Logger.Warning($"Cannot send {endpoint} event to server script is not loaded yet");
+                Logger.Warning($"Cannot send {endpoint} event to server script is not loaded yet");
 #endif
                 return default;
             }
