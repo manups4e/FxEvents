@@ -375,6 +375,8 @@ namespace FxEvents.Shared.EventSubsystem
                     stopwatch.Start();
                 }
 
+                if (EventHub.Gateway.GetSecret(source).Length == 0) return null;
+
                 byte[] data = [];
                 if (binding == Binding.Remote || binding == Binding.Local && !isServer)
                 {
@@ -431,8 +433,9 @@ namespace FxEvents.Shared.EventSubsystem
                 stopwatch.Start();
             }
 
-            byte[] data = message.EncryptObject(source);
+            if (EventHub.Gateway.GetSecret(source).Length == 0) return null;
 
+            byte[] data = message.EncryptObject(source);
             PushDelegateLatent(InboundPipeline, source, bytePerSecond, message.Endpoint, data);
             if (EventHub.Debug)
             {

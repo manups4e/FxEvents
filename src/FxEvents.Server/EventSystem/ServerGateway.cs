@@ -210,7 +210,19 @@ namespace FxEvents.EventSystem
             if (GetSecret(source).Length == 0)
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                while (GetSecret(source).Length == 0) await BaseScript.Delay(0);
+                long time = API.GetGameTimer();
+                while (GetSecret(source).Length == 0)
+                {
+                    if (API.GetGameTimer() - time > 1000)
+                    {
+                        if (EventHub.Debug)
+                        {
+                            Logger.Debug($"[{message}] Took to much time: {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval, client not found, still connecting or disconnected.");
+                        }
+                        return;
+                    }
+                    await BaseScript.Delay(0);
+                }
                 if (EventHub.Debug)
                 {
                     Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");
