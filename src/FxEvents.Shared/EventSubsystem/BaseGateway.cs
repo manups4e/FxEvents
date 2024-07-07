@@ -1,15 +1,25 @@
 ﻿using FxEvents.Shared.Diagnostics;
+using FxEvents.Shared.Encryption;
+
+using FxEvents.Shared.EventSubsystem.Serialization;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.Message;
 using FxEvents.Shared.Models;
 using FxEvents.Shared.Payload;
 using FxEvents.Shared.Serialization;
+using FxEvents.Shared.Snowflakes;
+using FxEvents.Shared.TypeExtensions;
 using Logger;
+using MsgPack;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,8 +28,8 @@ namespace FxEvents.Shared.EventSubsystem
     // TODO: Concurrency, block a request simliar to a already processed one unless tagged with the [Concurrent] method attribute to combat force spamming events to achieve some kind of bug.
     public delegate Task EventDelayMethod(int ms = 0);
     public delegate Task EventMessagePreparation(string pipeline, int source, IMessage message);
-    public delegate void EventMessagePush(string pipeline, int source, byte[] buffer);
-    public delegate void EventMessagePushLatent(string pipeline, int source, int bytePerSecond, byte[] buffer);
+    public delegate void EventMessagePush(string pipeline, int source, string endpoint, Binding binding, byte[] buffer);
+    public delegate void EventMessagePushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer);
     public delegate ISource ConstructorCustomActivator<T>(int handle);
     public abstract class BaseGateway
     {
@@ -27,32 +37,73 @@ namespace FxEvents.Shared.EventSubsystem
         internal string InboundPipeline;
         internal string OutboundPipeline;
         internal string SignaturePipeline;
+        internal bool takesSource = false;
+#if CLIENT
+        internal bool isServer = false;
+#elif SERVER
+        internal bool isServer = true;
+#endif
         protected abstract ISerialization Serialization { get; }
 
-        private List<Tuple<EventMessage, EventHandler>> _processed = new();
+        private List<Snowflake> eventIds = new List<Snowflake>();
         private List<EventObservable> _queue = new();
-        private EventHandlerCollection _handlers = new();
+        internal EventsDictionary _handlers = new();
 
         public EventDelayMethod? DelayDelegate { get; set; }
         public EventMessagePreparation? PrepareDelegate { get; set; }
         public EventMessagePush? PushDelegate { get; set; }
         public EventMessagePushLatent? PushDelegateLatent { get; set; }
 
-        public async Task ProcessInboundAsync(int source, byte[] serialized)
+        public async Task ProcessInboundAsync(int source, string endpoint, Binding binding, byte[] serialized)
         {
-            EventMessage message = serialized.DecryptObject<EventMessage>(EventDispatcher.EncryptionKey);
-            await ProcessInboundAsync(message, source);
+            EventMessage message;
+            try
+            {
+                if (isServer && binding == Binding.Local)
+                    message = serialized.FromBytes<EventMessage>();
+                else
+                    message = serialized.DecryptObject<EventMessage>(source);
+                if (eventIds.Contains(message.Id))
+                {
+#if CLIENT
+                    BaseScript.TriggerServerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.REPEATED_MESSAGE_ID);
+                    Logger.Warning($"Possible tampering detected, the event \"{endpoint}]\" sent by player {API.GetPlayerName(source)} [{source}] has an used ID");
+#elif SERVER
+                    BaseScript.TriggerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.REPEATED_MESSAGE_ID);
+                    Logger.Warning($"Possible tampering detected, the event \"{endpoint}]\" sent by player {API.GetPlayerName("" + source)} [{source}] has an used ID");
+#endif
+                }
+                else
+                {
+                    if (eventIds.Count >= 500)
+                        eventIds.RemoveAt(0);
+                    eventIds.Add(message.Id);
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                // failed decryption.. possible tampering?
+#if CLIENT
+                BaseScript.TriggerServerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.EDITED_ENCRYPTED_DATA);
+                Logger.Warning($"Possible tampering detected, impossible to decrypt event message \"{endpoint}]\" sent by player {API.GetPlayerName(source)} [{source}]");
+#elif SERVER
+                BaseScript.TriggerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.EDITED_ENCRYPTED_DATA);
+                Logger.Warning($"Possible tampering detected, impossible to decrypt event message \"{endpoint}]\" sent by player {API.GetPlayerName("" + source)} [{source}]");
+#endif
+                return;
+            }
+            await ProcessInvokeAsync(message, source);
         }
 
-        public async Task ProcessInboundAsync(EventMessage message, int source)
+        internal async Task ProcessInvokeAsync(EventMessage message, int source)
         {
-            object InvokeDelegate(EventHandler subscription)
+            object InvokeDelegate(Delegate @delegate)
             {
                 List<object> parameters = new List<object>();
-                bool isServer = API.IsDuplicityVersion();
-                Delegate @delegate = subscription.Delegate;
                 MethodInfo method = @delegate.Method;
+#if SERVER
                 bool takesSource = method.GetParameters().Any(self => self.GetCustomAttribute<FromSourceAttribute>() != null);
+#endif
                 int startingIndex = takesSource && isServer ? 1 : 0;
 
                 object CallInternalDelegate()
@@ -69,15 +120,13 @@ namespace FxEvents.Shared.EventSubsystem
 
                     ParameterInfo param = method.GetParameters().FirstOrDefault(self => typeof(ISource).IsAssignableFrom(self.ParameterType) ||
                                                                         typeof(Player).IsAssignableFrom(self.ParameterType) ||
-                                                                        typeof(string).IsAssignableFrom(self.ParameterType) || typeof(int).IsAssignableFrom(self.ParameterType));
+                                                                        typeof(string).IsAssignableFrom(self.ParameterType) ||
+                                                                        typeof(int).IsAssignableFrom(self.ParameterType));
                     Type type = param.ParameterType;
                     if (typeof(ISource).IsAssignableFrom(type))
                     {
-                        ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)));
-                        if (constructor == null)
-                        {
-                            throw new Exception("no constructor to initialize the ISource class");
-                        }
+                        ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)))
+                            ?? throw new Exception("no constructor to initialize the ISource class");
 
                         ParameterExpression parameter = Expression.Parameter(typeof(int), "handle");
                         NewExpression expression = Expression.New(constructor, parameter);
@@ -91,7 +140,6 @@ namespace FxEvents.Shared.EventSubsystem
                         }
                         else
                         {
-
                             ConstructorCustomActivator<ISource> activator = (ConstructorCustomActivator<ISource>)Expression
                                 .Lambda(typeof(ConstructorCustomActivator<ISource>), expression, parameter).Compile();
 
@@ -101,7 +149,7 @@ namespace FxEvents.Shared.EventSubsystem
                     }
                     else if (typeof(Player).IsAssignableFrom(type))
                     {
-                        parameters.Add(EventDispatcher.Instance.GetPlayers[source]);
+                        parameters.Add(EventHub.Instance.GetPlayers[source]);
                     }
                     else if (typeof(string).IsAssignableFrom(type))
                     {
@@ -126,19 +174,58 @@ namespace FxEvents.Shared.EventSubsystem
                 {
                     ParameterInfo parameterInfo = parameterInfos[idx];
                     Type type = parameterInfo.ParameterType;
-
                     if (idx - startingIndex < array.Length)
                     {
                         EventParameter parameter = array[idx - startingIndex];
-                        using SerializationContext context = new SerializationContext(message.Endpoint, $"(Process) Parameter Index {idx - startingIndex}",
-                            Serialization, parameter.Data);
-                        object a = context.Deserialize(type);
-                        holder.Add(a);
+                        using SerializationContext context = new(message.Endpoint, $"(Process) Parameter Index {idx - startingIndex}", Serialization, parameter.Data);
+                        //MessagePackObject a = context.Deserialize<MessagePackObject>();
+                        //if (a.UnderlyingType != type)
+                        //{
+                        //    if (type.Name.StartsWith("List") || type.Name.StartsWith("Dictionary") || type.Name.StartsWith("Tuple") || a.IsMap || a.IsDictionary || a.IsArray)
+                        //    {
+                        //        context.Reader.BaseStream.Position = 0;
+                        //        var des = context.Deserialize(type);
+                        //        holder.Add(des);
+                        //    }
+                        //    else
+                        //    {
+                        //        holder.Add(TypeConvert.GetHolder(a, type));
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    if (TypeCache.IsSimpleType(type))
+                        //        holder.Add(a.ToObject());
+                        //    else
+                        //    {
+                        //        context.Reader.BaseStream.Position = 0;
+                        //        var des = context.Deserialize(type);
+                        //        holder.Add(des);
+                        //    }
+                        //}
+
+                        if (TypeCache.IsSimpleType(type))
+                        {
+                            holder.Add(TypeConvert.GetNewHolder(context, type));
+                        }
+                        else
+                        {
+                            holder.Add(context.Deserialize(type));
+                        }
                     }
                     else
                     {
-                        object a = Activator.CreateInstance(type);
-                        holder.Add(a);
+                        if (TypeCache.IsSimpleType(type))
+                        {
+                            if (parameterInfo.DefaultValue != null)
+                                holder.Add(parameterInfo.DefaultValue);
+                            else
+                                holder.Add(default);
+                        }
+                        else
+                        {
+                            holder.Add(default);
+                        }
                     }
                 }
 
@@ -160,47 +247,55 @@ namespace FxEvents.Shared.EventSubsystem
             if (message.Flow == EventFlowType.Circular)
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                KeyValuePair<bool, int> hasSingle = _handlers.HasSingleEndpoint(message.Endpoint);
-                if (!hasSingle.Key)
+                EventEntry subscription = _handlers[message.Endpoint];
+
+                int hasSingle = subscription.m_callbacks.Count;
+                if (hasSingle != 1)
                 {
-                    if (hasSingle.Value > 1)
+                    if (hasSingle > 1)
                         throw new EventException($"Found multiple callback handlers for event {message.Endpoint}, only 1 allowed.");
-                    else if (hasSingle.Value == 0)
+                    else if (hasSingle == 0)
                         throw new EventException($"Callback handler for event {message.Endpoint} not found.");
                 }
 
-                EventHandler subscription = _handlers[message.Endpoint][0];
-                object result = InvokeDelegate(subscription);
+                Tuple<Delegate, Binding> @event = subscription.m_callbacks[0];
+                if (!CanExecuteEvent(@event.Item2, message.Sender))
+                    return;
 
-                if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
+                object result = InvokeDelegate(@event.Item1);
+
+                if (result.GetType().IsGenericType)
                 {
-                    using CancellationTokenSource token = new CancellationTokenSource();
-
-                    Task task = (Task)result;
-                    Task timeout = DelayDelegate!(10000);
-                    Task completed = await Task.WhenAny(task, timeout);
-
-                    if (completed == task)
+                    if (result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
                     {
-                        token.Cancel();
+                        using CancellationTokenSource token = new CancellationTokenSource();
+
+                        Task task = (Task)result;
+                        Task timeout = DelayDelegate!(10000);
+                        Task completed = await Task.WhenAny(task, timeout);
+
+                        if (completed == task)
+                        {
+                            token.Cancel();
 
 #if CLIENT
-                        await task;
+                            await task;
 #elif SERVER
-                        await task.ConfigureAwait(false);
+                            await task.ConfigureAwait(false);
 #endif
 
-                        result = ((dynamic)task).Result;
-                    }
-                    else
-                    {
-                        throw new EventTimeoutException(
-                            $"({message.Endpoint} - {subscription.Delegate.Method.DeclaringType?.Name ?? "null"}/{subscription.Delegate.Method.Name}) The operation was timed out");
+                            result = ((dynamic)task).Result;
+                        }
+                        else
+                        {
+                            throw new EventTimeoutException(
+                                $"({message.Endpoint} - {subscription.m_callbacks[0].Item1.Method.DeclaringType?.Name ?? "null"}/{subscription.m_callbacks[0].Item1.Method.Name}) The operation was timed out");
+                        }
                     }
                 }
 
                 Type resultType = result?.GetType() ?? typeof(object);
-                EventResponseMessage response = new EventResponseMessage(message.Id, message.Endpoint, message.Signature, null);
+                EventResponseMessage response = new EventResponseMessage(message.Id, message.Endpoint, null);
 
                 if (result != null)
                 {
@@ -210,38 +305,40 @@ namespace FxEvents.Shared.EventSubsystem
                 }
                 else
                 {
-                    response.Data = new byte[] { };
+                    response.Data = [];
                 }
 
-                if (PrepareDelegate != null)
-                {
-                    stopwatch.Stop();
-
-                    await PrepareDelegate(response.Endpoint, source, response);
-                    stopwatch.Start();
-                }
-
-                byte[] data = response.EncryptObject(EventDispatcher.EncryptionKey);
-                PushDelegate(OutboundPipeline, source, data);
-                if (EventDispatcher.Debug)
+                byte[] data = response.EncryptObject(source);
+                PushDelegate(OutboundPipeline, source, message.Endpoint, @event.Item2, data);
+                if (EventHub.Debug)
                     Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
             }
             else
             {
-                foreach (EventHandler handler in _handlers.FindAllEndpoints(message.Endpoint))
+                foreach (Tuple<Delegate, Binding> handler in _handlers[message.Endpoint].m_callbacks)
                 {
-                    InvokeDelegate(handler);
+                    if (CanExecuteEvent(handler.Item2, message.Sender))
+                        InvokeDelegate(handler.Item1);
                 }
             }
         }
 
-        public void ProcessOutbound(byte[] serialized)
+        private bool CanExecuteEvent(Binding handler, EventRemote sender)
         {
-            EventResponseMessage response = serialized.DecryptObject<EventResponseMessage>(EventDispatcher.EncryptionKey);
-            ProcessOutbound(response);
+            return ((handler == Binding.Remote && sender == EventRemote.Client && isServer) ||
+                   (handler == Binding.Remote && sender == EventRemote.Server && !isServer) ||
+                   (handler == Binding.Local && sender == EventRemote.Client && !isServer) ||
+                   (handler == Binding.Local && sender == EventRemote.Server && !isServer) ||
+                   handler == Binding.All) && handler != Binding.None;
         }
 
-        public void ProcessOutbound(EventResponseMessage response)
+        public void ProcessReply(byte[] serialized)
+        {
+            EventResponseMessage response = serialized.DecryptObject<EventResponseMessage>();
+            ProcessReply(response);
+        }
+
+        public void ProcessReply(EventResponseMessage response)
         {
             EventObservable waiting = _queue.SingleOrDefault(self => self.Message.Id == response.Id) ?? throw new Exception($"No request matching {response.Id} was found.");
 
@@ -249,7 +346,7 @@ namespace FxEvents.Shared.EventSubsystem
             waiting.Callback.Invoke(response.Data);
         }
 
-        protected async Task<EventMessage> SendInternal(EventFlowType flow, int source, string endpoint, params object[] args)
+        internal async Task<EventMessage> CreateAndSendAsync(EventFlowType flow, int source, string endpoint, Binding binding, params object[] args)
         {
             try
             {
@@ -268,7 +365,7 @@ namespace FxEvents.Shared.EventSubsystem
                     parameters.Add(new EventParameter(context.GetData()));
                 }
 
-                EventMessage message = new(endpoint, flow, parameters);
+                EventMessage message = new(endpoint, flow, parameters, isServer ? EventRemote.Server : EventRemote.Client);
 
                 if (PrepareDelegate != null)
                 {
@@ -278,10 +375,20 @@ namespace FxEvents.Shared.EventSubsystem
                     stopwatch.Start();
                 }
 
-                byte[] data = message.EncryptObject(EventDispatcher.EncryptionKey);
+                if (EventHub.Gateway.GetSecret(source).Length == 0) return null;
 
-                PushDelegate(InboundPipeline, source, data);
-                if (EventDispatcher.Debug)
+                byte[] data = [];
+                if (binding == Binding.Remote || binding == Binding.Local && !isServer)
+                {
+                    data = message.EncryptObject(source);
+                }
+                else
+                {
+                    data = message.ToBytes();
+                }
+
+                PushDelegate(InboundPipeline, source, endpoint, binding, data);
+                if (EventHub.Debug)
                 {
 #if CLIENT
                     Logger.Debug($"[{endpoint} {flow}] Sent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
@@ -294,12 +401,12 @@ namespace FxEvents.Shared.EventSubsystem
             catch (Exception ex)
             {
                 Logger.Error($"{endpoint} - {ex.ToString()}");
-                EventMessage message = new(endpoint, flow, new List<EventParameter>());
+                EventMessage message = new(endpoint, flow, new List<EventParameter>(), isServer ? EventRemote.Server : EventRemote.Client);
                 return message;
             }
         }
 
-        protected async Task<EventMessage> SendInternalLatent(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
+        internal async Task<EventMessage> CreateAndSendLatentAsync(EventFlowType flow, int source, string endpoint, int bytePerSecond, params object[] args)
         {
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
             List<EventParameter> parameters = [];
@@ -316,7 +423,7 @@ namespace FxEvents.Shared.EventSubsystem
                 parameters.Add(new EventParameter(context.GetData()));
             }
 
-            EventMessage message = new(endpoint, flow, parameters);
+            EventMessage message = new(endpoint, flow, parameters, isServer ? EventRemote.Server : EventRemote.Client);
 
             if (PrepareDelegate != null)
             {
@@ -326,10 +433,11 @@ namespace FxEvents.Shared.EventSubsystem
                 stopwatch.Start();
             }
 
-            byte[] data = message.EncryptObject(EventDispatcher.EncryptionKey);
+            if (EventHub.Gateway.GetSecret(source).Length == 0) return null;
 
-            PushDelegateLatent(InboundPipeline, source, bytePerSecond, data);
-            if (EventDispatcher.Debug)
+            byte[] data = message.EncryptObject(source);
+            PushDelegateLatent(InboundPipeline, source, bytePerSecond, message.Endpoint, data);
+            if (EventHub.Debug)
             {
 #if CLIENT
                 Logger.Debug($"[{endpoint} {flow}] Sent latent {data.Length} byte(s) to {(source == -1 ? "Server" : API.GetPlayerName(source))} in {stopwatch.Elapsed.TotalMilliseconds}ms");
@@ -340,10 +448,10 @@ namespace FxEvents.Shared.EventSubsystem
             return message;
         }
 
-        protected async Task<T> GetInternal<T>(int source, string endpoint, params object[] args)
+        protected async Task<T> GetInternal<T>(int source, string endpoint, Binding binding, params object[] args)
         {
             StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-            EventMessage message = await SendInternal(EventFlowType.Circular, source, endpoint, args);
+            EventMessage message = await CreateAndSendAsync(EventFlowType.Circular, source, endpoint, binding, args);
             EventValueHolder<T> holder = new EventValueHolder<T>();
             TaskCompletionSource<bool> TokenLoading = new();
 
@@ -360,7 +468,7 @@ namespace FxEvents.Shared.EventSubsystem
             await TokenLoading.Task;
 
             double elapsed = stopwatch.Elapsed.TotalMilliseconds;
-            if (EventDispatcher.Debug)
+            if (EventHub.Debug)
             {
 #if CLIENT
                 Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
@@ -371,16 +479,15 @@ namespace FxEvents.Shared.EventSubsystem
             return holder.Value;
         }
 
-        public void Mount(string endpoint, Delegate @delegate)
+        public void Mount(string endpoint, Binding binding, Delegate @delegate)
         {
-            if (EventDispatcher.Debug)
-                Logger.Debug($"Mounted: {endpoint}");
-            _handlers.Add(new EventHandler(endpoint, @delegate));
+            if (EventHub.Debug)
+                Logger.Debug($"Mounted: {endpoint} - binding {binding}");
+            _handlers.Add(endpoint, binding, @delegate);
         }
         public void Unmount(string endpoint)
         {
-            if (_handlers.Any(x => x.Endpoint == endpoint))
-                _handlers.RemoveAll(x => x.Endpoint == endpoint);
+            _handlers.Remove(endpoint);
         }
     }
 }

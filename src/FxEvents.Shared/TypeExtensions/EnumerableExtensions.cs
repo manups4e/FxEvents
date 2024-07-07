@@ -88,5 +88,12 @@ namespace FxEvents.Shared.TypeExtensions
                 dictionary.Add(key, def);
             }
         }
+        public static IEnumerable<IEnumerable<Type>> GetCombinations(this IEnumerable<Type> elements, int k)
+        {
+            if (k == 0) return new[] { new Type[0] };
+
+            return elements.SelectMany((e, i) =>
+                elements.Skip(i + 1).GetCombinations(k - 1).Select(c => new Type[] { e }.Concat(c)));
+        }
     }
 }

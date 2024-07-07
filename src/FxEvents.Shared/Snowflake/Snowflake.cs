@@ -44,17 +44,7 @@ namespace FxEvents.Shared.Snowflakes
 
         public Snowflake(string value)
         {
-            _value = (ulong)long.Parse(value);
-        }
-
-        public Snowflake(BinaryReader reader)
-        {
-            _value = reader.ReadUInt64();
-        }
-
-        public void PackSerializedBytes(BinaryWriter writer)
-        {
-            writer.Write(_value);
+            ulong.TryParse(value, out _value);
         }
 
         public override string ToString()
