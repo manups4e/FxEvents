@@ -7,7 +7,6 @@
 		<Description Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents an advanced event subsystem for RedM C# Resources.</Description>
 		<PackageTags Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FiveM FxEvents</PackageTags>
 		<PackageTags Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">RedM FxEvents</PackageTags>
-		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageId Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents.FiveM.Client</PackageId>
 		<PackageId Condition="'$(Configuration)' == 'Debug RedM' Or '$(Configuration)' == 'Release RedM'">FxEvents.RedM.Client</PackageId>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug FiveM</Configuration>
