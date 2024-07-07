@@ -5,7 +5,7 @@
 FxEvents is a robust event handling system for FiveM, allowing secure and efficient communication between client and server. It features encrypted signatures and MsgPack binary serialization to protect against malicious clients. To integrate FxEvents into your project, simply add `FxEvents.Client.dll` or `FxEvents.Server.dll` along with `Newtonsoft.Json.dll` (if using JSON serialization). The MsgPack functionality is built into FiveM, so no additional libraries are required!
 
 Beginning from Version 3.0.0, the library won't need initialization of events as its internal events are SHA-256 generated starting from the resource name itself + a random seed.
-This means that initialization is mainly used to register events with [FxEvent] attribute that wouldn't be registered without a mandatory call from the requesting script.
+This means that initialization is mainly used to register all the events with [FxEvent] attribute that wouldn't be registered otherwise without a mandatory call from the requesting script.
 ---
 
 ## Support
