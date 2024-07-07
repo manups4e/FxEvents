@@ -364,7 +364,6 @@ MigrationBackup/
 *.log
 
 *.md
-*.txt
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
