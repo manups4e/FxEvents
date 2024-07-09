@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace FxEvents
 {
     [Obsolete("Use EventHub instead, this class will be removed soon")]
-    public class EventDispatcher : BaseScript
+    public class EventDispatcher
     {
         internal static Log Logger;
         internal PlayerList GetPlayers => EventHub.Instance.GetPlayers;
@@ -27,11 +27,6 @@ namespace FxEvents
         public static void Initalize(string inboundEvent, string outboundEvent, string signatureEvent)
         {
             EventHub.Initialize();
-        }
-
-        internal async void AddEventHandler(string eventName, Delegate action)
-        {
-            EventHub.Instance.AddEventHandler(eventName, action);
         }
 
         public static void Send(string endpoint, params object[] args)
