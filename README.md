@@ -40,7 +40,7 @@ Events can be mounted similarly to standard events. Below is an example of mount
 - The `FromSource` attribute enables you to retrieve the source as in standard events, allowing requests for Player, the ISource inheriting class, source as Int32 or as String.
 
 ```csharp
-EventHub.Mount("eventName", Binding.All, new Action<ISource, type1, type2>(([FromSource] source, val1, val2) =>    
+EventHub.Mount("eventName", Binding.All, new Action<ISource, type1, type2>([FromSource] source, val1, val2) =>    
 {
     // Code to execute inside the event.
     // ISource is an optional class handling clients triggering the event, similar to the "[FromSource] Player player" parameter but customizable.
@@ -48,7 +48,7 @@ EventHub.Mount("eventName", Binding.All, new Action<ISource, type1, type2>(([Fro
 }));
 
 EventHub.Mount("eventName", Binding.All, new Action<ISource, type1, type2>(MyMethod));
-private void MyMethod(([FromSource] ISource source, type1 val1, type2 val2)
+private void MyMethod([FromSource] ISource source, type1 val1, type2 val2)
 {
     // Code to execute inside the event.
     // ISource is an optional class handling clients triggering the event, similar to the "[FromSource] Player player" parameter but customizable.
