@@ -9,7 +9,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
 {
     internal class Matrix3x3Resolver : MessagePackSerializer<Matrix3x3>
     {
-        public Matrix3x3Resolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
+        public Matrix3x3Resolver(SerializationContext ownerContext) : base(ownerContext)
         {
         }
 

@@ -10,7 +10,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
     /// </summary>
     public class EntityResolver : MessagePackSerializer<Entity>
     {
-        public EntityResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
+        public EntityResolver(SerializationContext ownerContext) : base(ownerContext)
         {
         }
 
@@ -34,7 +34,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
 
     public class PedResolver : MessagePackSerializer<Ped>
     {
-        public PedResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
+        public PedResolver(SerializationContext ownerContext) : base(ownerContext)
         {
         }
 
@@ -58,7 +58,7 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
 
     public class VehicleResolver : MessagePackSerializer<Vehicle>
     {
-        public VehicleResolver(MsgPack.Serialization.SerializationContext ownerContext) : base(ownerContext)
+        public VehicleResolver(SerializationContext ownerContext) : base(ownerContext)
         {
         }
 

@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\BaseGateway.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventRemote.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\DoubleFixer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\MsgPackCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\TypeConvert.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\TamperType.cs" />
@@ -77,8 +78,5 @@
     <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\TaskExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TypeExtensions\TypeCache.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)typeextensions\ValueTuple.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\" />
   </ItemGroup>
 </Project>

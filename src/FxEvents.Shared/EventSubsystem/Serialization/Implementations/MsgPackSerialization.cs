@@ -1,4 +1,5 @@
 using FxEvents.Shared.EventSubsystem.Serialization;
+using FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPack.MsgPackResolvers;
 using FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackResolvers;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.Serialization.Implementations.MsgPackResolvers;
@@ -32,6 +33,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             PedResolver ped = new(_context);
             PropResolver prop = new(_context);
             VehicleResolver vehicle = new(_context);
+            DoubleFixer doubleFixer = new(_context);
 
             _context.Serializers.RegisterOverride(vector2);
             _context.Serializers.RegisterOverride(vector3);
@@ -45,6 +47,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             _context.Serializers.RegisterOverride(ped);
             _context.Serializers.RegisterOverride(prop);
             _context.Serializers.RegisterOverride(vehicle);
+            _context.Serializers.RegisterOverride(doubleFixer);
         }
 
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
