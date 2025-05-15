@@ -462,8 +462,13 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
                 throw new ArgumentException("Input byte array is too short to contain a double.");
             }
 
-            double result = (double)ReadSingle(data);
-            return result;
+            byte[] buffer = new byte[sizeof(double)];
+            data.Read(buffer, 0, buffer.Length);
+
+            if (BitConverter.IsLittleEndian)
+                buffer = buffer.Reverse().ToArray();
+
+            return BitConverter.ToDouble(buffer, 0);
         }
 
         public static byte ReadUInt8(MemoryStream data)
