@@ -49,8 +49,6 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations
             }
 
             var type = obj.GetType();
-            new Logger.Log().Warning("Item: " + obj + ", type: " + type.Name);
-
 
             if (type.IsSimpleType())
             {
