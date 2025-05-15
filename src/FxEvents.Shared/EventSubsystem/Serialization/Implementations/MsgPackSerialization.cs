@@ -1,4 +1,5 @@
 using FxEvents.Shared.EventSubsystem.Serialization;
+using FxEvents.Shared.EventSubsystem.Serialization.Implementations;
 using FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPack.MsgPackResolvers;
 using FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackResolvers;
 using FxEvents.Shared.Exceptions;
@@ -92,7 +93,10 @@ namespace FxEvents.Shared.Serialization.Implementations
                 logger.Warning("Using Tuple is not advised due to differences between client and server environments and the unavailability of resolvers. Consider using ValueTuple instead.");
                 SerializeTuple(type, value, context);
             }
-            SerializeObject(type, value, context);
+            else
+            {
+                SerializeObject(type, value, context);
+            }
         }
 
         private void SerializeTuple(Type type, object value, SerializationContext context)
@@ -108,13 +112,12 @@ namespace FxEvents.Shared.Serialization.Implementations
 
         private void SerializeObject(Type type, object value, SerializationContext context)
         {
-            IMessagePackSingleObjectSerializer ser = MessagePackSerializer.Get(type, _context);
-            ser.Pack(context.Writer.BaseStream, value);
+            TypeSerializer.Serialize(value, context);
         }
 
         public void Serialize<T>(T value, SerializationContext context)
         {
-            Serialize(typeof(T), value, context);
+            TypeSerializer.Serialize(value, context);
         }
         #endregion
 
