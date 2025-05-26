@@ -340,7 +340,7 @@ namespace FxEvents.Shared.EventSubsystem
 
         public void ProcessReply(EventResponseMessage response)
         {
-            EventObservable waiting = _queue.SingleOrDefault(self => self.Message.Id == response.Id) ?? throw new Exception($"No request matching {response.Id} was found.");
+            EventObservable waiting = _queue.SingleOrDefault(self => self.Message.Id == response.Id) ?? throw new Exception($"No request matching {response.Id} was found for event {response.Endpoint}.");
 
             _queue.Remove(waiting);
             waiting.Callback.Invoke(response.Data);

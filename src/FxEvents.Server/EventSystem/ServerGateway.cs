@@ -122,7 +122,6 @@ namespace FxEvents.EventSystem
         {
             try
             {
-                Logger.Warning("source:" + source);
                 int client = int.Parse(source.Replace("net:", string.Empty));
 
                 if (!_signatures.TryGetValue(client, out byte[] signature)) return;
