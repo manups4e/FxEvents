@@ -84,7 +84,7 @@ namespace FxEvents.EventSystem
                     if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
                 BaseScript.TriggerServerEvent(pipeline, endpoint, binding, buffer);
             }
-            if (binding == Binding.All || binding == Binding.Local)
+            else if (binding == Binding.All || binding == Binding.Local)
             {
                 BaseScript.TriggerEvent(pipeline, endpoint, binding, buffer);
             }
