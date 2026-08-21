@@ -1,13 +1,18 @@
-﻿namespace FxEvents.Shared.Payload
-{
-    public class EventParameter
-    {
-        public byte[] Data { get; set; }
+﻿using MessagePack;
 
-        public EventParameter() { }
-        public EventParameter(byte[] data)
-        {
-            Data = data;
-        }
-    }
+namespace FxEvents.Shared.Payload
+{
+	[MessagePackObject]
+	public class EventParameter
+	{
+		[Key(0)]
+		public byte[] Data { get; set; }
+
+		public EventParameter() { }
+
+		public EventParameter(byte[] data)
+		{
+			Data = data;
+		}
+	}
 }

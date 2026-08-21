@@ -278,8 +278,9 @@ namespace FxEvents.Shared.EventSubsystem
 
 			return (handler == Binding.Remote && sender == EventRemote.Client && isServer) ||
 				   (handler == Binding.Remote && sender == EventRemote.Server && !isServer) ||
-				   (handler == Binding.Local && !isServer);
+				   (handler == Binding.Local); // Binding.Local è sempre eseguibile in locale (sia Server che Client)
 		}
+
 
 		public void ProcessReply(byte[] serialized)
 		{

@@ -39,9 +39,9 @@ namespace FxEvents.EventSystem
 
         internal void AddEvents()
         {
-            _hub.RegisterEvent(SignaturePipeline, new Action<string, byte[]>(GetSignature));
-            _hub.RegisterEvent(InboundPipeline, new Action<string, string, Binding, byte[]>(Inbound));
-            _hub.RegisterEvent(OutboundPipeline, new Action<string, string, Binding, byte[]>(Outbound));
+            _hub.RegisterEvent(SignaturePipeline, new Action<int, byte[]>(GetSignature));
+            _hub.RegisterEvent(InboundPipeline, new Action<int, string, Binding, byte[]>(Inbound));
+            _hub.RegisterEvent(OutboundPipeline, new Action<int, string, Binding, byte[]>(Outbound));
         }
 
         internal void Push(string pipeline, int source, string endpoint, Binding binding, byte[] buffer)
@@ -67,11 +67,11 @@ namespace FxEvents.EventSystem
                 API.EmitClientLatent(source, bytePerSecond, pipeline, endpoint, Binding.Remote, buffer);
         }
 
-        private void GetSignature([FromSource] string source, byte[] clientPubKey)
+        private void GetSignature([FromSource] int source, byte[] clientPubKey)
         {
             try
             {
-                int client = int.Parse(source.Replace("net:", string.Empty));
+                int client = source;
                 if (_signatures.ContainsKey(client))
                 {
                     Logger.Warning($"Client {GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
@@ -92,26 +92,23 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private async void Inbound([FromSource] string source, string endpoint, Binding binding, byte[] encrypted)
+        private async void Inbound([FromSource] int source, string endpoint, Binding binding, byte[] encrypted)
         {
             try
             {
-                int client = -1;
-                if(source != null) 
+                if(source != -1) 
                 {
-                    client = int.Parse(source.Replace("net:", string.Empty));
-
-                    if (!_signatures.TryGetValue(client, out byte[] signature))
+                    if (!_signatures.TryGetValue(source, out byte[] signature))
                         return;
                 }
 
                 try
                 {
-                    await ProcessInboundAsync(client, endpoint, binding, encrypted);
+                    await ProcessInboundAsync(source, endpoint, binding, encrypted);
                 }
                 catch (TimeoutException)
                 {
-                    DropPlayer(client.ToString(), $"Operation timed out: {endpoint.ToBase64()}");
+                    DropPlayer(source.ToString(), $"Operation timed out: {endpoint.ToBase64()}");
                 }
             }
             catch (Exception ex)
@@ -120,11 +117,11 @@ namespace FxEvents.EventSystem
             }
         }
 
-        private void Outbound([FromSource] string source, string endpoint, Binding binding, byte[] encrypted)
+        private void Outbound([FromSource] int source, string endpoint, Binding binding, byte[] encrypted)
         {
             try
             {
-                int client = int.Parse(source.Replace("net:", string.Empty));
+                int client = source;
 
                 if (!_signatures.TryGetValue(client, out byte[] signature)) return;
 
@@ -162,13 +159,16 @@ namespace FxEvents.EventSystem
             }
         }
 
-        public async void Send(int target, string endpoint, Binding binding, params object[] args)
-        {
-            if (!string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target].Name) || (binding == Binding.Local))
-                await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, binding, args);
-        }
-
-        public void SendLatent(Player player, string endpoint, int bytesxSecond, params object[] args) => SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesxSecond, args);
+		public async void Send(int target, string endpoint, Binding binding, params object[] args)
+		{
+			// 1. Se il binding è Local o All, invia senza controllare la lista giocatori
+			// 2. Se è Remote, controlla prima che target sia valido (> -1) e che il giocatore esista in GetPlayers
+			if (binding == Binding.Local || (binding == Binding.Remote && target >= 0 && !string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target]?.Name)))
+			{
+				await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, binding, args);
+			}
+		}
+		public void SendLatent(Player player, string endpoint, int bytesxSecond, params object[] args) => SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesxSecond, args);
         public void SendLatent(ISource client, string endpoint, int bytesxSecond, params object[] args) => SendLatent(client.Handle, endpoint, bytesxSecond, args);
         public void SendLatent(List<Player> players, string endpoint, int bytesxSecond, params object[] args) => SendLatent(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesxSecond, args);
         public void SendLatent(List<ISource> clients, string endpoint, int bytesxSecond, params object[] args) => SendLatent(clients.Select(x => x.Handle).ToList(), endpoint, bytesxSecond, args);
