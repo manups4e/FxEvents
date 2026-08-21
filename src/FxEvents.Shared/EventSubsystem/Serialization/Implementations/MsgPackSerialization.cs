@@ -34,6 +34,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             PropResolver prop = new(_context);
             VehicleResolver vehicle = new(_context);
             DoubleFixer doubleFixer = new(_context);
+            EnumFixer enumFixer = new(_context);
 
             _context.Serializers.RegisterOverride(vector2);
             _context.Serializers.RegisterOverride(vector3);
@@ -48,6 +49,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             _context.Serializers.RegisterOverride(prop);
             _context.Serializers.RegisterOverride(vehicle);
             _context.Serializers.RegisterOverride(doubleFixer);
+            _context.Serializers.RegisterOverride(enumFixer);
         }
 
         private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
