@@ -1,4 +1,8 @@
-# FxEvents: An Advanced Event Subsystem for FiveM using mono v1
+# FxEvents: An Advanced Event Subsystem for FiveM using mono legacy (v1)
+
+# This library is archived and considered legacy since CFX decided to not support the mono runtime anymore and decided that Lua is more important than a real language like C#.
+
+---
 
 FxEvents provides a robust and secure framework for event handling in FiveM, equipped with powerful serialization, encryption, and anti-tampering features. With its easy integration and extensive functionality, FxEvents is a valuable tool for developers seeking efficient and secure client-server communication in their FiveM projects. It incorporates encrypted signatures and MsgPack binary serialization to safeguard against malicious client actions. To integrate FxEvents into your project, simply include `FxEvents.Client.dll` or `FxEvents.Server.dll` along with `Newtonsoft.Json.dll` (if you opt for JSON serialization). The MsgPack functionality is inherently supported by FiveM, so no additional libraries are required!
 
