@@ -16,7 +16,7 @@ namespace Logger
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [INFO] -- ";
             string color = LoggerColors.LIGHT_GREEN;
-            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
+            SharedAPI.Log.Info($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace Logger
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [DEBUG] -- ";
             string color = LoggerColors.LIGHT_BLUE;
-            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
+			SharedAPI.Log.Debug($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Logger
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [WARNING] --";
             string color = LoggerColors.YELLOW;
-            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
+            SharedAPI.Log.Warn($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Logger
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [ERROR] -- ";
             string color = LoggerColors.LIGHT_RED;
-            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
+            SharedAPI.Log.Error($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Logger
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
             string errorPrefix = "-- [FATAL] -- ";
             string color = LoggerColors.DARK_RED;
-            CitizenFX.Core.Debug.WriteLine($"{color}{timestamp} {errorPrefix} {text}.^7");
+            SharedAPI.Log.Critical($"{color}{timestamp} {errorPrefix} {text}.^7");
         }
     }
 }

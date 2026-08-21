@@ -1,5 +1,8 @@
-﻿global using CitizenFX.Core;
-global using CitizenFX.Core.Native;
+﻿global using CitizenFX.FiveM.Client;
+global using CitizenFX.FiveM.Shared.Script;
+global using static CitizenFX.FiveM.Client.Native;
+using CitizenFX.FiveM.Client.Entities;
+using CitizenFX.FiveM.Shared;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using FxEvents.Shared.Encryption;
@@ -15,34 +18,36 @@ using System.Threading.Tasks;
 
 namespace FxEvents
 {
-    public class EventHub : ClientScript
+    public class EventHub : IScript
     {
         internal static Log Logger;
-        internal PlayerList GetPlayers => Players;
+        internal Player[] GetPlayers => API.Players.All.ToArray();
         internal static ClientGateway Gateway;
         internal static bool Debug { get; set; }
         internal static bool Initialized = false;
         internal static EventHub Instance;
         public static EventsDictionary Events => Gateway._handlers;
 
-        public EventHub()
+        public void Initialize()
         {
             Logger = new Log();
             Instance = this;
-            var resName = API.GetCurrentResourceName();
-            string debugMode = API.GetResourceMetadata(resName, "fxevents_debug_mode", 0);
+            var resName = GetCurrentResourceName();
+            string debugMode = GetResourceMetadata(resName, "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || int.TryParse(debugMode, out int num) && num > 0;
 
             byte[] inbound = Encryption.GenerateHash(resName + "_inbound");
             byte[] outbound = Encryption.GenerateHash(resName + "_outbound");
             byte[] signature = Encryption.GenerateHash(resName + "_signature");
-            Gateway = new ClientGateway();
-            Gateway.SignaturePipeline = signature.BytesToString();
-            Gateway.InboundPipeline = inbound.BytesToString();
-            Gateway.OutboundPipeline = outbound.BytesToString();
-        }
+			Gateway = new ClientGateway
+			{
+				SignaturePipeline = signature.BytesToString(),
+				InboundPipeline = inbound.BytesToString(),
+				OutboundPipeline = outbound.BytesToString()
+			};
+		}
 
-        public static void Initialize()
+        public static void StartEngine()
         {
             Initialized = true;
             Gateway.AddEvents();
@@ -83,15 +88,13 @@ namespace FxEvents
             }
         }
 
-        /// <summary>
-        /// registra un evento client (TriggerEvent)
-        /// </summary>
-        /// <param name="eventName">Nome evento</param>
-        /// <param name="action">Azione legata all'evento</param>
+
         internal async void AddEventHandler(string eventName, Delegate action)
         {
-            while (!Initialized) await BaseScript.Delay(0);
-            EventHandlers[eventName] += action;
+            while (!Initialized) await API.Delay(0);
+            //TODO: BOTH?
+			SharedAPI.OnNetEvent(eventName, action);
+			//SharedAPI.OnEvent(eventName, action);
         }
 
         public static void Send(string endpoint, params object[] args)

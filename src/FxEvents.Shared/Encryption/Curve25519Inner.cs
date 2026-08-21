@@ -112,10 +112,8 @@ namespace FxEvents.Shared.Encryption
 		public static byte[] CreateRandomPrivateKey()
 		{
 			var privateKey = new byte[32];
-			using (RNGCryptoServiceProvider rng = new())
-			{
-				rng.GetBytes(privateKey);
-			}
+			RandomNumberGenerator.Fill(privateKey);
+
 			ClampPrivateKeyInline(privateKey);
 
 			return privateKey;
@@ -130,43 +128,19 @@ namespace FxEvents.Shared.Encryption
 		/// <remarks>WARNING: if signingKey is not NULL, this function has data-dependent timing</remarks>
 		public static void KeyGenInline(byte[] publicKey, byte[] signingKey, byte[] privateKey)
 		{
-			if (publicKey == null)
-				throw new ArgumentNullException("publicKey");
+			ArgumentNullException.ThrowIfNull(publicKey);
 			if (publicKey.Length != 32)
-				throw new ArgumentException(
-					String.Format(
-						"publicKey must be 32 bytes long (but was {0} bytes long)",
-						publicKey.Length
-					),
-					"publicKey"
-				);
+				throw new ArgumentException($"publicKey must be 32 bytes long (but was {publicKey.Length} bytes long)", nameof(publicKey));
 
-			if (signingKey == null)
-				throw new ArgumentNullException("signingKey");
+			ArgumentNullException.ThrowIfNull(signingKey);
 			if (signingKey.Length != 32)
-				throw new ArgumentException(
-					String.Format(
-						"signingKey must be 32 bytes long (but was {0} bytes long)",
-						signingKey.Length
-					),
-					"signingKey"
-				);
+				throw new ArgumentException($"signingKey must be 32 bytes long (but was {signingKey.Length} bytes long)", nameof(signingKey));
 
-			if (privateKey == null)
-				throw new ArgumentNullException("privateKey");
+			ArgumentNullException.ThrowIfNull(privateKey);
 			if (privateKey.Length != 32)
-				throw new ArgumentException(
-					String.Format(
-						"privateKey must be 32 bytes long (but was {0} bytes long)",
-						privateKey.Length
-					),
-					"privateKey"
-				);
+				throw new ArgumentException($"privateKey must be 32 bytes long (but was {privateKey.Length} bytes long)", nameof(privateKey));
 
-			using (RNGCryptoServiceProvider rng = new())
-			{
-				rng.GetBytes(privateKey);
-			}
+			RandomNumberGenerator.Fill(privateKey);
 			ClampPrivateKeyInline(privateKey);
 
 			Core(publicKey, signingKey, privateKey, null);
@@ -220,41 +194,12 @@ namespace FxEvents.Shared.Encryption
 		{
 			public Long10() { }
 
-			public Long10(
-				long n0,
-				long n1,
-				long n2,
-				long n3,
-				long n4,
-				long n5,
-				long n6,
-				long n7,
-				long n8,
-				long n9
-			)
+			public Long10(long n0, long n1, long n2, long n3, long n4, long n5, long n6, long n7, long n8, long n9)
 			{
-				N0 = n0;
-				N1 = n1;
-				N2 = n2;
-				N3 = n3;
-				N4 = n4;
-				N5 = n5;
-				N6 = n6;
-				N7 = n7;
-				N8 = n8;
-				N9 = n9;
+				N0 = n0; N1 = n1; N2 = n2; N3 = n3; N4 = n4; N5 = n5; N6 = n6; N7 = n7; N8 = n8; N9 = n9;
 			}
 
-			public long N0,
-				N1,
-				N2,
-				N3,
-				N4,
-				N5,
-				N6,
-				N7,
-				N8,
-				N9;
+			public long N0, N1, N2, N3, N4, N5, N6, N7, N8, N9;
 		}
 
 		/********************* radix 2^8 math *********************/
@@ -1020,8 +965,8 @@ namespace FxEvents.Shared.Encryption
 				t2 = new Long10(),
 				t3 = new Long10(),
 				t4 = new Long10();
-			Long10[] x =  { new Long10(), new Long10() },
-				z =  { new Long10(), new Long10() };
+			Long10[] x = { new Long10(), new Long10() },
+				z = { new Long10(), new Long10() };
 
 			/* unpack the base */
 			if (peerPublicKey != null)
@@ -1037,9 +982,9 @@ namespace FxEvents.Shared.Encryption
 			Copy(x[1], dx);
 			Set(z[1], 1);
 
-			for (int i = 32; i-- != 0; )
+			for (int i = 32; i-- != 0;)
 			{
-				for (int j = 8; j-- != 0; )
+				for (int j = 8; j-- != 0;)
 				{
 					/* swap arguments depending on bit */
 					int bit1 = (privateKey[i] & 0xFF) >> j & 1;

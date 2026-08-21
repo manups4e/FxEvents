@@ -1,166 +1,142 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using CitizenFX.Core;
 
 namespace FxEvents.Shared.Encryption
 {
-    public static class Encryption
-    {
-        static readonly Random random = new Random(DateTime.Now.Millisecond);
-        #region Byte encryption
-        private static byte[] GenerateIV()
-        {
-            byte[] rgbIV = new byte[16];
-            using (RNGCryptoServiceProvider rng = new())
-            rng.GetBytes(rgbIV);
-            return rgbIV;
-        }
+	public static class Encryption
+	{
+		#region Byte encryption
+		private static byte[] GenerateIV()
+		{
+			byte[] rgbIV = new byte[16];
+			RandomNumberGenerator.Fill(rgbIV);
+			return rgbIV;
+		}
 
-        private static byte[] EncryptBytes(byte[] data, object input)
-        {
-            byte[] rgbIV = GenerateIV();
-            byte[] keyBytes = input switch
-            {
-                int sourceId => EventHub.Gateway.GetSecret(sourceId),
-                string strKey => GenerateHash(strKey),
-                _ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
-            };
-            using AesManaged aesAlg = new AesManaged
-            {
-                Key = keyBytes,
-                IV = rgbIV
-            };
+		private static byte[] EncryptBytes(byte[] data, object input)
+		{
+			byte[] rgbIV = GenerateIV();
+			byte[] keyBytes = input switch
+			{
+				int sourceId => EventHub.Gateway.GetSecret(sourceId),
+				string strKey => GenerateHash(strKey),
+				_ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
+			};
 
-            ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+			using Aes aesAlg = Aes.Create();
+			aesAlg.Key = keyBytes;
+			aesAlg.IV = rgbIV;
 
-            using MemoryStream msEncrypt = new MemoryStream();
-            msEncrypt.Write(rgbIV, 0, rgbIV.Length);
-            using CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
-            csEncrypt.Write(data, 0, data.Length);
-            csEncrypt.FlushFinalBlock();
+			using ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+			using MemoryStream msEncrypt = new MemoryStream();
 
-            return msEncrypt.ToArray();
-        }
+			msEncrypt.Write(rgbIV, 0, rgbIV.Length);
+			using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+			{
+				csEncrypt.Write(data, 0, data.Length);
+				csEncrypt.FlushFinalBlock();
+			}
 
-        private static byte[] DecryptBytes(byte[] data, object input)
-        {
-            byte[] rgbIV = data.Take(16).ToArray(); // Extract the IV from the beginning of the data
-            byte[] keyBytes = input switch
-            {
-                int sourceId => EventHub.Gateway.GetSecret(sourceId),
-                string strKey => GenerateHash(strKey),
-                _ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
-            };
-            using AesManaged aesAlg = new AesManaged
-            {
-                Key = keyBytes,
-                IV = rgbIV
-            };
+			return msEncrypt.ToArray();
+		}
 
-            ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+		private static byte[] DecryptBytes(byte[] data, object input)
+		{
+			if (data == null || data.Length < 16)
+				throw new ArgumentException("Encrypted data is invalid or too short.", nameof(data));
 
-            using MemoryStream msDecrypt = new MemoryStream(data.Skip(16).ToArray()); // Skip the IV part
-            using CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
-            using MemoryStream msDecrypted = new MemoryStream();
-            csDecrypt.CopyTo(msDecrypted);
+			byte[] keyBytes = input switch
+			{
+				int sourceId => EventHub.Gateway.GetSecret(sourceId),
+				string strKey => GenerateHash(strKey),
+				_ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
+			};
 
-            return msDecrypted.ToArray();
-        }
-        #endregion
+			using Aes aesAlg = Aes.Create();
+			aesAlg.Key = keyBytes;
 
+			byte[] rgbIV = new byte[16];
+			Buffer.BlockCopy(data, 0, rgbIV, 0, 16);
+			aesAlg.IV = rgbIV;
 
-        internal static byte[] EncryptObject<T>(this T obj, int plySource = -1)
-        {
-            return EncryptBytes(obj.ToBytes(), plySource);
-        }
+			using ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+			using MemoryStream msDecrypt = new MemoryStream(data, 16, data.Length - 16);
+			using CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+			using MemoryStream msDecrypted = new MemoryStream();
 
-        internal static T DecryptObject<T>(this byte[] data, int plySource = -1)
-        {
-            return DecryptBytes(data, plySource).FromBytes<T>();
-        }
+			csDecrypt.CopyTo(msDecrypted);
+			return msDecrypted.ToArray();
+		}
+		#endregion
 
+		internal static byte[] EncryptObject<T>(this T obj, int plySource = -1)
+		{
+			return EncryptBytes(obj.ToBytes(), plySource);
+		}
 
-        /// <summary>
-        /// Encrypt the object.
-        /// </summary>
-        /// <typeparam name="T"/>
-        /// <param name="obj">The object to encrypt.</param>
-        /// <param name="key">The string key to encrypt it.</param>
-        /// <exception cref="Exception"></exception>
-        /// <returns>An encrypted array of byte</returns>
-        public static byte[] EncryptObject<T>(this T obj, string key)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-                throw new Exception("FXEvents: Encryption key cannot be empty!");
-            return EncryptBytes(obj.ToBytes(), key);
-        }
+		internal static T DecryptObject<T>(this byte[] data, int plySource = -1)
+		{
+			return DecryptBytes(data, plySource).FromBytes<T>();
+		}
 
-        /// <summary>
-        /// Decrypt the object.
-        /// </summary>
-        /// <typeparam name="T"/>
-        /// <param name="data">The data to decrypt.</param>
-        /// <param name="key">The key to decrypt it (MUST BE THE SAME AS THE ENCRYPTION KEY).</param>
-        /// <exception cref="Exception"></exception>
-        /// <returns>A <typeparamref name="T"/></returns>
-        public static T DecryptObject<T>(this byte[] data, string key)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-                throw new Exception("FXEvents: Encryption key cannot be empty!");
-            return EncryptBytes(data, key).FromBytes<T>();
-        }
+		public static byte[] EncryptObject<T>(this T obj, string key)
+		{
+			if (string.IsNullOrWhiteSpace(key))
+				throw new Exception("FXEvents: Encryption key cannot be empty!");
+			return EncryptBytes(obj.ToBytes(), key);
+		}
 
-        /// <summary>
-        /// Generate the Sha-256 hash of the given input string.
-        /// </summary>
-        /// <param name="input">The input string.</param>
-        /// <returns>The generated hash in byte[]</returns>
-        public static byte[] GenerateHash(string input)
-        {
-            using SHA256Managed sha256 = new SHA256Managed();
-            return sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-        }
+		public static T DecryptObject<T>(this byte[] data, string key)
+		{
+			if (string.IsNullOrWhiteSpace(key))
+				throw new Exception("FXEvents: Encryption key cannot be empty!");
 
-        internal static async Task<Tuple<string, string>> GenerateKey()
-        {
-            string[] words = ["Scalder", "Suscipient", "Sodalite", "Maharanis", "Mussier", "Abouts", "Geologized", "Antivenins", "Volcanized", "Heliskier", "Bedclothes", "Streamier", "Postulant", "Grizzle", "Folkies", "Poplars", "Stalls", "Chiefess", "Trip", "Untarred", "Cadillacs", "Fixings", "Overage", "Upbraider", "Phocas", "Galton", "Pests", "Saxifraga", "Erodes", "Bracketing", "Rugs", "Deprecate", "Monomials", "Subtracts", "Kettledrum", "Cometic", "Wrvs", "Phalangids", "Vareuse", "Pinchbecks", "Moony", "Scissoring", "Sarks", "Victresses", "Thorned", "Bowled", "Bakeries", "Printable", "Beethoven", "Sacher"];
-            int i = 0;
-            int length = random.Next(5, 10);
-            string passfrase = "";
-            while (i <= length)
-            {
-                await BaseScript.Delay(5);
-                string symbol = "";
-                if (i > 0)
-                    symbol = "-";
-                passfrase += symbol + words[random.Next(words.Length - 1)];
-                i++;
-            }
-            return new(passfrase, passfrase.EncryptObject(GetRandomString(random.Next(30, 50))).BytesToString());
-        }
+			// FIX: Chiamata a DecryptBytes anziché EncryptBytes
+			return DecryptBytes(data, key).FromBytes<T>();
+		}
 
-        private static string GetRandomString(int size, bool lowerCase = false)
-        {
-            StringBuilder builder = new StringBuilder(size);
-            // Unicode/ASCII Letters are divided into two blocks
-            // (Letters 65�90 / 97�122):
-            // The first group containing the uppercase letters and
-            // the second group containing the lowercase.  
+		public static byte[] GenerateHash(string input)
+		{
+			return SHA256.HashData(Encoding.UTF8.GetBytes(input));
+		}
 
-            // char is a single Unicode character  
-            char offset = lowerCase ? 'a' : 'A';
-            const int lettersOffset = 26; // A...Z or a..z: length=26
+		internal static async Task<Tuple<string, string>> GenerateKey()
+		{
+			string[] words = ["Scalder", "Suscipient", "Sodalite", "Maharanis", "Mussier", "Abouts", "Geologized", "Antivenins", "Volcanized", "Heliskier", "Bedclothes", "Streamier", "Postulant", "Grizzle", "Folkies", "Poplars", "Stalls", "Chiefess", "Trip", "Untarred", "Cadillacs", "Fixings", "Overage", "Upbraider", "Phocas", "Galton", "Pests", "Saxifraga", "Erodes", "Bracketing", "Rugs", "Deprecate", "Monomials", "Subtracts", "Kettledrum", "Cometic", "Wrvs", "Phalangids", "Vareuse", "Pinchbecks", "Moony", "Scissoring", "Sarks", "Victresses", "Thorned", "Bowled", "Bakeries", "Printable", "Beethoven", "Sacher"];
 
-            for (int i = 0; i < size; i++)
-            {
-                char @char = (char)random.Next(offset, offset + lettersOffset);
-                builder.Append(@char);
-            }
+			int length = Random.Shared.Next(5, 10);
+			StringBuilder passphraseBuilder = new StringBuilder();
 
-            return lowerCase ? builder.ToString().ToLower() : builder.ToString();
-        }
-    }
+			for (int i = 0; i <= length; i++)
+			{
+				await API.Delay(5);
+				if (i > 0)
+					passphraseBuilder.Append('-');
+
+				passphraseBuilder.Append(words[Random.Shared.Next(words.Length)]);
+			}
+
+			string passphrase = passphraseBuilder.ToString();
+			return new(passphrase, passphrase.EncryptObject(GetRandomString(Random.Shared.Next(30, 50))).BytesToString());
+		}
+
+		private static string GetRandomString(int size, bool lowerCase = false)
+		{
+			StringBuilder builder = new StringBuilder(size);
+			char offset = lowerCase ? 'a' : 'A';
+			const int lettersOffset = 26;
+
+			for (int i = 0; i < size; i++)
+			{
+				char @char = (char)Random.Shared.Next(offset, offset + lettersOffset);
+				builder.Append(@char);
+			}
+
+			return lowerCase ? builder.ToString().ToLower() : builder.ToString();
+		}
+	}
 }

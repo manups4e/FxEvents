@@ -1,5 +1,9 @@
-﻿global using CitizenFX.Core;
-global using CitizenFX.Core.Native;
+﻿global using CitizenFX.FiveM.Server;
+global using CitizenFX.FiveM.Shared.Script;
+global using static CitizenFX.FiveM.Server.Native;
+using CitizenFX.FiveM.Server.Entities;
+using CitizenFX.FiveM.Shared;
+using CitizenFX.FiveM.Shared.Serialization;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
 using FxEvents.Shared.Encryption;
@@ -15,52 +19,55 @@ using System.Threading.Tasks;
 
 namespace FxEvents
 {
-    public class EventHub : ServerScript
+    public class EventHub : IScript
     {
         internal static Log Logger { get; set; }
-        internal ExportDictionary GetExports => Exports;
-        internal PlayerList GetPlayers => Players;
+        internal Player[] GetPlayers => API.Players.All.ToArray();
         internal static ServerGateway Gateway { get; set; }
         internal static bool Debug { get; set; }
-        internal static bool Initialized = false;
+        public static bool Initialized = false;
         internal static EventHub Instance;
 
         public static EventsDictionary Events => Gateway._handlers;
 
-        public EventHub()
+        public void Initialize()
         {
             Logger = new Log();
             Instance = this;
-            var resName = API.GetCurrentResourceName();
-            string debugMode = API.GetResourceMetadata(resName, "fxevents_debug_mode", 0);
+            var resName = GetCurrentResourceName();
+            string debugMode = GetResourceMetadata(resName, "fxevents_debug_mode", 0);
             Debug = debugMode == "yes" || debugMode == "true" || int.TryParse(debugMode, out int num) && num > 0;
-            API.RegisterCommand("generatekey", new Action<int, List<object>, string>(async (a, b, c) =>
-            {
-                if (a != 0) return;
-                Logger.Info("Generating random passfrase with a 50 words dictionary...");
-                Tuple<string, string> ret = await Encryption.GenerateKey();
-                string print = $"Here is your generated encryption key, save it in a safe place.\nThis key is not saved by FXEvents anywhere, so please store it somewhere safe, if you save encrypted data and loose this key, your data will be lost.\n" +
-                $"You can always generate new keys by using \"generatekey\" command.\n" +
-                $"Passfrase: {ret.Item1}\nEncrypted Passfrase: {ret.Item2}";
-                Logger.Info(print);
-            }), false);
+            //RegisterCommand("generatekey", new Action<int, List<object>, string>(generateKeyCommand), false);
             byte[] inbound = Encryption.GenerateHash(resName + "_inbound");
             byte[] outbound = Encryption.GenerateHash(resName + "_outbound");
             byte[] signature = Encryption.GenerateHash(resName + "_signature");
-            Gateway = new ServerGateway();
-            Gateway.SignaturePipeline = signature.BytesToString();
-            Gateway.InboundPipeline = inbound.BytesToString();
-            Gateway.OutboundPipeline = outbound.BytesToString();
-            EventHandlers.Add("playerJoining", new Action<Player>(OnPlayerDropped));
-            EventHandlers.Add("playerDropped", new Action<Player>(OnPlayerDropped));
-        }
+			Gateway = new ServerGateway
+			{
+				SignaturePipeline = signature.BytesToString(),
+				InboundPipeline = inbound.BytesToString(),
+				OutboundPipeline = outbound.BytesToString()
+			};
+			SharedAPI.OnEvent("playerJoining", new Action<Player>(OnPlayerDropped));
+			SharedAPI.OnEvent("playerDropped", new Action<Player>(OnPlayerDropped));
+            InitializeInternal();
 
-        public static void Initialize()
+		}
+
+        [OnCommand("generatekey", Restricted = true)]
+        private static async void generateKeyCommand()
+		{
+			Logger.Info("Generating random passfrase with a 50 words dictionary...");
+			Tuple<string, string> ret = await Encryption.GenerateKey();
+			string print = $"Here is your generated encryption key, save it in a safe place.\nThis key is not saved by FXEvents anywhere, so please store it somewhere safe, if you save encrypted data and loose this key, your data will be lost.\n" +
+			$"You can always generate new keys by using \"generatekey\" command.\n" +
+			$"Passfrase: {ret.Item1}\nEncrypted Passfrase: {ret.Item2}";
+			Logger.Info(print);
+		}
+
+		private void InitializeInternal()
         {
-            Initialized = true;
             Gateway.AddEvents();
-
-            var assembly = Assembly.GetCallingAssembly();
+			var assembly = Assembly.GetCallingAssembly();
             List<string> withReturnType = new List<string>();
             foreach (var type in assembly.GetTypes())
             {
@@ -93,17 +100,18 @@ namespace FxEvents
                         Logger.Error($"Error registering method {method.Name} - FxEvents supports only Static methods for its [FxEvent] attribute!");
                 }
             }
-        }
+			Initialized = true;
+		}
 
-        /// <summary>
-        /// Register an event (TriggerEvent)
-        /// </summary>
-        /// <param name="name">Event name</param>
-        /// <param name="action">Action bound to the event</param>
-        internal async void RegisterEvent(string eventName, Delegate action)
+		/// <summary>
+		/// Register an event (TriggerEvent)
+		/// </summary>
+		/// <param name="name">Event name</param>
+		/// <param name="action">Action bound to the event</param>
+		internal async void RegisterEvent(string eventName, Delegate action)
         {
-            while (!Initialized) await BaseScript.Delay(0);
-            EventHandlers[eventName] += action;
+            while (!Initialized) await API.Delay(0);
+            SharedAPI.OnNetEvent(eventName, action);
         }
 
         public static void Send(Player player, string endpoint, params object[] args)
@@ -142,7 +150,7 @@ namespace FxEvents
                 return;
             }
 
-            PlayerList playerList = Instance.GetPlayers;
+            var playerList = Instance.GetPlayers;
             Gateway.Send(playerList.ToList(), endpoint, args);
         }
 
@@ -203,7 +211,7 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            PlayerList playerList = Instance.GetPlayers;
+            var playerList = Instance.GetPlayers;
             Gateway.SendLatent(playerList.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
         }
 
@@ -248,8 +256,8 @@ namespace FxEvents
 
         private void OnPlayerDropped([FromSource] Player player)
         {
-            if (Gateway._signatures.ContainsKey(int.Parse(player.Handle)))
-                Gateway._signatures.Remove(int.Parse(player.Handle));
+            if (Gateway._signatures.ContainsKey(player.Handle))
+				Gateway._signatures.Remove(player.Handle);
         }
     }
 }

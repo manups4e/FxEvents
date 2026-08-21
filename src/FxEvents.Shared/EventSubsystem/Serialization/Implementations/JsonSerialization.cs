@@ -1,34 +1,38 @@
-using Newtonsoft.Json;
 using System;
-using System.Text;
+using System.Text.Json;
 
 namespace FxEvents.Shared.Serialization.Implementations
 {
-    public class JsonSerialization : ISerialization
-    {
-        public JsonSerialization()
-        {
-        }
+	public class JsonSerialization : ISerialization
+	{
+		private readonly JsonSerializerOptions _options;
 
-        public void Serialize(Type type, object value, SerializationContext context)
-        {
-            context.Writer.Write(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value)));
-        }
+		public JsonSerialization(JsonSerializerOptions options = null)
+		{
+			_options = options ?? JsonHelper.Empty;
+		}
 
-        public void Serialize<T>(T value, SerializationContext context)
-        {
-            Serialize(typeof(T), value, context);
-        }
+		public void Serialize(Type type, object value, SerializationContext context)
+		{
+			byte[] utf8Bytes = JsonSerializer.SerializeToUtf8Bytes(value, type, _options);
+			context.Writer.Write(utf8Bytes);
+		}
 
-        public object Deserialize(Type type, SerializationContext context)
-        {
-            return JsonConvert.DeserializeObject(
-                Encoding.UTF8.GetString(context.Reader.ReadBytes(context.Original!.Length)), type);
-        }
+		public void Serialize<T>(T value, SerializationContext context)
+		{
+			Serialize(typeof(T), value, context);
+		}
 
-        public T Deserialize<T>(SerializationContext context)
-        {
-            return (T)Deserialize(typeof(T), context);
-        }
-    }
+		public object Deserialize(Type type, SerializationContext context)
+		{
+			byte[] bytes = context.Reader.ReadBytes(context.Original!.Length);
+			return JsonSerializer.Deserialize(bytes, type, _options);
+		}
+
+		public T Deserialize<T>(SerializationContext context)
+		{
+			byte[] bytes = context.Reader.ReadBytes(context.Original!.Length);
+			return JsonSerializer.Deserialize<T>(bytes, _options);
+		}
+	}
 }

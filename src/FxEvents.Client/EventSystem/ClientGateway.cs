@@ -1,4 +1,5 @@
-﻿using FxEvents.Shared;
+﻿using CitizenFX.FiveM.Shared;
+using FxEvents.Shared;
 using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem;
@@ -26,7 +27,7 @@ namespace FxEvents.EventSystem
             SnowflakeGenerator.Create((short)new Random().Next(1, 199));
             _curve25519 = Curve25519.Create();
             Serialization = new MsgPackSerialization();
-            DelayDelegate = async delay => await BaseScript.Delay(delay);
+            DelayDelegate = async delay => await API.Delay(delay);
             PrepareDelegate = PrepareAsync;
             PushDelegate = Push;
             PushDelegateLatent = PushLatent;
@@ -60,7 +61,7 @@ namespace FxEvents.EventSystem
             }));
 
             _hub.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => _secret = _curve25519.GetSharedSecret(signature)));
-            BaseScript.TriggerServerEvent(SignaturePipeline, _curve25519.GetPublicKey());
+			API.EmitServer(SignaturePipeline, _curve25519.GetPublicKey());
         }
 
         internal async Task PrepareAsync(string pipeline, int source, IMessage message)
@@ -68,7 +69,7 @@ namespace FxEvents.EventSystem
             if (_secret.Length == 0)
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                while (_secret.Length == 0) await BaseScript.Delay(0);
+                while (_secret.Length == 0) await API.Delay(0);
                 if (EventHub.Debug)
                 {
                     Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");
@@ -82,18 +83,18 @@ namespace FxEvents.EventSystem
             {
                 if(binding != Binding.Remote)
                     if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-                BaseScript.TriggerServerEvent(pipeline, endpoint, binding, buffer);
+				API.EmitServer(pipeline, endpoint, binding, buffer);
             }
             else if (binding == Binding.All || binding == Binding.Local)
             {
-                BaseScript.TriggerEvent(pipeline, endpoint, binding, buffer);
+				API.EmitLocal(pipeline, endpoint, binding, buffer);
             }
         }
 
         internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
         {
             if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-            BaseScript.TriggerLatentServerEvent(pipeline, bytePerSecond, endpoint, Binding.Remote, buffer);
+			API.EmitServerLatent(bytePerSecond, pipeline, endpoint, Binding.Remote, buffer);
         }
 
         public async void Send(string endpoint, Binding binding, params object[] args)

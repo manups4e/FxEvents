@@ -5,7 +5,7 @@ namespace FxEvents.Shared.Diagnostics
 {
     public abstract class StopwatchUtil
     {
-        private static bool IsServer = API.IsDuplicityVersion();
+        private static bool IsServer = IsDuplicityVersion();
 
         public abstract TimeSpan Elapsed { get; }
         public abstract void Stop();

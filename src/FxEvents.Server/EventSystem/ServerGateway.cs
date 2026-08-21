@@ -1,4 +1,6 @@
 ﻿using CitizenFX.Core;
+using CitizenFX.FiveM.Server.Entities;
+using CitizenFX.FiveM.Shared.Serialization;
 using FxEvents.Shared;
 using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Encryption;
@@ -28,7 +30,7 @@ namespace FxEvents.EventSystem
         {
             SnowflakeGenerator.Create((short)new Random().Next(200, 399));
             Serialization = new MsgPackSerialization();
-            DelayDelegate = async delay => await BaseScript.Delay(delay);
+            DelayDelegate = async delay => await API.Delay(delay);
             PrepareDelegate = PrepareAsync;
             PushDelegate = Push;
             PushDelegateLatent = PushLatent;
@@ -47,22 +49,22 @@ namespace FxEvents.EventSystem
             if (binding == Binding.All || binding == Binding.Remote)
             {
                 if (source != new ServerId().Handle)
-                    BaseScript.TriggerClientEvent(_hub.GetPlayers[source], pipeline, endpoint, binding, buffer);
+                    API.EmitClient(source, pipeline, endpoint, binding, buffer);
                 else
-                    BaseScript.TriggerClientEvent(pipeline, endpoint, binding, buffer);
+					API.EmitClient(-1, pipeline, endpoint, binding, buffer);
             }
             else if (binding == Binding.All || binding == Binding.Local)
             {
-                BaseScript.TriggerEvent(pipeline, endpoint, binding, buffer);
+				API.EmitLocal(pipeline, endpoint, binding, buffer);
             }
         }
 
         internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
         {
             if (source != new ServerId().Handle)
-                BaseScript.TriggerLatentClientEvent(_hub.GetPlayers[source], pipeline, bytePerSecond, endpoint, Binding.Remote, buffer);
+				API.EmitClient(source, pipeline, bytePerSecond, endpoint, Binding.Remote, buffer);
             else
-                BaseScript.TriggerLatentClientEvent(pipeline, bytePerSecond, endpoint, Binding.Remote, buffer);
+                API.EmitClientLatent(source, bytePerSecond, pipeline, endpoint, Binding.Remote, buffer);
         }
 
         private void GetSignature([FromSource] string source, byte[] clientPubKey)
@@ -72,8 +74,8 @@ namespace FxEvents.EventSystem
                 int client = int.Parse(source.Replace("net:", string.Empty));
                 if (_signatures.ContainsKey(client))
                 {
-                    Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
-                    BaseScript.TriggerEvent("fxevents:tamperingprotection", source, "signature retrival", TamperType.REQUESTED_NEW_PUBLIC_KEY);
+                    Logger.Warning($"Client {GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
+                    API.EmitLocal("fxevents:tamperingprotection", source, "signature retrival", TamperType.REQUESTED_NEW_PUBLIC_KEY);
                     return;
                 }
 
@@ -82,7 +84,7 @@ namespace FxEvents.EventSystem
 
                 _signatures.Add(client, secret);
 
-                BaseScript.TriggerClientEvent(_hub.GetPlayers[client], SignaturePipeline, curve25519.GetPublicKey());
+                API.EmitClient(client, SignaturePipeline, curve25519.GetPublicKey());
             }
             catch (Exception ex)
             {
@@ -109,7 +111,7 @@ namespace FxEvents.EventSystem
                 }
                 catch (TimeoutException)
                 {
-                    API.DropPlayer(client.ToString(), $"Operation timed out: {endpoint.ToBase64()}");
+                    DropPlayer(client.ToString(), $"Operation timed out: {endpoint.ToBase64()}");
                 }
             }
             catch (Exception ex)
@@ -138,7 +140,7 @@ namespace FxEvents.EventSystem
 
         public void Send(Player player, string endpoint, params object[] args) => Send(Convert.ToInt32(player.Handle), endpoint, Binding.Remote, args);
         public void Send(ISource client, string endpoint, params object[] args) => Send(client.Handle, endpoint, Binding.Remote, args);
-        public void Send(List<Player> players, string endpoint, params object[] args) => Send(players.Select(x => int.Parse(x.Handle)).ToList(), endpoint, Binding.Remote, args);
+        public void Send(List<Player> players, string endpoint, params object[] args) => Send(players.Select(x => x.Handle).ToList(), endpoint, Binding.Remote, args);
         public void Send(List<ISource> clients, string endpoint, params object[] args) => Send(clients.Select(x => x.Handle).ToList(), endpoint, Binding.Remote, args);
         public void Send(string endpoint, params object[] args) => Send([], endpoint, Binding.Local, args);
 
@@ -149,7 +151,7 @@ namespace FxEvents.EventSystem
                 int i = 0;
                 while (i < targets.Count)
                 {
-                    await BaseScript.Delay(0);
+                    await API.Delay(0);
                     Send(targets[i], endpoint, binding, args);
                     i++;
                 }
@@ -176,7 +178,7 @@ namespace FxEvents.EventSystem
             int i = 0;
             while (i < targets.Count)
             {
-                await BaseScript.Delay(0);
+                await API.Delay(0);
                 SendLatent(targets[i], endpoint, bytesxSecond, args);
                 i++;
             }
@@ -209,10 +211,10 @@ namespace FxEvents.EventSystem
             if (GetSecret(source).Length == 0)
             {
                 StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                long time = API.GetGameTimer();
+                long time = GetGameTimer();
                 while (GetSecret(source).Length == 0)
                 {
-                    if (API.GetGameTimer() - time > 1000)
+                    if (GetGameTimer() - time > 1000)
                     {
                         if (EventHub.Debug)
                         {
@@ -220,7 +222,7 @@ namespace FxEvents.EventSystem
                         }
                         return;
                     }
-                    await BaseScript.Delay(0);
+                    await API.Delay(0);
                 }
                 if (EventHub.Debug)
                 {

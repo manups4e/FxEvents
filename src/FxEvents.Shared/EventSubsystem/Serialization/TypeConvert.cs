@@ -1,7 +1,6 @@
 ﻿using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.TypeExtensions;
-using MsgPack;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -562,77 +561,6 @@ namespace FxEvents.Shared.EventSubsystem.Serialization
         }
 
 
-        #endregion
-
-        #region OLD METHOD
-        internal static object GetHolder(MessagePackObject msgpkObj, Type type)
-        {
-            object obj = msgpkObj.ToObject();
-            TypeCode typeCode = Type.GetTypeCode(type);
-            switch (typeCode)
-            {
-                case TypeCode.String:
-                    if (msgpkObj.IsNil)
-                        return string.Empty;
-                    return obj as string ?? (type.IsSimpleType() ? obj.ToString() : string.Empty);
-                case TypeCode.Byte:
-                case TypeCode.SByte:
-                case TypeCode.Int16:
-                case TypeCode.Int32:
-                case TypeCode.Int64:
-                case TypeCode.UInt16:
-                case TypeCode.UInt32:
-                case TypeCode.UInt64:
-                    if (obj is IConvertible convertible)
-                    {
-                        try
-                        {
-                            return Convert.ChangeType(convertible, type);
-                        }
-                        catch (InvalidCastException)
-                        {
-                            return GetDefaultForType(type);
-                        }
-                    }
-                    else
-                        return GetDefaultForType(type);
-                case TypeCode.Boolean:
-                    bool booleanValue;
-                    if (bool.TryParse(obj.ToString(), out booleanValue))
-                        return booleanValue;
-                    else
-                        return false;
-                case TypeCode.Char:
-                    char charValue;
-                    if (char.TryParse(obj.ToString(), out charValue))
-                        return charValue;
-                    else
-                        return '\0';
-                case TypeCode.Decimal:
-                    decimal decimalValue;
-                    if (decimal.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
-                        return decimalValue;
-                    else
-                        return 0M;
-                case TypeCode.Single:
-                    float floatValue;
-                    if (float.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out floatValue))
-                        return floatValue;
-                    else
-                        return 0F;
-                case TypeCode.Double:
-                    double doubleValue;
-                    if (double.TryParse(obj.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out doubleValue))
-                        return doubleValue;
-                    else
-                        return 0D;
-                case TypeCode.DBNull:
-                case TypeCode.DateTime:
-                    return obj;
-                default:
-                    return GetDefaultForType(type);
-            }
-        }
         #endregion
 
         private static object GetDefaultForType(Type type)

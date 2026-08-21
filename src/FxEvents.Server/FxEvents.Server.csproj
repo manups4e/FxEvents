@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
 		<AssemblyTitle>FxEvents Server</AssemblyTitle>
 		<Description>FxEvents an advanced event subsystem for FiveM C# Resources.</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -9,8 +10,6 @@
 		<PackageProjectUrl>https://github.com/manups4e/FxEvents</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/manups4e/FxEvents</RepositoryUrl>
 		<Copyright>Copyright Leonardo Emanuele</Copyright>
-		<TargetFramework>netstandard2.0</TargetFramework>
-		<LangVersion>latest</LangVersion>
 		<AssemblyName>FxEvents.Server</AssemblyName>
 		<RootNamespace>FxEvents.Server</RootNamespace>
 		<BaseOutputPath>..\..\CompiledLibs\Server</BaseOutputPath>
@@ -31,18 +30,6 @@
 		<DebugType>portable</DebugType>
 	</PropertyGroup>
 
-<ItemGroup>
-		<PackageReference Include="CitizenFX.Core.Server" Version="1.0.10018" />
-		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" ExcludeAssets="Compile" GeneratePathProperty="true" />
-		<Reference Include="MsgPack">
-		  <HintPath>..\..\FiveMMsgPack\MsgPack.dll</HintPath>
-		</Reference>
-		<Reference Include="Newtonsoft.Json">
-			<HintPath>$(PkgNewtonsoft_Json)\lib\portable-net40+sl5+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\README.md">
 			<Pack>True</Pack>
@@ -50,11 +37,19 @@
 		</None>
 		<None Include=".editorconfig" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<EditorConfigFiles Remove=".editorconfig" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="CitizenFX.FiveM.Server" Version="0.0.4-alpha" />
+	</ItemGroup>
+
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Exec Command="IF EXIST &quot;$(SolutionDir)scripts\post_server.bat&quot; call &quot;$(SolutionDir)scripts\post_server.bat&quot; &gt; &quot;$(SolutionDir)scripts\post_server.log&quot; 2&gt;&amp;1" IgnoreExitCode="true" />
 	</Target>
+
 	<Import Project="..\FxEvents.Shared\FxEvents.Shared.projitems" Label="Shared" />
+
 </Project>
