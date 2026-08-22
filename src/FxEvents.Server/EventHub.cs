@@ -64,6 +64,12 @@ namespace FxEvents
 			InitializeInternal();
 		}
 
+		private static void WarmUpSerialization()
+		{
+			// Forza il JIT a compilare i formattatori di MessagePack all'avvio della risorsa
+			_ = BinaryHelper.ToBytes(new EventMessage());
+		}
+
 		private static void EnsureInitialized()
 		{
 			if (!Initialized)
@@ -121,6 +127,9 @@ namespace FxEvents
 					}
 				}
 			}
+
+			//Note: This is to allow msgpack caching of EventMessage.. this will avoid the first event to take more than 100ms to send
+			WarmUpSerialization();
 		}
 
 		internal async void RegisterEvent(string eventName, Delegate action)

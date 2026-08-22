@@ -1,8 +1,10 @@
 using FxEvents.Shared.EventSubsystem.Serialization;
 using FxEvents.Shared.Exceptions;
+using FxEvents.Shared.Serialization.Formatters;
 using FxEvents.Shared.TypeExtensions;
 using Logger;
 using MessagePack;
+using MessagePack.Formatters;
 using MessagePack.Resolvers;
 using System;
 using System.Collections.Generic;
@@ -13,9 +15,13 @@ namespace FxEvents.Shared.Serialization.Implementations
 	public class MsgPackSerialization : ISerialization
 	{
 		private readonly Log logger = new();
-		private static readonly MessagePackSerializerOptions DefaultOptions = MessagePackSerializerOptions.Standard
-			.WithResolver(StandardResolver.Instance);
-
+		private static readonly MessagePackSerializerOptions DefaultOptions = MessagePackSerializerOptions.Standard.WithResolver(CompositeResolver.Create(
+				new IMessagePackFormatter[] { SnowflakeFormatter.Instance }, // Formatter custom per Snowflake
+				new IFormatterResolver[] {
+					BuiltinResolver.Instance,
+					ContractlessStandardResolverAllowPrivate.Instance
+				}
+			));
 		private static bool IsTuple(Type t) => t.Name.StartsWith("Tuple");
 
 		#region Serialization

@@ -3,14 +3,12 @@ using System;
 
 namespace FxEvents.Shared.Snowflakes
 {
-	[MessagePackObject]
 	public struct Snowflake : IEquatable<Snowflake>
 	{
 		public static readonly Snowflake Empty = new Snowflake(0);
 
 		private ulong _value;
 
-		[Key(0)]
 		public ulong Value
 		{
 			get => _value;
@@ -22,7 +20,7 @@ namespace FxEvents.Shared.Snowflakes
 			_value = 0;
 		}
 
-		[SerializationConstructor]
+		[SerializationConstructor] // <-- Dice a MessagePack quale costruttore usare per deserializzare
 		public Snowflake(ulong value)
 		{
 			_value = value;

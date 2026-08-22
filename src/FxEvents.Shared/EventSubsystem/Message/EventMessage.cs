@@ -5,22 +5,16 @@ using FxEvents.Shared.Snowflakes;
 using MessagePack;
 using System.Collections.Generic;
 
-[MessagePackObject(AllowPrivate = true)]
 internal class EventMessage : IMessage
 {
-	[Key(0)]
 	public Snowflake Id { get; set; }
 
-	[Key(1)]
 	public string? Endpoint { get; set; }
 
-	[Key(2)]
 	public EventFlowType Flow { get; set; }
 
-	[Key(3)]
 	public EventRemote Sender { get; set; }
 
-	[Key(4)]
 	public List<EventParameter> Parameters { get; set; }
 
 	public EventMessage()
