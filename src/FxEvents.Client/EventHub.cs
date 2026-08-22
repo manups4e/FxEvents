@@ -20,7 +20,6 @@ namespace FxEvents
 	public class EventHub : IScript
 	{
 		internal static Log Logger { get; set; } = new();
-		internal Player[] GetPlayers => API.Players.All.ToArray();
 		internal static ClientGateway Gateway { get; set; }
 		internal static bool Debug { get; set; }
 		public static bool Initialized { get; private set; } = false;

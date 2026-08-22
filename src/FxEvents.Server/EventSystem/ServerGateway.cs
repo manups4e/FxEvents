@@ -161,9 +161,11 @@ namespace FxEvents.EventSystem
 
 		public async void Send(int target, string endpoint, Binding binding, params object[] args)
 		{
-			// 1. Se il binding è Local o All, invia senza controllare la lista giocatori
-			// 2. Se è Remote, controlla prima che target sia valido (> -1) e che il giocatore esista in GetPlayers
-			if (binding == Binding.Local || (binding == Binding.Remote && target >= 0 && !string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target]?.Name)))
+			// 1. Se il binding è Local, procede direttamente.
+			// 2. Se è Remote/All, verifica che il target sia valido e presente tra i giocatori connessi.
+			bool isValidTarget = binding == Binding.Local || (target >= 0 && API.Players.All.Any(p => p.Handle == target));
+
+			if (isValidTarget)
 			{
 				await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, binding, args);
 			}
@@ -186,7 +188,7 @@ namespace FxEvents.EventSystem
 
 		public async void SendLatent(int target, string endpoint, int bytesxSecond, params object[] args)
 		{
-			if (!string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target].Name))
+			if (target >= 0 && API.Players.All.Any(p => p.Handle == target)) 
 				await CreateAndSendLatentAsync(EventFlowType.Straight, target, endpoint, bytesxSecond, args);
 		}
 

@@ -145,7 +145,8 @@ namespace FxEvents.Shared.EventSubsystem
 					}
 					else if (typeof(Player).IsAssignableFrom(pType))
 					{
-						parameters.Add(EventHub.Instance.GetPlayers[source]);
+						Player? player = API.Players.Get(source);
+						parameters.Add(player);
 					}
 					else if (pType == typeof(string))
 					{

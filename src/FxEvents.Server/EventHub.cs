@@ -22,7 +22,6 @@ namespace FxEvents
 	public class EventHub : IScript
 	{
 		internal static Log Logger { get; set; } = new();
-		internal Player[] GetPlayers => API.Players.All.ToArray();
 		internal static ServerGateway Gateway { get; set; }
 		internal static bool Debug { get; set; }
 		public static bool Initialized { get; private set; } = false;
@@ -161,7 +160,7 @@ namespace FxEvents
 		public static void Send(string endpoint, params object[] args)
 		{
 			EnsureInitialized();
-			Gateway.Send(Instance.GetPlayers.ToList(), endpoint, args);
+			Gateway.Send(API.Players.All.ToList(), endpoint, args);
 		}
 
 		public static void Send(IEnumerable<ISource> clients, string endpoint, params object[] args)
@@ -199,7 +198,7 @@ namespace FxEvents
 		public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
 		{
 			EnsureInitialized();
-			Gateway.SendLatent(Instance.GetPlayers.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
+			Gateway.SendLatent(API.Players.All.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesPerSeconds, args);
 		}
 
 		public static void SendLatent(IEnumerable<ISource> clients, string endpoint, int bytesPerSeconds, params object[] args)
