@@ -28,18 +28,15 @@ namespace FxEvents.Shared
         All = Local | Remote
     }
 
-    /// <summary>
-    /// The fxevent attribute.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-    public class FxEventAttribute : Attribute
+    
+    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    public sealed class FxNetEventAttribute(string name) : Attribute
     {
-        public string Name { get; }
-        public Binding Binding { get; }
-        public FxEventAttribute(string name, Binding binding = Binding.All)
-        {
-            Name = name;
-            Binding = binding;
-        }
+        public string Name { get; } = name;
     }
-}
+
+    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    public sealed class FxLocalEventAttribute(string name) : Attribute
+    {
+        public string Name { get; } = name;
+    }}

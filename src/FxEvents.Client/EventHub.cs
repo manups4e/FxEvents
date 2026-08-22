@@ -5,6 +5,7 @@ using CitizenFX.FiveM.Client.Entities;
 using CitizenFX.FiveM.Shared;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
+using FxEvents.Shared.Attributes;
 using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem;
 using Logger;
@@ -17,24 +18,37 @@ using System.Threading.Tasks;
 
 namespace FxEvents
 {
+	/// <summary>
+	/// Client-side event management hub for FxEvents, handling encrypted network messaging and fast local dispatches.
+	/// </summary>
 	public class EventHub : IScript
 	{
 		internal static Log Logger { get; set; } = new();
 		internal static ClientGateway Gateway { get; set; }
 		internal static bool Debug { get; set; }
+
+		/// <summary>
+		/// Gets a value indicating whether the client-side <see cref="EventHub"/> framework has been initialized.
+		/// </summary>
 		public static bool Initialized { get; private set; } = false;
+
 		internal static EventHub Instance { get; private set; }
 
+		/// <summary>
+		/// Gets the active collection of registered event endpoints and their bound delegates.
+		/// </summary>
 		public static EventsDictionary Events => Gateway._handlers;
 
 		/// <summary>
-		/// Inizializza l'EventHub lato Client.
+		/// Explicitly initializes the client-side <see cref="EventHub"/> framework, setting up crypto pipelines and registering event attributes.
 		/// </summary>
+		/// <remarks>
+		/// Calling this method manually at resource startup is optional, as all public API methods automatically invoke it if uninitialized.
+		/// </remarks>
 		public static void Initialize()
 		{
 			if (Initialized) return;
 
-			// Imposta subito la flag per spezzare qualsiasi loop di ricorsione
 			Initialized = true;
 			Instance ??= new EventHub();
 
@@ -58,7 +72,6 @@ namespace FxEvents
 
 		private static void WarmUpSerialization()
 		{
-			// Forza il JIT a compilare i formattatori di MessagePack all'avvio della risorsa
 			_ = BinaryHelper.ToBytes(new EventMessage());
 		}
 
@@ -79,37 +92,44 @@ namespace FxEvents
 
 			foreach (var type in assembly.GetTypes())
 			{
-				var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
-								  .Where(m => m.GetCustomAttributes(typeof(FxEventAttribute), false).Length > 0);
+				var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 
 				foreach (var method in methods)
 				{
-					var attribute = method.GetCustomAttribute<FxEventAttribute>();
-					if (attribute == null) continue;
+					var netAttr = method.GetCustomAttribute<FxNetEventAttribute>();
+					var localAttr = method.GetCustomAttribute<FxLocalEventAttribute>();
+
+					if (netAttr == null && localAttr == null) continue;
+
+					string eventName = netAttr?.Name ?? localAttr!.Name;
+					bool isRemote = netAttr != null;
+
+					if (!method.IsStatic)
+					{
+						Logger.Error($"Error registering {method.Name}: FxEvents supports only static methods for event handlers!");
+						continue;
+					}
 
 					var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
 					var actionType = Expression.GetDelegateType([.. parameters, method.ReturnType]);
 
 					if (method.ReturnType != typeof(void))
 					{
-						if (!withReturnType.Add(attribute.Name))
+						if (!withReturnType.Add(eventName))
 						{
-							throw new InvalidOperationException($"FxEvents - Failed registering [{attribute.Name}] delegates. Cannot register more than 1 delegate for [{attribute.Name}] with a return type!");
+							throw new InvalidOperationException($"FxEvents - Cannot register more than 1 delegate with a return type for [{eventName}]!");
 						}
 					}
 
-					if (method.IsStatic)
-					{
-						Mount(attribute.Name, attribute.Binding, Delegate.CreateDelegate(actionType, method));
-					}
+					var @delegate = Delegate.CreateDelegate(actionType, method);
+
+					if (isRemote)
+						OnNet(eventName, @delegate);
 					else
-					{
-						Logger.Error($"Error registering method {method.Name} - FxEvents supports only Static methods for its [FxEvent] attribute!");
-					}
+						OnLocal(eventName, @delegate);
 				}
 			}
-		
-			//Note: This is to allow msgpack caching of EventMessage.. this will avoid the first event to take more than 100ms to send
+
 			WarmUpSerialization();
 		}
 
@@ -119,41 +139,100 @@ namespace FxEvents
 		}
 
 		#region Public Static API
-		public static void Send(string endpoint, params object[] args)
+
+		/// <summary>
+		/// Sends an encrypted network message from the client to the server.
+		/// </summary>
+		/// <param name="endpoint">The registered event endpoint name.</param>
+		/// <param name="args">Optional arguments to serialize and send to the server handler.</param>
+		public static void SendNet(string endpoint, params object[] args)
 		{
 			EnsureInitialized();
-			Gateway.Send(endpoint, Binding.Remote, args);
+			Gateway.SendNet(endpoint, args);
 		}
 
+		/// <summary>
+		/// Dispatches an unencrypted local event message within the client process/AppDomain.
+		/// </summary>
+		/// <param name="endpoint">The registered event endpoint name.</param>
+		/// <param name="args">Optional arguments to pass to the local client handler.</param>
 		public static void SendLocal(string endpoint, params object[] args)
 		{
 			EnsureInitialized();
-			Gateway.Send(endpoint, Binding.Local, args);
+			Gateway.SendLocal(endpoint, args);
 		}
 
-		public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
+		/// <summary>
+		/// Sends a rate-limited, bandwidth-throttled network event from the client to the server.
+		/// </summary>
+		/// <param name="endpoint">The registered event endpoint name.</param>
+		/// <param name="target">The target server handle ID (default is -1 for the server).</param>
+		/// <param name="bytesPerSecond">Maximum rate of data transfer in bytes per second.</param>
+		/// <param name="args">Optional arguments to serialize and send.</param>
+		public static void SendLatent(string endpoint, int target, int bytesPerSecond, params object[] args)
 		{
 			EnsureInitialized();
-			Gateway.SendLatent(endpoint, bytesPerSeconds, args);
+			Gateway.SendLatent(endpoint, target, bytesPerSecond, args);
 		}
 
-		public static async Task<T?> Get<T>(string endpoint, params object[] args)
+		/// <summary>
+		/// Asynchronously sends a network request to the server and awaits a typed response payload.
+		/// </summary>
+		/// <typeparam name="T">The expected response payload type.</typeparam>
+		/// <param name="endpoint">The registered event endpoint name.</param>
+		/// <param name="args">Optional arguments to pass with the request.</param>
+		/// <returns>A task containing the returned payload of type <typeparamref name="T"/>, or <c>null</c> if the request failed or timed out.</returns>
+		public static async Task<T?> GetNet<T>(string endpoint, params object[] args)
 		{
 			EnsureInitialized();
-			return await Gateway.Get<T>(endpoint, args);
+			return await Gateway.GetNet<T>(endpoint, -1, args);
 		}
 
-		public static void Mount(string endpoint, Binding binding, Delegate @delegate)
+		/// <summary>
+		/// Asynchronously invokes an in-process local client event handler and awaits a typed response payload.
+		/// </summary>
+		/// <typeparam name="T">The expected response payload type.</typeparam>
+		/// <param name="endpoint">The registered event endpoint name.</param>
+		/// <param name="args">Optional arguments to pass with the request.</param>
+		/// <returns>A task containing the returned payload of type <typeparamref name="T"/>, or <c>null</c> if the request failed.</returns>
+		public static async Task<T?> GetLocal<T>(string endpoint, params object[] args)
 		{
 			EnsureInitialized();
-			Gateway.Mount(endpoint, binding, @delegate);
+			return await Gateway.GetLocal<T>(endpoint, args);
 		}
 
-		public static void Unmount(string endpoint)
+		/// <summary>
+		/// Subscribes a delegate callback to an encrypted network event endpoint coming from the server.
+		/// </summary>
+		/// <param name="endpoint">The event endpoint name to listen for.</param>
+		/// <param name="action">The target delegate callback method.</param>
+		public static void OnNet(string endpoint, Delegate action)
+		{
+			EnsureInitialized();
+			Gateway.MountNet(endpoint, action);
+		}
+
+		/// <summary>
+		/// Subscribes a delegate callback to an unencrypted local client event endpoint.
+		/// </summary>
+		/// <param name="endpoint">The event endpoint name to listen for.</param>
+		/// <param name="action">The target delegate callback method.</param>
+		public static void OnLocal(string endpoint, Delegate action)
+		{
+			EnsureInitialized();
+			Gateway.MountLocal(endpoint, action);
+		}
+
+		/// <summary>
+		/// Unregisters and unmounts all callbacks associated with the specified endpoint name.
+		/// </summary>
+		/// <param name="endpoint">The event endpoint name to unregister.</param>
+		public static void Off(string endpoint)
 		{
 			EnsureInitialized();
 			Gateway.Unmount(endpoint);
 		}
+
 		#endregion
 	}
 }

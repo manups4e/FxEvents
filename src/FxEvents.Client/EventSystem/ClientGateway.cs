@@ -8,120 +8,122 @@ using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.Snowflakes;
 using System;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace FxEvents.EventSystem
 {
-    internal class ClientGateway : BaseGateway
-    {
-        protected override ISerialization Serialization { get; }
+	internal class ClientGateway : BaseGateway
+	{
+		protected override ISerialization Serialization { get; }
 
-        private EventHub _hub => EventHub.Instance;
-        private Curve25519 _curve25519;
-        private byte[] _secret = [];
+		private EventHub Hub => EventHub.Instance;
+		private readonly Curve25519 _curve25519;
+		private byte[] _secret = [];
 
+		public ClientGateway()
+		{
+			SnowflakeGenerator.Create((short)Random.Shared.Next(1, 199));
+			_curve25519 = Curve25519.Create();
+			Serialization = new MsgPackSerialization();
+			DelayDelegate = async delay => await API.Delay(delay);
+			PrepareDelegate = PrepareAsync;
+			PushDelegate = Push;
+			PushDelegateLatent = PushLatent;
+		}
 
-        public ClientGateway()
-        {
-            SnowflakeGenerator.Create((short)new Random().Next(1, 199));
-            _curve25519 = Curve25519.Create();
-            Serialization = new MsgPackSerialization();
-            DelayDelegate = async delay => await API.Delay(delay);
-            PrepareDelegate = PrepareAsync;
-            PushDelegate = Push;
-            PushDelegateLatent = PushLatent;
-        }
+		internal void AddEvents()
+		{
+			Hub.AddEventHandler(InboundPipeline, new Action<string, bool, byte[]>(async (endpoint, isRemote, encrypted) =>
+			{
+				try
+				{
+					await ProcessInboundAsync(new ServerId().Handle, endpoint, isRemote, encrypted);
+				}
+				catch (Exception ex)
+				{
+					EventMessage message = encrypted.DecryptObject<EventMessage>();
+					Logger.Error($"InboundPipeline [{message.Endpoint}]: {ex}");
+				}
+			}));
 
-        internal void AddEvents()
-        {
-            _hub.AddEventHandler(InboundPipeline, new Action<string, Binding, byte[]>(async (endpoint, binding, encrypted) =>
-            {
-                try
-                {
-                    await ProcessInboundAsync(new ServerId().Handle, endpoint, binding, encrypted);
-                }
-                catch (Exception ex)
-                {
-                    EventMessage message = encrypted.DecryptObject<EventMessage>();
-                    Logger.Error($"InboundPipeline [{message.Endpoint}]:" + ex.ToString());
-                }
-            }));
+			Hub.AddEventHandler(OutboundPipeline, new Action<string, bool, byte[]>((endpoint, isRemote, serialized) =>
+			{
+				try
+				{
+					ProcessReply(serialized);
+				}
+				catch (Exception ex)
+				{
+					Logger.Error($"OutboundPipeline: {ex}");
+				}
+			}));
 
-            _hub.AddEventHandler(OutboundPipeline, new Action<string, Binding, byte[]>((endpoint, binding, serialized) =>
-            {
-                try
-                {
-                    ProcessReply(serialized);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("OutboundPipeline:" + ex.ToString());
-                }
-            }));
-
-            _hub.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => _secret = _curve25519.GetSharedSecret(signature)));
+			Hub.AddEventHandler(SignaturePipeline, new Action<byte[]>(signature => _secret = _curve25519.GetSharedSecret(signature)));
 			API.EmitServer(SignaturePipeline, _curve25519.GetPublicKey());
-        }
+		}
 
-        internal async Task PrepareAsync(string pipeline, int source, IMessage message)
-        {
-            if (_secret.Length == 0)
-            {
-                StopwatchUtil stopwatch = StopwatchUtil.StartNew();
-                while (_secret.Length == 0) await API.Delay(0);
-                if (EventHub.Debug)
-                {
-                    Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");
-                }
-            }
-        }
+		internal async Task PrepareAsync(string pipeline, int source, IMessage message)
+		{
+			if (_secret.Length == 0)
+			{
+				StopwatchUtil stopwatch = StopwatchUtil.StartNew();
+				while (_secret.Length == 0) await API.Delay(0);
+				if (EventHub.Debug)
+				{
+					Logger.Debug($"[{message}] Halted {stopwatch.Elapsed.TotalMilliseconds}ms due to signature retrieval.");
+				}
+			}
+		}
 
-        internal void Push(string pipeline, int source, string endpoint, Binding binding, byte[] buffer)
-        {
-            if(binding == Binding.All || binding == Binding.Remote)
-            {
-                if(binding != Binding.Remote)
-                    if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-				API.EmitServer(pipeline, endpoint, binding, buffer);
-            }
-            else if (binding == Binding.All || binding == Binding.Local)
-            {
-				API.EmitLocal(pipeline, endpoint, binding, buffer);
-            }
-        }
+		internal void Push(string pipeline, int source, string endpoint, bool isRemote, byte[] buffer)
+		{
+			if (isRemote)
+			{
+				if (source != -1) throw new InvalidOperationException($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
+				API.EmitServer(pipeline, endpoint, isRemote, buffer);
+			}
+			else
+			{
+				API.EmitLocal(pipeline, endpoint, isRemote, buffer);
+			}
+		}
 
-        internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
-        {
-            if (source != -1) throw new Exception($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
-			API.EmitServerLatent(bytePerSecond, pipeline, endpoint, Binding.Remote, buffer);
-        }
+		internal void PushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer)
+		{
+			if (source != -1) throw new InvalidOperationException($"The client can only target server events. (arg {nameof(source)} is not matching -1)");
+			API.EmitServerLatent(bytePerSecond, pipeline, endpoint, true, buffer);
+		}
 
-        public async void Send(string endpoint, Binding binding, params object[] args)
-        {
-            await CreateAndSendAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, binding, args);
-        }
+		public async void SendNet(string endpoint, params object[] args)
+		{
+			await CreateAndSendAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, isRemote: true, args);
+		}
 
-        public async void SendLatent(string endpoint, int bytePerSecond, params object[] args)
-        {
-            await CreateAndSendLatentAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, bytePerSecond, args);
-        }
+		public async void SendLocal(string endpoint, params object[] args)
+		{
+			await CreateAndSendAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, isRemote: false, args);
+		}
 
-        public async Task<T> Get<T>(string endpoint, params object[] args)
-        {
-            return await GetInternal<T>(new ServerId().Handle, endpoint, Binding.Remote, args);
-        }
+		public async void SendLatent(string endpoint, int bytePerSecond, params object[] args)
+		{
+			await CreateAndSendLatentAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, bytePerSecond, args);
+		}
 
-        public async Task<T> GetLocal<T>(string endpoint, params object[] args)
-        {
-            return await GetInternal<T>(new ServerId().Handle, endpoint, Binding.Local, args);
-        }
+		public async Task<T?> GetNet<T>(string endpoint, params object[] args)
+		{
+			return await GetInternal<T>(new ServerId().Handle, endpoint, isRemote: true, args);
+		}
 
-        internal byte[] GetSecret(int _)
-        {
-            if (_secret == null)
-                throw new Exception("Shared Encryption Secret has not been generated yet");
-            return _secret;
-        }
-    }
+		public async Task<T?> GetLocal<T>(string endpoint, params object[] args)
+		{
+			return await GetInternal<T>(new ServerId().Handle, endpoint, isRemote: false, args);
+		}
+
+		internal byte[] GetSecret(int _)
+		{
+			if (_secret == null || _secret.Length == 0)
+				throw new InvalidOperationException("Shared Encryption Secret has not been generated yet");
+			return _secret;
+		}
+	}
 }

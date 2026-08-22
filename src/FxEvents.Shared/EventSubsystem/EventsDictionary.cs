@@ -1,64 +1,58 @@
-﻿
-using FxEvents.Shared.Exceptions;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FxEvents.Shared.EventSubsystem
 {
-    public class EventsDictionary : Dictionary<string, EventEntry>
-    {
-        public new EventEntry this[string key]
-        {
-            get
-            {
-                var lookupKey = key.ToLower();
+	public readonly record struct EventCallback(Delegate Callback, bool IsRemote);
 
-                if (this.ContainsKey(lookupKey))
-                {
-                    return base[lookupKey];
-                }
+	public class EventsDictionary : Dictionary<string, EventEntry>
+	{
+		public new EventEntry this[string key]
+		{
+			get
+			{
+				var lookupKey = key.ToLowerInvariant();
 
-                var entry = new EventEntry(key);
-                base.Add(lookupKey, entry);
+				if (TryGetValue(lookupKey, out var entry))
+				{
+					return entry;
+				}
 
-                return entry;
-            }
-            set { }
-        }
+				entry = new EventEntry(key);
+				base.Add(lookupKey, entry);
+				return entry;
+			}
+			set { }
+		}
 
-        public void Add(string endpoint, Binding binding, Delegate callback)
-        {
-            this[endpoint] += new Tuple<Delegate, Binding>(callback,binding);
-        }
-    }
+		public void Add(string endpoint, bool isRemote, Delegate callback)
+		{
+			this[endpoint] += new EventCallback(callback, isRemote);
+		}
+	}
 
-    public class EventEntry
-    {
-        internal readonly string m_eventName;
-        internal readonly List<Tuple<Delegate, Binding>> m_callbacks = new();
-        internal string name => m_eventName;
+	public class EventEntry
+	{
+		internal readonly string m_eventName;
+		internal readonly List<EventCallback> m_callbacks = [];
 
-        public EventEntry(string eventName)
-        {
-            m_eventName = eventName;
-        }
+		public string Name => m_eventName;
 
-        public static EventEntry operator +(EventEntry entry, Tuple<Delegate, Binding> deleg)
-        {
-            entry.m_callbacks.Add(deleg);
+		public EventEntry(string eventName)
+		{
+			m_eventName = eventName;
+		}
 
-            return entry;
-        }
+		public static EventEntry operator +(EventEntry entry, EventCallback callback)
+		{
+			entry.m_callbacks.Add(callback);
+			return entry;
+		}
 
-        public static EventEntry operator -(EventEntry entry, Tuple<Delegate, Binding> deleg)
-        {
-            entry.m_callbacks.Remove(deleg);
-
-            return entry;
-        }
-    }
+		public static EventEntry operator -(EventEntry entry, EventCallback callback)
+		{
+			entry.m_callbacks.Remove(callback);
+			return entry;
+		}
+	}
 }
