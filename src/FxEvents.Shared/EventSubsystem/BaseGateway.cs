@@ -219,26 +219,30 @@ namespace FxEvents.Shared.EventSubsystem
 
 				if (result is Task taskResult)
 				{
-					Task timeoutTask = DelayDelegate != null ? DelayDelegate(10000) : Task.Delay(10000);
-					Task completed = await Task.WhenAny(taskResult, timeoutTask);
-
-					if (completed == taskResult)
+					try
 					{
+						TimeSpan timeout = TimeSpan.FromMilliseconds(10000);
 #if CLIENT
-						await taskResult;
+						await taskResult.WaitAsync(timeout);
 #elif SERVER
-						await taskResult.ConfigureAwait(false);
+						await taskResult.WaitAsync(timeout).ConfigureAwait(false);
 #endif
-						PropertyInfo? resultProp = taskResult.GetType().GetProperty("Result");
-						result = resultProp?.GetValue(taskResult);
+						Type taskType = taskResult.GetType();
+						if (taskType.IsGenericType)
+						{
+							result = ((dynamic)taskResult).Result;
+						}
+						else
+						{
+							result = null;
+						}
 					}
-					else
+					catch (TimeoutException)
 					{
 						throw new EventTimeoutException(
-							$"({message.Endpoint} - {callback.Method.DeclaringType?.Name ?? "null"}/{callback.Method.Name}) The operation timed out.");
+							$"({message.Endpoint} - {callback.Method.DeclaringType?.Name ?? "null"}/{callback.Method.Name}) The operation timed out after 10s.");
 					}
 				}
-
 				Type resultType = result?.GetType() ?? typeof(object);
 				EventResponseMessage response = new(message.Id, message.Endpoint, null);
 
