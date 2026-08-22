@@ -324,9 +324,7 @@ namespace FxEvents.Shared.EventSubsystem
 
 				if (EventHub.Gateway.GetSecret(source).Length == 0) return null;
 
-				byte[] data = (binding == Binding.Remote || (binding == Binding.Local && !isServer))
-					? message.EncryptObject(source)
-					: message.ToBytes();
+				byte[] data = message.EncryptObject(source);
 
 				PushDelegate?.Invoke(InboundPipeline, source, endpoint, binding, data);
 
