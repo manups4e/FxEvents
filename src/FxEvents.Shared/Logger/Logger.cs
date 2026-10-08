@@ -14,9 +14,8 @@ namespace Logger
         public void Info(string text)
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string errorPrefix = "-- [INFO] -- ";
             string color = LoggerColors.LIGHT_GREEN;
-            SharedAPI.Log.Info($"{color}{timestamp} {errorPrefix} {text}.^7");
+            SharedAPI.Log.Info($"{color}{timestamp} {text}.^7");
         }
 
         /// <summary>
@@ -27,9 +26,8 @@ namespace Logger
         {
             if (!EventHub.Debug) return;
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string errorPrefix = "-- [DEBUG] -- ";
             string color = LoggerColors.LIGHT_BLUE;
-			SharedAPI.Log.Debug($"{color}{timestamp} {errorPrefix} {text}.^7");
+			SharedAPI.Log.Debug($"{color}{timestamp} {text}.^7");
         }
 
         /// <summary>
@@ -39,9 +37,8 @@ namespace Logger
         public void Warning(string text)
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string errorPrefix = "-- [WARNING] --";
             string color = LoggerColors.YELLOW;
-            SharedAPI.Log.Warn($"{color}{timestamp} {errorPrefix} {text}.^7");
+            SharedAPI.Log.Warn($"{color}{timestamp} {text}.^7");
         }
 
         /// <summary>
@@ -51,9 +48,8 @@ namespace Logger
         public void Error(string text)
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string errorPrefix = "-- [ERROR] -- ";
             string color = LoggerColors.LIGHT_RED;
-            SharedAPI.Log.Error($"{color}{timestamp} {errorPrefix} {text}.^7");
+            SharedAPI.Log.Error($"{color}{timestamp} {text}.^7");
         }
 
         /// <summary>
@@ -63,9 +59,8 @@ namespace Logger
         public void Fatal(string text)
         {
             string timestamp = $"{DateTime.Now:dd/MM/yyyy, HH:mm}";
-            string errorPrefix = "-- [FATAL] -- ";
             string color = LoggerColors.DARK_RED;
-            SharedAPI.Log.Critical($"{color}{timestamp} {errorPrefix} {text}.^7");
+            SharedAPI.Log.Critical($"{color}{timestamp} {text}.^7");
         }
     }
 }
