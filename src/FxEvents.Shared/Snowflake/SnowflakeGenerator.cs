@@ -2,93 +2,98 @@
 
 namespace FxEvents.Shared.Snowflakes
 {
+	public partial class SnowflakeGenerator
+	{
+		private readonly long _maskSequence;
+		private readonly long _maskTime;
+		private readonly long _maskInstance;
+		private readonly int _shiftTime;
+		private readonly int _shiftInstance;
+		private readonly object _lock = new object();
+		private SnowflakeConfiguration _configuration;
+		private long _instanceId;
+		private long _sequence;
+		private long _lastTimeslot;
 
-    public partial class SnowflakeGenerator
-    {
-        private readonly long _maskSequence;
-        private readonly long _maskTime;
-        private readonly long _maskInstance;
-        private readonly int _shiftTime;
-        private readonly int _shiftInstance;
-        private readonly object _lock = new object();
-        private SnowflakeConfiguration _configuration;
-        private long _instanceId;
-        private long _sequence;
-        private long _lastTimeslot;
+		public static SnowflakeGenerator Create(short instance)
+		{
+			SnowflakeGenerator value = new SnowflakeGenerator(instance, new SnowflakeConfiguration());
+			_singletonInstance = value;
+			return value;
+		}
 
-        public static SnowflakeGenerator Create(short instance)
-        {
-            SnowflakeGenerator value = new SnowflakeGenerator(instance, new SnowflakeConfiguration());
+		public SnowflakeGenerator(short instance, SnowflakeConfiguration configuration)
+		{
+			_configuration = configuration;
+			_instanceId = instance;
+			_maskTime = GetMask(configuration.TimestampBits);
+			_maskInstance = GetMask(configuration.InstanceBits);
+			_maskSequence = GetMask(configuration.SequenceBits);
+			_shiftTime = configuration.InstanceBits + configuration.SequenceBits;
+			_shiftInstance = configuration.SequenceBits;
+		}
 
-            _singletonInstance = value;
+		public Snowflake Next(long time)
+		{
+			lock (_lock)
+			{
+				long timestamp = time & _maskTime;
 
-            return value;
-        }
+				if (timestamp < _lastTimeslot)
+					timestamp = _lastTimeslot;
 
-        public SnowflakeGenerator(short instance, SnowflakeConfiguration configuration)
-        {
-            _configuration = configuration;
-            _instanceId = instance;
-            _maskTime = GetMask(configuration.TimestampBits);
-            _maskInstance = GetMask(configuration.InstanceBits);
-            _maskSequence = GetMask(configuration.SequenceBits);
-            _shiftTime = configuration.InstanceBits + configuration.SequenceBits;
-            _shiftInstance = configuration.SequenceBits;
-        }
+				if (_lastTimeslot == timestamp)
+				{
+					_sequence = (_sequence + 1) & _maskSequence;
 
-        public Snowflake Next(long time)
-        {
-            lock (_lock)
-            {
-                long timestamp = time & _maskTime;
+					if (_sequence == 0)
+					{
+						long nextTimestamp;
+						do
+							nextTimestamp = Clock.GetMilliseconds() & _maskTime;
+						while (nextTimestamp <= _lastTimeslot);
 
-                if (_lastTimeslot == timestamp)
-                {
-                    if (_sequence >= _maskSequence)
-                    {
-                        while (_lastTimeslot == Clock.GetMilliseconds())
-                        {
-                        }
-                    }
+						timestamp = nextTimestamp;
+						_lastTimeslot = timestamp;
+					}
+				}
+				else
+				{
+					_lastTimeslot = timestamp;
+					_sequence = 0;
+				}
+				long generatedId = (timestamp << _shiftTime) | (_instanceId << _shiftInstance) | _sequence;
+				return new Snowflake(generatedId);
+			}
+		}
 
-                    _sequence++;
-                }
-                else
-                {
-                    _lastTimeslot = timestamp;
-                    _sequence = 0;
-                }
+		public Snowflake Next() => Next(Clock.GetMilliseconds());
 
-                return new Snowflake((timestamp << _shiftTime) + (_instanceId << _shiftInstance) + _sequence);
-            }
-        }
+		public SnowflakeFragments Deconstruct(long value)
+		{
+			SnowflakeFragments fragments = new SnowflakeFragments
+			{
+				Sequence = value & _maskSequence,
+				Instance = (value >> _shiftInstance) & _maskInstance,
+				Timestamp = (value >> _shiftTime) & _maskTime
+			};
 
-        public Snowflake Next() => Next(Clock.GetMilliseconds());
+			return fragments;
+		}
 
-        public SnowflakeFragments Deconstruct(long value)
-        {
-            SnowflakeFragments fragments = new SnowflakeFragments
-            {
-                Sequence = value & _maskSequence,
-                Instance = (value >> _shiftInstance) & _maskInstance,
-                Timestamp = (value >> _shiftTime) & _maskTime
-            };
+		private long GetMask(byte bits) => (1L << bits) - 1;
 
-            return fragments;
-        }
+		public static SnowflakeGenerator Instance
+		{
+			get
+			{
+				if (_singletonInstance == null)
+					throw new Exception("SnowflakeGenerator.Instance property was null");
 
-        private long GetMask(byte bits) => (1L << bits) - 1;
+				return _singletonInstance;
+			}
+		}
 
-        public static SnowflakeGenerator Instance
-        {
-            get
-            {
-                if (_singletonInstance == null) throw new Exception("SnowflakeGenerator.Instance property was null");
-
-                return _singletonInstance;
-            }
-        }
-
-        private static SnowflakeGenerator _singletonInstance;
-    }
+		private static SnowflakeGenerator _singletonInstance;
+	}
 }
