@@ -110,7 +110,7 @@ namespace FxEvents.Shared.Encryption
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new Exception("FXEvents: Encryption key cannot be empty!");
-            return EncryptBytes(data, key).FromBytes<T>();
+            return DecryptBytes(data, key).FromBytes<T>();
         }
 
         /// <summary>
