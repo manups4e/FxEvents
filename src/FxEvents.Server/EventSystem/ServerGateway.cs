@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace FxEvents.EventSystem
 {
-    public class ServerGateway : BaseGateway
+	internal sealed class ServerGateway : BaseGateway
     {
         protected override ISerialization Serialization { get; }
         internal Dictionary<int, byte[]> _signatures;

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace FxEvents.EventSystem
 {
-    internal class ClientGateway : BaseGateway
+    internal sealed class ClientGateway : BaseGateway
     {
         protected override ISerialization Serialization { get; }
 
