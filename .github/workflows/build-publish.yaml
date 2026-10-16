@@ -3,7 +3,7 @@ name: Build and Publish
 on:
   push:
     tags:
-      - 'v*' # Match a qualsiasi tag che inizia per 'v' (es: v1.0, v1.0.0, v1.0.0.0)
+      - 'v*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -12,9 +12,15 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+
     strategy:
       matrix:
         client: ['FiveM', 'RedM']
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -64,9 +70,9 @@ jobs:
       run: dotnet pack -c "Release ${{ matrix.client }}" --no-restore
 
     - name: Publish - NuGet
-      run: dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+      run: dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
       working-directory: CompiledLibs
 
-    - name: Publish - GitHub
+    - name: Publish - GitHub Packages
       run: dotnet nuget push **/*.nupkg --skip-duplicate
       working-directory: CompiledLibs
