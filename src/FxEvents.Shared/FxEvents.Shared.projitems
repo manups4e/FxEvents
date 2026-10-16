@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Encryption\Encryption.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Encryption\Curve25519.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Encryption\Curve25519Inner.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)eventsubsystem\attributes\EventTimeoutAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\FxEventAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\ForceAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Attributes\IgnoreAttribute.cs" />
