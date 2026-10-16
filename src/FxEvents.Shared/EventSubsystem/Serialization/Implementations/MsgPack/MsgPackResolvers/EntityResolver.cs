@@ -1,4 +1,4 @@
-﻿using FxEvents.Shared.TypeExtensions;
+using FxEvents.Shared.TypeExtensions;
 using MsgPack;
 using MsgPack.Serialization;
 using System;
@@ -19,16 +19,20 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
             packer.Pack(objectTree.NetworkId);
         }
 
+        private static int ReadNetworkId(MessagePackObject data)
+        {
+            return data.UnderlyingType == typeof(string)
+                ? (int.TryParse(data.AsString(), out int parsed) ? parsed : 0)
+                : data.AsInt32();
+        }
+
         protected override Entity UnpackFromCore(Unpacker unpacker)
         {
             var data = unpacker.LastReadData;
-            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
-                throw new Exception($"FxEvents Entity - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
-            if (unpacker.IsArrayHeader)
-                throw new Exception($"FxEvents Entity - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+            if (unpacker.IsMapHeader || unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Entity - Cannot deserialize complex structure into Entity NetworkId");
 
-            int.TryParse(data.ToObject().ToString(), out int item);
-            return Entity.FromNetworkId(item);
+            return Entity.FromNetworkId(ReadNetworkId(data));
         }
     }
 
@@ -46,13 +50,10 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
         protected override Ped UnpackFromCore(Unpacker unpacker)
         {
             var data = unpacker.LastReadData;
-            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
-                throw new Exception($"FxEvents Ped - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
-            if (unpacker.IsArrayHeader)
-                throw new Exception($"FxEvents Ped - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+            if (unpacker.IsMapHeader || unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Ped - Cannot deserialize complex structure into Ped NetworkId");
 
-            int.TryParse(data.ToObject().ToString(), out int item);
-            return (Ped)Entity.FromNetworkId(item);
+            return (Ped)Entity.FromNetworkId(data.UnderlyingType == typeof(string) ? (int.TryParse(data.AsString(), out int p) ? p : 0) : data.AsInt32());
         }
     }
 
@@ -70,13 +71,10 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
         protected override Vehicle UnpackFromCore(Unpacker unpacker)
         {
             var data = unpacker.LastReadData;
-            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
-                throw new Exception($"FxEvents Vehicle - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
-            if (unpacker.IsArrayHeader)
-                throw new Exception($"FxEvents Vehicle - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+            if (unpacker.IsMapHeader || unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Vehicle - Cannot deserialize complex structure into Vehicle NetworkId");
 
-            int.TryParse(data.ToObject().ToString(), out int item);
-            return (Vehicle)Entity.FromNetworkId(item);
+            return (Vehicle)Entity.FromNetworkId(data.UnderlyingType == typeof(string) ? (int.TryParse(data.AsString(), out int p) ? p : 0) : data.AsInt32());
         }
     }
 
@@ -94,13 +92,10 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPackRe
         protected override Prop UnpackFromCore(Unpacker unpacker)
         {
             var data = unpacker.LastReadData;
-            if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
-                throw new Exception($"FxEvents Prop - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
-            if (unpacker.IsArrayHeader)
-                throw new Exception($"FxEvents Prop - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+            if (unpacker.IsMapHeader || unpacker.IsArrayHeader)
+                throw new Exception($"FxEvents Prop - Cannot deserialize complex structure into Prop NetworkId");
 
-            int.TryParse(data.ToObject().ToString(), out int item);
-            return (Prop)Entity.FromNetworkId(item);
+            return (Prop)Entity.FromNetworkId(data.UnderlyingType == typeof(string) ? (int.TryParse(data.AsString(), out int p) ? p : 0) : data.AsInt32());
         }
     }    
 }

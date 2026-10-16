@@ -1,4 +1,4 @@
-﻿using FxEvents.Shared.Serialization;
+using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
 using System;
 using System.Globalization;
@@ -18,23 +18,47 @@ namespace FxEvents.Shared
         }
         public static byte[] StringToBytes(this string str)
         {
-            char[] arr = str.ToCharArray();
-            if (arr[2] != '-' && arr[5] != '-')
-                return Enumerable.Range(0, str.Length).Where(x => x % 2 == 0).Select(x => Convert.ToByte(str.Substring(x, 2), 16)).ToArray();
-            return str.Split('-').Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray();
+            if (string.IsNullOrEmpty(str)) return new byte[0];
+
+            if (str.Contains("-"))
+            {
+                string[] parts = str.Split('-');
+                byte[] result = new byte[parts.Length];
+                for (int i = 0; i < parts.Length; i++)
+                    result[i] = byte.Parse(parts[i], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                return result;
+            }
+            else
+            {
+                int len = str.Length;
+                byte[] bytes = new byte[len / 2];
+                for (int i = 0; i < len; i += 2)
+                {
+                    bytes[i / 2] = Convert.ToByte(str.Substring(i, 2), 16);
+                }
+                return bytes;
+            }
         }
 
         public static string BytesToString(this byte[] ba, bool separator = false, bool toLower = true)
         {
-            string bytes;
-            if (separator)
-                bytes = BitConverter.ToString(ba);
-            else
-                bytes = BitConverter.ToString(ba).Replace("-", "");
+            if (ba == null || ba.Length == 0) return string.Empty;
 
-            if (toLower)
-                bytes = bytes.ToLower();
-            return bytes;
+            if (separator)
+            {
+                string hex = BitConverter.ToString(ba);
+                return toLower ? hex.ToLowerInvariant() : hex;
+            }
+
+            char[] c = new char[ba.Length * 2];
+            string hexChars = toLower ? "0123456789abcdef" : "0123456789ABCDEF";
+            for (int i = 0; i < ba.Length; i++)
+            {
+                int b = ba[i];
+                c[i * 2] = hexChars[b >> 4];
+                c[i * 2 + 1] = hexChars[b & 0xF];
+            }
+            return new string(c);
         }
 
         public static T FromBytes<T>(this byte[] data)

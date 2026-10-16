@@ -1,15 +1,15 @@
-﻿using FxEvents.Shared.Diagnostics;
+using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem.Serialization;
 using FxEvents.Shared.Exceptions;
 using FxEvents.Shared.Message;
-using FxEvents.Shared.Models;
 using FxEvents.Shared.Payload;
 using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Snowflakes;
 using FxEvents.Shared.TypeExtensions;
 using Logger;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -43,7 +43,7 @@ namespace FxEvents.Shared.EventSubsystem
 		private readonly Queue<Snowflake> _eventIdQueue = new();
 		private readonly object _eventIdLock = new();
 
-		private List<EventObservable> _queue = new();
+		private readonly ConcurrentDictionary<Snowflake, Action<byte[]>> _pendingResponses = new();
 		internal EventsDictionary _handlers = new();
 
 		public EventDelayMethod? DelayDelegate { get; set; }
@@ -105,125 +105,93 @@ namespace FxEvents.Shared.EventSubsystem
 			await ProcessInvokeAsync(message, source);
 		}
 
+		private static readonly ConcurrentDictionary<Type, Func<Task, object>> _taskResultGetterCache = new();
+
+		private static object GetTaskResult(Task task)
+		{
+			var getter = _taskResultGetterCache.GetOrAdd(task.GetType(), t =>
+			{
+				ParameterExpression parameter = Expression.Parameter(typeof(Task), "t");
+				UnaryExpression castTask = Expression.Convert(parameter, t);
+				MemberExpression property = Expression.Property(castTask, "Result");
+				UnaryExpression castResult = Expression.Convert(property, typeof(object));
+
+				return Expression.Lambda<Func<Task, object>>(castResult, parameter).Compile();
+			});
+
+			return getter(task);
+		}
+
 		internal async Task ProcessInvokeAsync(EventMessage message, int source)
 		{
-			object InvokeDelegate(Delegate @delegate)
+			object InvokeDelegate(EventCallback callbackReg)
 			{
-				List<object> parameters = new List<object>();
-				MethodInfo method = @delegate.Method;
-#if SERVER
-                bool takesSource = method.GetParameters().Any(self => self.GetCustomAttribute<FromSourceAttribute>() != null);
-#endif
-				int startingIndex = takesSource && isServer ? 1 : 0;
+				Delegate @delegate = callbackReg.Callback;
+				int startingIndex = (callbackReg.TakesSource && isServer) ? 1 : 0;
+				int totalParams = startingIndex + callbackReg.Parameters.Length;
+				object[] parameters = new object[totalParams];
 
-				object CallInternalDelegate()
+				if (isServer && callbackReg.TakesSource)
 				{
-					return @delegate.DynamicInvoke(parameters.ToArray());
-				}
-
-				if (isServer && takesSource)
-				{
-					ParameterInfo param = method.GetParameters().FirstOrDefault(self =>
-						typeof(ISource).IsAssignableFrom(self.ParameterType) ||
-						typeof(Player).IsAssignableFrom(self.ParameterType) ||
-						typeof(string).IsAssignableFrom(self.ParameterType) ||
-						typeof(int).IsAssignableFrom(self.ParameterType));
-
-					Type type = param.ParameterType;
-					if (typeof(ISource).IsAssignableFrom(type))
+					switch (callbackReg.SourceKind)
 					{
-						ConstructorInfo constructor = type.GetConstructors().FirstOrDefault(x => x.GetParameters().Any(y => y.ParameterType == typeof(int)))
-							?? throw new Exception("No constructor found to initialize the ISource class.");
-
-						ParameterExpression parameter = Expression.Parameter(typeof(int), "handle");
-						NewExpression expression = Expression.New(constructor, parameter);
-
-						if (typeof(ISource) == typeof(object))
-						{
-							Type generic = typeof(ConstructorCustomActivator<>).MakeGenericType(type);
-							Delegate activator = Expression.Lambda(generic, expression, parameter).Compile();
-
-							ISource objectInstance = (ISource)activator.DynamicInvoke(source);
-							parameters.Add(objectInstance);
-						}
-						else
-						{
-							ConstructorCustomActivator<ISource> activator = (ConstructorCustomActivator<ISource>)Expression
-								.Lambda(typeof(ConstructorCustomActivator<ISource>), expression, parameter).Compile();
-
-							ISource objectInstance = activator.Invoke(source);
-							parameters.Add(objectInstance);
-						}
-					}
-					else if (typeof(Player).IsAssignableFrom(type))
-					{
-						parameters.Add(EventHub.Instance.GetPlayers[source]);
-					}
-					else if (typeof(string).IsAssignableFrom(type))
-					{
-						parameters.Add(source.ToString());
-					}
-					else if (typeof(int).IsAssignableFrom(type))
-					{
-						parameters.Add(source);
+						case SourceParamKind.Player:
+							parameters[0] = EventHub.Instance.GetPlayers[source];
+							break;
+						case SourceParamKind.String:
+							parameters[0] = source.ToString();
+							break;
+						case SourceParamKind.Int:
+							parameters[0] = source;
+							break;
+						case SourceParamKind.ISource:
+							parameters[0] = callbackReg.SourceActivator!(source);
+							break;
 					}
 				}
 
-				if (message.Parameters == null)
+				if (message.Parameters != null)
 				{
-					return CallInternalDelegate();
-				}
+					EventParameter[] array = message.Parameters as EventParameter[] ?? message.Parameters.ToArray();
 
-				EventParameter[] array = message.Parameters.ToArray();
-				List<object> holder = new List<object>();
-				ParameterInfo[] parameterInfos = method.GetParameters();
-
-				for (int idx = startingIndex; idx < parameterInfos.Length; idx++)
-				{
-					ParameterInfo parameterInfo = parameterInfos[idx];
-					Type type = parameterInfo.ParameterType;
-
-					if (idx - startingIndex < array.Length)
+					for (int i = 0; i < callbackReg.Parameters.Length; i++)
 					{
-						EventParameter parameter = array[idx - startingIndex];
-						using SerializationContext context = new(message.Endpoint, $"(Process) Parameter Index {idx - startingIndex}", Serialization, parameter.Data);
+						var pMeta = callbackReg.Parameters[i];
+						if (i < array.Length)
+						{
+							EventParameter parameter = array[i];
+							using SerializationContext context = new(message.Endpoint, $"(Process) Parameter Index {i}", Serialization, parameter.Data);
 
-						if (TypeCache.IsSimpleType(type))
-						{
-							holder.Add(TypeConvert.GetNewHolder(context, type));
-						}
-						else
-						{
-							holder.Add(context.Deserialize(type));
-						}
-					}
-					else
-					{
-						if (TypeCache.IsSimpleType(type))
-						{
-							if (parameterInfo.DefaultValue != null)
-								holder.Add(parameterInfo.DefaultValue);
+							if (pMeta.IsSimpleType)
+							{
+								parameters[startingIndex + i] = TypeConvert.GetNewHolder(context, pMeta.ParameterType);
+							}
 							else
-								holder.Add(default);
+							{
+								parameters[startingIndex + i] = context.Deserialize(pMeta.ParameterType);
+							}
 						}
 						else
 						{
-							holder.Add(default);
+							parameters[startingIndex + i] = pMeta.DefaultValue;
 						}
 					}
 				}
-
-				parameters.AddRange(holder.ToArray());
+				else
+				{
+					for (int i = 0; i < callbackReg.Parameters.Length; i++)
+					{
+						parameters[startingIndex + i] = callbackReg.Parameters[i].DefaultValue;
+					}
+				}
 
 				try
 				{
-					return @delegate.DynamicInvoke(parameters.ToArray());
+					return @delegate.DynamicInvoke(parameters);
 				}
 				catch (Exception ex)
 				{
-					if (isServer && takesSource)
-						parameters.RemoveAt(0);
-					Logger.Error($"Handler [{message.Endpoint}] with parameters [{parameters.ToJson()}] threw an error.\n" + ex);
+					Logger.Error($"Handler [{message.Endpoint}] threw an error.\n" + ex);
 					return null;
 				}
 			}
@@ -242,11 +210,11 @@ namespace FxEvents.Shared.EventSubsystem
 						throw new EventException($"Callback handler for event {message.Endpoint} not found.");
 				}
 
-				Tuple<Delegate, Binding> @event = subscription.m_callbacks[0];
-				if (!CanExecuteEvent(@event.Item2, message.Sender))
+				EventCallback @event = subscription.m_callbacks[0];
+				if (!CanExecuteEvent(@event.Binding, message.Sender))
 					return;
 
-				object result = InvokeDelegate(@event.Item1);
+				object result = InvokeDelegate(@event);
 
 				if (result?.GetType().IsGenericType == true && result.GetType().GetGenericTypeDefinition() == typeof(Task<>))
 				{
@@ -254,9 +222,7 @@ namespace FxEvents.Shared.EventSubsystem
 
 					Task task = (Task)result;
 
-					// check for the new attribute or go to default 10000ms;
-					EventTimeoutAttribute timeoutAttr = @event.Item1.Method.GetCustomAttribute<EventTimeoutAttribute>();
-					int timeoutMs = timeoutAttr?.TimeoutMs ?? DefaultTimeoutMs;
+					int timeoutMs = @event.CustomTimeoutMs ?? DefaultTimeoutMs;
 
 					Task timeout = DelayDelegate!(timeoutMs);
 					Task completed = await Task.WhenAny(task, timeout);
@@ -267,16 +233,18 @@ namespace FxEvents.Shared.EventSubsystem
 #if CLIENT
 						await task;
 #elif SERVER
-						await task.ConfigureAwait(false);
+					    await task.ConfigureAwait(false);
 #endif
-						result = ((dynamic)task).Result;
+						// Estrazione sicura del risultato senza Reflection diretta
+						result = GetTaskResult(task);
 					}
 					else
 					{
 						throw new EventTimeoutException(
-							$"({message.Endpoint} - {@event.Item1.Method.DeclaringType?.Name ?? "null"}/{@event.Item1.Method.Name}) Operation timed out after {timeoutMs}ms.");
+							$"({message.Endpoint} - {@event.Callback.Method.DeclaringType?.Name ?? "null"}/{@event.Callback.Method.Name}) Operation timed out after {timeoutMs}ms.");
 					}
 				}
+
 				Type resultType = result?.GetType() ?? typeof(object);
 				EventResponseMessage response = new EventResponseMessage(message.Id, message.Endpoint, null);
 
@@ -292,16 +260,16 @@ namespace FxEvents.Shared.EventSubsystem
 				}
 
 				byte[] data = response.EncryptObject(source);
-				PushDelegate(OutboundPipeline, source, message.Endpoint, @event.Item2, data);
+				PushDelegate(OutboundPipeline, source, message.Endpoint, @event.Binding, data);
 				if (EventHub.Debug)
 					Logger.Debug($"[{message.Endpoint}] Responded to {source} with {data.Length} byte(s) in {stopwatch.Elapsed.TotalMilliseconds}ms");
 			}
 			else
 			{
-				foreach (Tuple<Delegate, Binding> handler in _handlers[message.Endpoint].m_callbacks)
+				foreach (EventCallback handler in _handlers[message.Endpoint].m_callbacks)
 				{
-					if (CanExecuteEvent(handler.Item2, message.Sender))
-						InvokeDelegate(handler.Item1);
+					if (CanExecuteEvent(handler.Binding, message.Sender))
+						InvokeDelegate(handler);
 				}
 			}
 		}
@@ -323,11 +291,14 @@ namespace FxEvents.Shared.EventSubsystem
 
 		public void ProcessReply(EventResponseMessage response)
 		{
-			EventObservable waiting = _queue.SingleOrDefault(self => self.Message.Id == response.Id)
-				?? throw new Exception($"No request matching {response.Id} was found for event {response.Endpoint}.");
-
-			_queue.Remove(waiting);
-			waiting.Callback.Invoke(response.Data);
+			if (_pendingResponses.TryRemove(response.Id, out Action<byte[]> callback))
+			{
+				callback(response.Data);
+			}
+			else if (EventHub.Debug)
+			{
+				Logger.Warning($"No request matching {response.Id} was found for event {response.Endpoint}.");
+			}
 		}
 
 		internal async Task<EventMessage> CreateAndSendAsync(EventFlowType flow, int source, string endpoint, Binding binding, params object[] args)
@@ -431,31 +402,34 @@ namespace FxEvents.Shared.EventSubsystem
 		{
 			StopwatchUtil stopwatch = StopwatchUtil.StartNew();
 			EventMessage message = await CreateAndSendAsync(EventFlowType.Circular, source, endpoint, binding, args);
-			EventValueHolder<T> holder = new EventValueHolder<T>();
-			TaskCompletionSource<bool> TokenLoading = new();
+			if (message == null) return default;
 
-			_queue.Add(new EventObservable(message, data =>
+			TaskCompletionSource<byte[]> tcs = new();
+			_pendingResponses[message.Id] = data => tcs.TrySetResult(data);
+
+			Task timeoutTask = DelayDelegate != null ? DelayDelegate(DefaultTimeoutMs) : Task.Delay(DefaultTimeoutMs);
+			Task completed = await Task.WhenAny(tcs.Task, timeoutTask);
+
+			if (completed != tcs.Task)
 			{
-				using SerializationContext context = new SerializationContext(endpoint, "(Get) Response", Serialization, data);
+				_pendingResponses.TryRemove(message.Id, out _);
+				throw new EventTimeoutException($"({endpoint}) Operation timed out after {DefaultTimeoutMs}ms waiting for response.");
+			}
 
-				holder.Data = data;
-				holder.Value = context.Deserialize<T>();
-
-				TokenLoading.SetResult(true);
-			}));
-
-			await TokenLoading.Task;
+			byte[] responseData = await tcs.Task;
+			using SerializationContext context = new(endpoint, "(Get) Response", Serialization, responseData);
+			T value = context.Deserialize<T>();
 
 			double elapsed = stopwatch.Elapsed.TotalMilliseconds;
 			if (EventHub.Debug)
 			{
 #if CLIENT
-				Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName(source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+				Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName(source))} of {responseData?.Length ?? 0} byte(s) in {elapsed}ms");
 #elif SERVER
-                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName("" + source))} of {holder.Data.Length} byte(s) in {elapsed}ms");
+                Logger.Debug($"[{message.Endpoint} {EventFlowType.Circular}] Received response from {(source == -1 ? "Server" : API.GetPlayerName("" + source))} of {responseData?.Length ?? 0} byte(s) in {elapsed}ms");
 #endif
 			}
-			return holder.Value;
+			return value;
 		}
 
 		public void Mount(string endpoint, Binding binding, Delegate @delegate)

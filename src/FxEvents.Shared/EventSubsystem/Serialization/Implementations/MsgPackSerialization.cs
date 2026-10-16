@@ -52,39 +52,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             _context.Serializers.RegisterOverride(enumFixer);
         }
 
-        private bool CanCreateInstanceUsingDefaultConstructor(Type t) => t.IsValueType || !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null;
-        private bool IsTuple(Type t) => t.Name.StartsWith("Tuple");
-        private bool ContainsTuple(Type t) => t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Any(x=>x.Name.StartsWith("Tuple"))||
-            t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Any(x => x.Name.StartsWith("Tuple"));
-        private Type[] GetTupleTypes(Type t)
-        {
-            List<Type> types = [];
-            var fields = t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Where(x => x.Name.StartsWith("Tuple"));
-            var properties = t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Where(x => x.Name.StartsWith("Tuple"));
-
-
-            return types.ToArray();
-        }
-        private static string GetTypeIdentifier(Type type)
-        {
-            StringBuilder builder = new StringBuilder();
-            Type declaring = type;
-
-            builder.Append(type.Namespace);
-            builder.Append(".");
-
-            int idx = builder.Length;
-
-            while ((declaring = declaring.DeclaringType) != null)
-            {
-                builder.Insert(idx, declaring.Name + ".");
-            }
-
-            builder.Append(type.Name);
-
-            return builder.ToString();
-        }
-
+        private static bool IsTuple(Type t) => t.FullName != null && t.FullName.StartsWith("System.Tuple`");
 
         #region Serialization
         public void Serialize(Type type, object value, SerializationContext context)
@@ -93,6 +61,7 @@ namespace FxEvents.Shared.Serialization.Implementations
             {
                 logger.Warning("Using Tuple is not advised due to differences between client and server environments and the unavailability of resolvers. Consider using ValueTuple instead.");
                 SerializeTuple(type, value, context);
+                return;
             }
             SerializeObject(type, value, context);
         }

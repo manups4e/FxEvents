@@ -1,4 +1,4 @@
-﻿global using CitizenFX.Core;
+global using CitizenFX.Core;
 global using CitizenFX.Core.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
@@ -248,8 +248,8 @@ namespace FxEvents
 
         private void OnPlayerDropped([FromSource] Player player)
         {
-            if (Gateway._signatures.ContainsKey(int.Parse(player.Handle)))
-                Gateway._signatures.Remove(int.Parse(player.Handle));
+            if (player?.Handle != null && int.TryParse(player.Handle, out int playerId))
+                Gateway._signatures.TryRemove(playerId, out _);
         }
     }
 }

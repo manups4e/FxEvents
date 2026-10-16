@@ -9,7 +9,7 @@ namespace FxEvents.Shared.Serialization
         internal string Details { get; set; }
         internal BinaryWriter? Writer
         {
-            get => _writer;
+            get => _writer ??= new BinaryWriter(_memory);
             set
             {
                 _writer?.Dispose();
@@ -19,7 +19,7 @@ namespace FxEvents.Shared.Serialization
 
         internal BinaryReader? Reader
         {
-            get => _reader;
+            get => _reader ??= new BinaryReader(_memory);
             set
             {
                 _reader?.Dispose();
@@ -50,8 +50,6 @@ namespace FxEvents.Shared.Serialization
             Details = details;
             _serialization = serialization;
             _memory = data != null ? new MemoryStream(data) : new MemoryStream();
-            _writer = new BinaryWriter(_memory);
-            _reader = new BinaryReader(_memory);
 
             if (data != null)
             {
@@ -61,8 +59,9 @@ namespace FxEvents.Shared.Serialization
 
         public void Dispose()
         {
-            Writer?.Dispose();
-            Reader?.Dispose();
+            _writer?.Dispose();
+            _reader?.Dispose();
+            _memory?.Dispose();
         }
 
         internal void Serialize(Type type, object value) => _serialization.Serialize(type, value, this);

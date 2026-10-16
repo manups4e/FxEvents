@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 
 namespace FxEvents.Shared.TypeExtensions
@@ -23,12 +23,12 @@ namespace FxEvents.Shared.TypeExtensions
 
         public static int ToInt(this string source)
         {
-            return int.Parse(source);
+            return int.Parse(source, System.Globalization.CultureInfo.InvariantCulture);
         }
 
         public static float ToFloat(this string source)
         {
-            return float.Parse(source);
+            return float.Parse(source, System.Globalization.CultureInfo.InvariantCulture);
         }
 
         public static bool ToBool(this string source)

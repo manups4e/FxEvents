@@ -1,4 +1,4 @@
-﻿using CitizenFX.Core;
+using CitizenFX.Core;
 using FxEvents.Shared;
 using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Encryption;
@@ -9,6 +9,7 @@ using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.Snowflakes;
 using FxEvents.Shared.TypeExtensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -20,7 +21,7 @@ namespace FxEvents.EventSystem
 	internal sealed class ServerGateway : BaseGateway
     {
         protected override ISerialization Serialization { get; }
-        internal Dictionary<int, byte[]> _signatures;
+        internal ConcurrentDictionary<int, byte[]> _signatures;
 
         private EventHub _hub => EventHub.Instance;
 
@@ -70,17 +71,15 @@ namespace FxEvents.EventSystem
             try
             {
                 int client = int.Parse(source.Replace("net:", string.Empty));
-                if (_signatures.ContainsKey(client))
+                Curve25519 curve25519 = Curve25519.Create();
+                byte[] secret = curve25519.GetSharedSecret(clientPubKey);
+
+                if (!_signatures.TryAdd(client, secret))
                 {
                     Logger.Warning($"Client {API.GetPlayerName("" + client)}[{client}] tried acquiring event signature more than once.");
                     BaseScript.TriggerEvent("fxevents:tamperingprotection", source, "signature retrival", TamperType.REQUESTED_NEW_PUBLIC_KEY);
                     return;
                 }
-
-                Curve25519 curve25519 = Curve25519.Create();
-                byte[] secret = curve25519.GetSharedSecret(clientPubKey);
-
-                _signatures.Add(client, secret);
 
                 BaseScript.TriggerClientEvent(_hub.GetPlayers[client], SignaturePipeline, curve25519.GetPublicKey());
             }
@@ -232,12 +231,10 @@ namespace FxEvents.EventSystem
 
         internal byte[] GetSecret(int source)
         {
-            if (!_signatures.ContainsKey(source)) {
-                Curve25519 curve25519 = Curve25519.Create();
-                byte[] secret = curve25519.GetSharedSecret(curve25519.GetPublicKey());
+            if (_signatures.TryGetValue(source, out byte[] secret))
                 return secret;
-            }
-            return _signatures[source];
+
+            return new byte[0];
         }
     }
 }

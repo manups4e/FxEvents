@@ -1,4 +1,4 @@
-﻿using FxEvents.Shared.TypeExtensions;
+using FxEvents.Shared.TypeExtensions;
 using MsgPack;
 using MsgPack.Serialization;
 using Newtonsoft.Json.Linq;
@@ -22,9 +22,9 @@ namespace FxEvents.Shared.EventSubsystem.Serialization.Implementations.MsgPack.M
         {
             var data = unpacker.LastReadData;
             if (!TypeCache.IsSimpleType(data.UnderlyingType) || unpacker.IsMapHeader)
-                throw new Exception($"FxEvents double - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(int).FullName}");
+                throw new Exception($"FxEvents double - Cannot deserialize {data.UnderlyingType.FullName} into {typeof(double).FullName}");
             if (unpacker.IsArrayHeader)
-                throw new Exception($"FxEvents double - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(int).FullName}");
+                throw new Exception($"FxEvents double - Cannot deserialize {data.UnderlyingType.FullName}[] array into {typeof(double).FullName}");
 
             return double.Parse(data.AsString(), CultureInfo.InvariantCulture);
 

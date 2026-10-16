@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
@@ -37,8 +37,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventMessage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventParameter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Message\EventResponseMessage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventObservable.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Models\EventValueHolder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\BinarySerialization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\JsonSerialization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventSubsystem\Serialization\Implementations\MsgPack\MsgPackResolvers\EntityResolver.cs" />
@@ -62,7 +60,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Logger\Logger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Logger\LoggerColors.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Snowflake\Clock.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Snowflake\Program.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Snowflake\Serialization\SnowflakeConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Snowflake\Snowflake.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Snowflake\SnowflakeConfiguration.cs" />
