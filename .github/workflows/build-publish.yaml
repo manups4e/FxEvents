@@ -69,8 +69,14 @@ jobs:
     - name: Dotnet - Pack
       run: dotnet pack -c "Release ${{ matrix.client }}" --no-restore
 
+    - name: NuGet Login (OIDC)
+      id: login
+      uses: NuGet/login@v1
+      with:
+        user: FiveMScripters
+
     - name: Publish - NuGet
-      run: dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
+      run: dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --skip-duplicate
       working-directory: CompiledLibs
 
     - name: Publish - GitHub Packages
