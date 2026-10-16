@@ -16,6 +16,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: write
 
     strategy:
       matrix:
@@ -80,5 +81,5 @@ jobs:
       working-directory: CompiledLibs
 
     - name: Publish - GitHub Packages
-      run: dotnet nuget push **/*.nupkg --skip-duplicate
+      run: dotnet nuget push **/*.nupkg --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
       working-directory: CompiledLibs
