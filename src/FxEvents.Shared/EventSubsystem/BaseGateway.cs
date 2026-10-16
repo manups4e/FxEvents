@@ -407,7 +407,7 @@ namespace FxEvents.Shared.EventSubsystem
 			TaskCompletionSource<byte[]> tcs = new();
 			_pendingResponses[message.Id] = data => tcs.TrySetResult(data);
 
-			Task timeoutTask = DelayDelegate != null ? DelayDelegate(DefaultTimeoutMs) : Task.Delay(DefaultTimeoutMs);
+			Task timeoutTask = DelayDelegate != null ? DelayDelegate(DefaultTimeoutMs) : BaseScript.Delay(DefaultTimeoutMs);
 			Task completed = await Task.WhenAny(tcs.Task, timeoutTask);
 
 			if (completed != tcs.Task)
