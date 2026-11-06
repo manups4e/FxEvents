@@ -26,6 +26,20 @@ namespace FxEvents.Shared.EventSubsystem
 	public delegate void EventMessagePushLatent(string pipeline, int source, int bytePerSecond, string endpoint, byte[] buffer);
 	public delegate ISource ConstructorCustomActivator<T>(int handle);
 
+	internal readonly struct BatchedQueueEntry
+	{
+		public readonly int Target;
+		public readonly Binding Binding;
+		public readonly EventMessage Message;
+
+		public BatchedQueueEntry(int target, Binding binding, EventMessage message)
+		{
+			Target = target;
+			Binding = binding;
+			Message = message;
+		}
+	}
+
 	public abstract class BaseGateway
 	{
 		internal Log Logger = new();
@@ -51,6 +65,8 @@ namespace FxEvents.Shared.EventSubsystem
 		public EventMessagePush? PushDelegate { get; set; }
 		public EventMessagePushLatent? PushDelegateLatent { get; set; }
 		public int DefaultTimeoutMs { get; set; } = 10000;
+		internal readonly ConcurrentQueue<BatchedQueueEntry> _batchedQueue = new();
+		public bool HasBatchedMessages => !_batchedQueue.IsEmpty;
 
 		public async Task ProcessInboundAsync(int source, string endpoint, Binding binding, byte[] serialized)
 		{
@@ -99,6 +115,19 @@ namespace FxEvents.Shared.EventSubsystem
                 BaseScript.TriggerEvent("fxevents:tamperingprotection", source, endpoint, TamperType.EDITED_ENCRYPTED_DATA);
                 Logger.Warning($"Possible tampering detected, impossible to decrypt event message \"{endpoint}\" sent by player {API.GetPlayerName("" + source)} [{source}]");
 #endif
+				return;
+			}
+
+			if (message.Flow == EventFlowType.Batched)
+			{
+				if (message.Parameters != null)
+				{
+					foreach (EventParameter param in message.Parameters)
+					{
+						EventMessage subMessage = param.Data.FromBytes<EventMessage>();
+						await ProcessInvokeAsync(subMessage, source);
+					}
+				}
 				return;
 			}
 
@@ -452,6 +481,100 @@ namespace FxEvents.Shared.EventSubsystem
 		public void Unmount(string endpoint)
 		{
 			_handlers.Remove(endpoint);
+		}
+
+		internal void QueueBatched(EventFlowType flow, int source, string endpoint, Binding binding, params object[] args)
+		{
+			List<EventParameter> parameters = new List<EventParameter>(args.Length);
+			for (int idx = 0; idx < args.Length; idx++)
+			{
+				object argument = args[idx];
+				Type type = argument.GetType();
+				using (SerializationContext context = new SerializationContext(endpoint, string.Format("(SendBatched) Parameter Index '{0}'", idx), Serialization))
+				{
+					context.Serialize(type, argument);
+					parameters.Add(new EventParameter(context.GetData()));
+				}
+			}
+
+			EventMessage message = new EventMessage(endpoint, flow, parameters, isServer ? EventRemote.Server : EventRemote.Client);
+			_batchedQueue.Enqueue(new BatchedQueueEntry(source, binding, message));
+		}
+
+		internal void QueueBatchedMessage(int target, Binding binding, EventMessage message)
+		{
+			_batchedQueue.Enqueue(new BatchedQueueEntry(target, binding, message));
+		}
+
+		public async Task FlushBatchAsync()
+		{
+			if (_batchedQueue.IsEmpty) return;
+
+			List<BatchedQueueEntry> items = new List<BatchedQueueEntry>();
+			while (_batchedQueue.TryDequeue(out BatchedQueueEntry entry))
+			{
+				items.Add(entry);
+			}
+
+			if (items.Count == 0) return;
+
+			var groups = items.GroupBy(x => new { x.Target, x.Binding });
+			foreach (var group in groups)
+			{
+				int target = group.Key.Target;
+				Binding binding = group.Key.Binding;
+				var messages = group.Select(x => x.Message).ToList();
+
+				if (messages.Count == 1)
+				{
+					EventMessage m = messages[0];
+					if (PrepareDelegate != null)
+					{
+						await PrepareDelegate(InboundPipeline, target, m);
+					}
+
+					if (EventHub.Gateway.GetSecret(target).Length == 0) continue;
+
+					byte[] data = (binding == Binding.Remote || (binding == Binding.Local && !isServer))
+						? m.EncryptObject(target)
+						: m.ToBytes();
+
+					PushDelegate?.Invoke(InboundPipeline, target, m.Endpoint, binding, data);
+				}
+				else
+				{
+					List<EventParameter> subParams = new List<EventParameter>(messages.Count);
+					for (int i = 0; i < messages.Count; i++)
+					{
+						subParams.Add(new EventParameter(messages[i].ToBytes()));
+					}
+
+					EventMessage batchedParent = new EventMessage(
+						"fxevents:batch",
+						EventFlowType.Batched,
+						subParams,
+						isServer ? EventRemote.Server : EventRemote.Client
+					);
+
+					if (PrepareDelegate != null)
+					{
+						await PrepareDelegate(InboundPipeline, target, batchedParent);
+					}
+
+					if (EventHub.Gateway.GetSecret(target).Length == 0) continue;
+
+					byte[] data = (binding == Binding.Remote || (binding == Binding.Local && !isServer))
+						? batchedParent.EncryptObject(target)
+						: batchedParent.ToBytes();
+
+					PushDelegate?.Invoke(InboundPipeline, target, "fxevents:batch", binding, data);
+
+					if (EventHub.Debug)
+					{
+						Logger.Debug(string.Format("[Batch] Dispatched {0} events to target {1} in a single {2} bytes payload.", messages.Count, target, data.Length));
+					}
+				}
+			}
 		}
 	}
 }

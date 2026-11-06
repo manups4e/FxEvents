@@ -4,6 +4,7 @@ using FxEvents.Shared.Diagnostics;
 using FxEvents.Shared.Encryption;
 using FxEvents.Shared.EventSubsystem;
 using FxEvents.Shared.Message;
+using FxEvents.Shared.Payload;
 using FxEvents.Shared.Serialization;
 using FxEvents.Shared.Serialization.Implementations;
 using FxEvents.Shared.Snowflakes;
@@ -141,21 +142,45 @@ namespace FxEvents.EventSystem
         public void Send(List<ISource> clients, string endpoint, params object[] args) => Send(clients.Select(x => x.Handle).ToList(), endpoint, Binding.Remote, args);
         public void Send(string endpoint, params object[] args) => Send([], endpoint, Binding.Local, args);
 
-        public async void Send(List<int> targets, string endpoint, Binding binding, params object[] args)
+        public void Send(List<int> targets, string endpoint, Binding binding, params object[] args)
         {
-            if (binding == Binding.Remote)
-            {
-                int i = 0;
-                while (i < targets.Count)
-                {
-                    await BaseScript.Delay(0);
-                    Send(targets[i], endpoint, binding, args);
-                    i++;
-                }
-            }
-            else if (binding == Binding.Local)
+            if (targets == null || targets.Count == 0) return;
+
+            if (binding == Binding.Local)
             {
                 Send(-1, endpoint, binding, args);
+                return;
+            }
+
+            // 1. Pre-serialize parameters and message ONCE for all targets!
+            List<EventParameter> parameters = new List<EventParameter>(args.Length);
+            for (int idx = 0; idx < args.Length; idx++)
+            {
+                object argument = args[idx];
+                Type type = argument.GetType();
+                using (SerializationContext context = new SerializationContext(endpoint, string.Format("(Send) Parameter Index '{0}'", idx), Serialization))
+                {
+                    context.Serialize(type, argument);
+                    parameters.Add(new EventParameter(context.GetData()));
+                }
+            }
+
+            EventMessage message = new EventMessage(endpoint, EventFlowType.Straight, parameters, EventRemote.Server);
+            byte[] serializedMessage = message.ToBytes();
+
+            // 2. Encrypt and dispatch to each target player in the list
+            for (int i = 0; i < targets.Count; i++)
+            {
+                int target = targets[i];
+                if (string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target].Name))
+                    continue;
+
+                byte[] secret = GetSecret(target);
+                if (secret == null || secret.Length == 0)
+                    continue;
+
+                byte[] encryptedData = Encryption.EncryptBytes(serializedMessage, target);
+                PushDelegate(InboundPipeline, target, endpoint, binding, encryptedData);
             }
         }
 
@@ -165,19 +190,73 @@ namespace FxEvents.EventSystem
                 await CreateAndSendAsync(EventFlowType.Straight, target, endpoint, binding, args);
         }
 
+        public void SendBatched(Player player, string endpoint, params object[] args) => SendBatched(Convert.ToInt32(player.Handle), endpoint, args);
+        public void SendBatched(ISource client, string endpoint, params object[] args) => SendBatched(client.Handle, endpoint, args);
+        public void SendBatched(int target, string endpoint, params object[] args)
+        {
+            QueueBatched(EventFlowType.Straight, target, endpoint, Binding.Remote, args);
+        }
+        public void SendBatched(List<Player> players, string endpoint, params object[] args) => SendBatched(players.Select(x => int.Parse(x.Handle)).ToList(), endpoint, args);
+        public void SendBatched(List<ISource> clients, string endpoint, params object[] args) => SendBatched(clients.Select(x => x.Handle).ToList(), endpoint, args);
+        public void SendBatched(List<int> targets, string endpoint, params object[] args)
+        {
+            if (targets == null || targets.Count == 0) return;
+
+            List<EventParameter> parameters = new List<EventParameter>(args.Length);
+            for (int idx = 0; idx < args.Length; idx++)
+            {
+                object argument = args[idx];
+                Type type = argument.GetType();
+                using (SerializationContext context = new SerializationContext(endpoint, string.Format("(SendBatched) Parameter Index '{0}'", idx), Serialization))
+                {
+                    context.Serialize(type, argument);
+                    parameters.Add(new EventParameter(context.GetData()));
+                }
+            }
+
+            EventMessage message = new EventMessage(endpoint, EventFlowType.Straight, parameters, EventRemote.Server);
+            for (int i = 0; i < targets.Count; i++)
+            {
+                QueueBatchedMessage(targets[i], Binding.Remote, message);
+            }
+        }
+
         public void SendLatent(Player player, string endpoint, int bytesxSecond, params object[] args) => SendLatent(Convert.ToInt32(player.Handle), endpoint, bytesxSecond, args);
         public void SendLatent(ISource client, string endpoint, int bytesxSecond, params object[] args) => SendLatent(client.Handle, endpoint, bytesxSecond, args);
         public void SendLatent(List<Player> players, string endpoint, int bytesxSecond, params object[] args) => SendLatent(players.Select(x => Convert.ToInt32(x.Handle)).ToList(), endpoint, bytesxSecond, args);
         public void SendLatent(List<ISource> clients, string endpoint, int bytesxSecond, params object[] args) => SendLatent(clients.Select(x => x.Handle).ToList(), endpoint, bytesxSecond, args);
 
-        public async void SendLatent(List<int> targets, string endpoint, int bytesxSecond, params object[] args)
+        public void SendLatent(List<int> targets, string endpoint, int bytesxSecond, params object[] args)
         {
-            int i = 0;
-            while (i < targets.Count)
+            if (targets == null || targets.Count == 0) return;
+
+            List<EventParameter> parameters = new List<EventParameter>(args.Length);
+            for (int idx = 0; idx < args.Length; idx++)
             {
-                await BaseScript.Delay(0);
-                SendLatent(targets[i], endpoint, bytesxSecond, args);
-                i++;
+                object argument = args[idx];
+                Type type = argument.GetType();
+                using (SerializationContext context = new SerializationContext(endpoint, string.Format("(SendLatent) Parameter Index '{0}'", idx), Serialization))
+                {
+                    context.Serialize(type, argument);
+                    parameters.Add(new EventParameter(context.GetData()));
+                }
+            }
+
+            EventMessage message = new EventMessage(endpoint, EventFlowType.Straight, parameters, EventRemote.Server);
+            byte[] serializedMessage = message.ToBytes();
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                int target = targets[i];
+                if (string.IsNullOrWhiteSpace(EventHub.Instance.GetPlayers[target].Name))
+                    continue;
+
+                byte[] secret = GetSecret(target);
+                if (secret == null || secret.Length == 0)
+                    continue;
+
+                byte[] encryptedData = Encryption.EncryptBytes(serializedMessage, target);
+                PushDelegateLatent(InboundPipeline, target, bytesxSecond, endpoint, encryptedData);
             }
         }
 

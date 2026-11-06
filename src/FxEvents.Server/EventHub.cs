@@ -22,6 +22,7 @@ namespace FxEvents
         internal PlayerList GetPlayers => Players;
         internal static ServerGateway Gateway { get; set; }
         internal static bool Debug { get; set; }
+        public static bool AutoBatch { get; set; } = false;
         internal static bool Initialized = false;
         internal static EventHub Instance;
 
@@ -53,6 +54,7 @@ namespace FxEvents
             Gateway.OutboundPipeline = outbound.BytesToString();
             EventHandlers.Add("playerJoining", new Action<Player>(OnPlayerDropped));
             EventHandlers.Add("playerDropped", new Action<Player>(OnPlayerDropped));
+            Tick += OnTick;
         }
 
         public static void Initialize()
@@ -113,8 +115,12 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Gateway.Send(player, endpoint, args);
+            if (AutoBatch)
+                Gateway.SendBatched(player, endpoint, args);
+            else
+                Gateway.Send(player, endpoint, args);
         }
+
         public static void Send(ISource client, string endpoint, params object[] args)
         {
             if (!Initialized)
@@ -122,8 +128,12 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Gateway.Send(client, endpoint, args);
+            if (AutoBatch)
+                Gateway.SendBatched(client, endpoint, args);
+            else
+                Gateway.Send(client, endpoint, args);
         }
+
         public static void Send(IEnumerable<Player> players, string endpoint, params object[] args)
         {
             if (!Initialized)
@@ -131,7 +141,10 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Gateway.Send(players.ToList(), endpoint, args);
+            if (AutoBatch)
+                Gateway.SendBatched(players.ToList(), endpoint, args);
+            else
+                Gateway.Send(players.ToList(), endpoint, args);
         }
 
         public static void Send(string endpoint, params object[] args)
@@ -143,7 +156,10 @@ namespace FxEvents
             }
 
             PlayerList playerList = Instance.GetPlayers;
-            Gateway.Send(playerList.ToList(), endpoint, args);
+            if (AutoBatch)
+                Gateway.SendBatched(playerList.ToList(), endpoint, args);
+            else
+                Gateway.Send(playerList.ToList(), endpoint, args);
         }
 
         public static void Send(IEnumerable<ISource> clients, string endpoint, params object[] args)
@@ -153,7 +169,70 @@ namespace FxEvents
                 Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
                 return;
             }
-            Gateway.Send(clients.ToList(), endpoint, args);
+            if (AutoBatch)
+                Gateway.SendBatched(clients.ToList(), endpoint, args);
+            else
+                Gateway.Send(clients.ToList(), endpoint, args);
+        }
+
+        public static void SendBatched(Player player, string endpoint, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Gateway.SendBatched(player, endpoint, args);
+        }
+
+        public static void SendBatched(ISource client, string endpoint, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Gateway.SendBatched(client, endpoint, args);
+        }
+
+        public static void SendBatched(int target, string endpoint, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Gateway.SendBatched(target, endpoint, args);
+        }
+
+        public static void SendBatched(IEnumerable<Player> players, string endpoint, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Gateway.SendBatched(players.ToList(), endpoint, args);
+        }
+
+        public static void SendBatched(IEnumerable<ISource> clients, string endpoint, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Gateway.SendBatched(clients.ToList(), endpoint, args);
+        }
+
+        public static void SendBatched(List<int> targets, string endpoint, params object[] args)
+        {
+            if (!Initialized)
+            {
+                Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+                return;
+            }
+            Gateway.SendBatched(targets, endpoint, args);
         }
 
         public static void SendLocal(string endpoint, params object[] args)
@@ -244,6 +323,22 @@ namespace FxEvents
         public static void Unmount(string endpoint)
         {
             Gateway.Unmount(endpoint);
+        }
+
+        public static async Task Flush()
+        {
+            if (Gateway != null && Gateway.HasBatchedMessages)
+            {
+                await Gateway.FlushBatchAsync();
+            }
+        }
+
+        private async Task OnTick()
+        {
+            if (Gateway != null && Gateway.HasBatchedMessages)
+            {
+                await Gateway.FlushBatchAsync();
+            }
         }
 
         private void OnPlayerDropped([FromSource] Player player)

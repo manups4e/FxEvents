@@ -13,7 +13,7 @@ namespace FxEvents.Shared.Encryption
 		private static readonly Random random = new Random();
 
 		#region Byte encryption
-		private static byte[] EncryptBytes(byte[] data, object input)
+		internal static byte[] EncryptBytes(byte[] data, object input)
 		{
 			byte[] rgbIV = ByteArrayPool.Rent(16);
 			try
@@ -37,7 +37,7 @@ namespace FxEvents.Shared.Encryption
 				};
 
 				using ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
-				using PooledMemoryStream msEncrypt = new PooledMemoryStream(data.Length + 32);
+				using MemoryStream msEncrypt = new MemoryStream(data.Length + 32);
 
 				msEncrypt.Write(rgbIV, 0, 16);
 				using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
@@ -54,7 +54,7 @@ namespace FxEvents.Shared.Encryption
 			}
 		}
 
-		private static byte[] DecryptBytes(byte[] data, object input)
+		internal static byte[] DecryptBytes(byte[] data, object input)
 		{
 			if (data == null || data.Length < 16)
 				throw new ArgumentException("Encrypted data is invalid or too short.", nameof(data));
@@ -80,7 +80,7 @@ namespace FxEvents.Shared.Encryption
 				using ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 				using MemoryStream msDecrypt = new MemoryStream(data, 16, data.Length - 16, writable: false);
 				using CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
-				using PooledMemoryStream msDecrypted = new PooledMemoryStream(data.Length);
+				using MemoryStream msDecrypted = new MemoryStream(data.Length);
 
 				csDecrypt.CopyTo(msDecrypted);
 

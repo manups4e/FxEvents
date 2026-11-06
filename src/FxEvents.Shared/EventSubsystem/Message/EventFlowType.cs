@@ -1,8 +1,9 @@
-﻿namespace FxEvents.Shared.Message
+namespace FxEvents.Shared.Message
 {
     public enum EventFlowType
     {
         Straight,
-        Circular
+        Circular,
+        Batched
     }
 }

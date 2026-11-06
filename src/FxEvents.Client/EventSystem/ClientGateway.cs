@@ -118,6 +118,16 @@ namespace FxEvents.EventSystem
 			await CreateAndSendAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, binding, args);
 		}
 
+		public void SendBatched(string endpoint, params object[] args)
+		{
+			QueueBatched(EventFlowType.Straight, new ServerId().Handle, endpoint, Binding.Remote, args);
+		}
+
+		public void SendLocalBatched(string endpoint, params object[] args)
+		{
+			QueueBatched(EventFlowType.Straight, new ServerId().Handle, endpoint, Binding.Local, args);
+		}
+
 		public async void SendLatent(string endpoint, int bytePerSecond, params object[] args)
 		{
 			await CreateAndSendLatentAsync(EventFlowType.Straight, new ServerId().Handle, endpoint, bytePerSecond, args);
