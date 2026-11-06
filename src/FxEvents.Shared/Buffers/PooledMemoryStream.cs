@@ -156,6 +156,7 @@ namespace FxEvents.Shared.Buffers
 		/// </summary>
 		public byte[] ToArray()
 		{
+			if (_isDisposed) throw new ObjectDisposedException(nameof(PooledMemoryStream));
 			if (_length == 0) return new byte[0];
 			byte[] copy = new byte[_length];
 			Buffer.BlockCopy(_buffer, 0, copy, 0, _length);
@@ -165,7 +166,11 @@ namespace FxEvents.Shared.Buffers
 		/// <summary>
 		/// Provides direct access to the internal rented buffer. Length is available via <see cref="Length"/>.
 		/// </summary>
-		public byte[] GetBuffer() => _buffer;
+		public byte[] GetBuffer()
+		{
+			if (_isDisposed) throw new ObjectDisposedException(nameof(PooledMemoryStream));
+			return _buffer;
+		}
 
 		protected override void Dispose(bool disposing)
 		{
