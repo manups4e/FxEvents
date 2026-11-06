@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Configurations>Release RedM;Release FiveM;Debug RedM;Debug FiveM</Configurations>
 		<AssemblyTitle Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Release FiveM'">FxEvents FiveM Client</AssemblyTitle>
@@ -32,6 +32,7 @@
 		<Nullable>annotations</Nullable>
 		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<DefineConstants>$(DefineConstants);CLIENT</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug FiveM' Or '$(Configuration)' == 'Debug RedM'">
 		<DebugSymbols>true</DebugSymbols>

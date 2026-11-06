@@ -44,13 +44,44 @@ namespace FxEvents
 			Tick += OnTick;
 		}
 
-		public static void Initialize()
+		public static void Initialize(Action customRegistration = null)
 		{
+			if (Initialized) return;
 			Initialized = true;
 			Gateway.AddEvents();
 
+			if (customRegistration != null)
+			{
+				customRegistration();
+				if (Debug)
+					Logger.Debug("[FxEvents] Initialized via explicit registration delegate.");
+				return;
+			}
+
 			var assembly = Assembly.GetCallingAssembly();
-			// we keep it outside because multiple classes with same event callback? no sir no.
+
+			// 1. Fast-path: Check for Source Generator bindings (0 reflection scan)
+			try
+			{
+				var generatedType = assembly.GetType("FxEvents.Generated.FxEventsGeneratedBindings");
+				if (generatedType != null)
+				{
+					var registerMethod = generatedType.GetMethod("RegisterEvents", BindingFlags.Public | BindingFlags.Static);
+					if (registerMethod != null)
+					{
+						registerMethod.Invoke(null, null);
+						if (Debug)
+							Logger.Debug("[FxEvents] Initialized via compile-time Source Generator bindings (0 reflection scan).");
+						return;
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.Error($"[FxEvents] Error executing generated bindings: {ex.Message}");
+			}
+
+			// 2. Fallback: Slow reflection scan for legacy resources
 			List<string> withReturnType = new List<string>();
 
 			foreach (var type in assembly.GetTypes())
