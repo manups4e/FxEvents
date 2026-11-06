@@ -82,10 +82,10 @@ namespace FxEvents
             try
             {
                 var generatedType = assembly.GetType("FxEvents.Generated.FxEventsGeneratedBindings");
-                if (generatedType != null)
+                if ((object)generatedType != null)
                 {
                     var registerMethod = generatedType.GetMethod("RegisterEvents", BindingFlags.Public | BindingFlags.Static);
-                    if (registerMethod != null)
+                    if ((object)registerMethod != null)
                     {
                         registerMethod.Invoke(null, null);
                         if (Debug)
