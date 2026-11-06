@@ -9,6 +9,7 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
     <NoWarn>$(NoWarn);RS2008;RS1032;RS1036</NoWarn>
+    <BaseOutputPath>..\..\CompiledLibs\SourceGenerator</BaseOutputPath>
     <PackageId>FxEvents.SourceGenerator</PackageId>
     <Description>Roslyn Source Generator for FxEvents compile-time event binding.</Description>
     <PackageProjectUrl>https://github.com/manups4e/FxEvents</PackageProjectUrl>
