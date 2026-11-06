@@ -1,4 +1,4 @@
-﻿global using CitizenFX.Core;
+global using CitizenFX.Core;
 global using CitizenFX.Core.Native;
 using FxEvents.EventSystem;
 using FxEvents.Shared;
@@ -21,6 +21,7 @@ namespace FxEvents
 		internal PlayerList GetPlayers => Players;
 		internal static ClientGateway Gateway;
 		internal static bool Debug { get; set; }
+		public static bool AutoBatch { get; set; } = false;
 		internal static bool Initialized = false;
 		internal static EventHub Instance;
 		public static EventsDictionary Events => Gateway._handlers;
@@ -40,6 +41,7 @@ namespace FxEvents
 			Gateway.SignaturePipeline = signature.BytesToString();
 			Gateway.InboundPipeline = inbound.BytesToString();
 			Gateway.OutboundPipeline = outbound.BytesToString();
+			Tick += OnTick;
 		}
 
 		public static void Initialize()
@@ -125,7 +127,10 @@ namespace FxEvents
 				Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
 				return;
 			}
-			Gateway.Send(endpoint, Binding.Remote, args);
+			if (AutoBatch)
+				Gateway.SendBatched(endpoint, args);
+			else
+				Gateway.Send(endpoint, Binding.Remote, args);
 		}
 
 		public static void SendLocal(string endpoint, params object[] args)
@@ -135,7 +140,30 @@ namespace FxEvents
 				Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
 				return;
 			}
-			Gateway.Send(endpoint, Binding.Local, args);
+			if (AutoBatch)
+				Gateway.SendLocalBatched(endpoint, args);
+			else
+				Gateway.Send(endpoint, Binding.Local, args);
+		}
+
+		public static void SendBatched(string endpoint, params object[] args)
+		{
+			if (!Initialized)
+			{
+				Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+				return;
+			}
+			Gateway.SendBatched(endpoint, args);
+		}
+
+		public static void SendLocalBatched(string endpoint, params object[] args)
+		{
+			if (!Initialized)
+			{
+				Logger.Error("Dispatcher not initialized, please initialize it and add the events strings");
+				return;
+			}
+			Gateway.SendLocalBatched(endpoint, args);
 		}
 
 		public static void SendLatent(string endpoint, int bytesPerSeconds, params object[] args)
@@ -157,6 +185,7 @@ namespace FxEvents
 			}
 			return await Gateway.Get<T>(endpoint, args);
 		}
+
 		public static void Mount(string endpoint, Binding binding, Delegate @delegate)
 		{
 			if (!Initialized)
@@ -166,6 +195,7 @@ namespace FxEvents
 			}
 			Gateway.Mount(endpoint, binding, @delegate);
 		}
+
 		public static void Unmount(string endpoint)
 		{
 			if (!Initialized)
@@ -176,5 +206,20 @@ namespace FxEvents
 			Gateway.Unmount(endpoint);
 		}
 
+		public static async Task Flush()
+		{
+			if (Gateway != null && Gateway.HasBatchedMessages)
+			{
+				await Gateway.FlushBatchAsync();
+			}
+		}
+
+		private async Task OnTick()
+		{
+			if (Gateway != null && Gateway.HasBatchedMessages)
+			{
+				await Gateway.FlushBatchAsync();
+			}
+		}
 	}
 }

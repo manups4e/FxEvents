@@ -13,7 +13,7 @@ namespace FxEvents.Shared.Encryption
 		private static readonly Random random = new Random();
 
 		#region Byte encryption
-		private static byte[] EncryptBytes(byte[] data, object input)
+		internal static byte[] EncryptBytes(byte[] data, object input)
 		{
 			byte[] rgbIV = ByteArrayPool.Rent(16);
 			try
@@ -54,7 +54,7 @@ namespace FxEvents.Shared.Encryption
 			}
 		}
 
-		private static byte[] DecryptBytes(byte[] data, object input)
+		internal static byte[] DecryptBytes(byte[] data, object input)
 		{
 			if (data == null || data.Length < 16)
 				throw new ArgumentException("Encrypted data is invalid or too short.", nameof(data));
