@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using FxEvents.Shared.Buffers;
 
 namespace FxEvents.Shared.Serialization
 {
@@ -30,16 +31,24 @@ namespace FxEvents.Shared.Serialization
         internal byte[]? Original { get; set; }
 
         private ISerialization _serialization;
-        private MemoryStream _memory;
+        private Stream _memory;
         private BinaryReader? _reader;
         private BinaryWriter? _writer;
 
         internal byte[] GetData()
         {
-            return _memory.ToArray();
+            if (_memory is PooledMemoryStream pooled)
+                return pooled.ToArray();
+            if (_memory is MemoryStream ms)
+                return ms.ToArray();
+
+            using MemoryStream temp = new MemoryStream();
+            _memory.Position = 0;
+            _memory.CopyTo(temp);
+            return temp.ToArray();
         }
 
-        internal MemoryStream GetMemory()
+        internal Stream GetMemory()
         {
             return _memory;
         }
@@ -49,7 +58,7 @@ namespace FxEvents.Shared.Serialization
             Source = source;
             Details = details;
             _serialization = serialization;
-            _memory = data != null ? new MemoryStream(data) : new MemoryStream();
+            _memory = data != null ? new MemoryStream(data, writable: false) : new PooledMemoryStream();
 
             if (data != null)
             {

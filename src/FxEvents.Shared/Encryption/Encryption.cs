@@ -1,3 +1,4 @@
+using FxEvents.Shared.Buffers;
 using System;
 using System.IO;
 using System.Linq;
@@ -12,40 +13,45 @@ namespace FxEvents.Shared.Encryption
 		private static readonly Random random = new Random();
 
 		#region Byte encryption
-		private static byte[] GenerateIV()
-		{
-			byte[] rgbIV = new byte[16];
-			lock (random)
-			{
-				random.NextBytes(rgbIV);
-			}
-			return rgbIV;
-		}
-
 		private static byte[] EncryptBytes(byte[] data, object input)
 		{
-			byte[] rgbIV = GenerateIV();
-			byte[] keyBytes = input switch
+			byte[] rgbIV = ByteArrayPool.Rent(16);
+			try
 			{
-				int sourceId => EventHub.Gateway.GetSecret(sourceId),
-				string strKey => GenerateHash(strKey),
-				_ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
-			};
-			using AesManaged aesAlg = new AesManaged
+				lock (random)
+				{
+					random.NextBytes(rgbIV);
+				}
+
+				byte[] keyBytes = input switch
+				{
+					int sourceId => EventHub.Gateway.GetSecret(sourceId),
+					string strKey => GenerateHash(strKey),
+					_ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
+				};
+
+				using AesManaged aesAlg = new AesManaged
+				{
+					Key = keyBytes,
+					IV = rgbIV
+				};
+
+				using ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+				using PooledMemoryStream msEncrypt = new PooledMemoryStream(data.Length + 32);
+
+				msEncrypt.Write(rgbIV, 0, 16);
+				using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+				{
+					csEncrypt.Write(data, 0, data.Length);
+					csEncrypt.FlushFinalBlock();
+				}
+
+				return msEncrypt.ToArray();
+			}
+			finally
 			{
-				Key = keyBytes,
-				IV = rgbIV
-			};
-
-			ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
-
-			using MemoryStream msEncrypt = new MemoryStream();
-			msEncrypt.Write(rgbIV, 0, rgbIV.Length);
-			using CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
-			csEncrypt.Write(data, 0, data.Length);
-			csEncrypt.FlushFinalBlock();
-
-			return msEncrypt.ToArray();
+				ByteArrayPool.Return(rgbIV);
+			}
 		}
 
 		private static byte[] DecryptBytes(byte[] data, object input)
@@ -53,29 +59,37 @@ namespace FxEvents.Shared.Encryption
 			if (data == null || data.Length < 16)
 				throw new ArgumentException("Encrypted data is invalid or too short.", nameof(data));
 
-			byte[] rgbIV = new byte[16];
-			Buffer.BlockCopy(data, 0, rgbIV, 0, 16);
-
-			byte[] keyBytes = input switch
+			byte[] rgbIV = ByteArrayPool.Rent(16);
+			try
 			{
-				int sourceId => EventHub.Gateway.GetSecret(sourceId),
-				string strKey => GenerateHash(strKey),
-				_ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
-			};
-			using AesManaged aesAlg = new AesManaged
+				Buffer.BlockCopy(data, 0, rgbIV, 0, 16);
+
+				byte[] keyBytes = input switch
+				{
+					int sourceId => EventHub.Gateway.GetSecret(sourceId),
+					string strKey => GenerateHash(strKey),
+					_ => throw new ArgumentException("Input must be an int or a string.", nameof(input)),
+				};
+
+				using AesManaged aesAlg = new AesManaged
+				{
+					Key = keyBytes,
+					IV = rgbIV
+				};
+
+				using ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+				using MemoryStream msDecrypt = new MemoryStream(data, 16, data.Length - 16, writable: false);
+				using CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+				using PooledMemoryStream msDecrypted = new PooledMemoryStream(data.Length);
+
+				csDecrypt.CopyTo(msDecrypted);
+
+				return msDecrypted.ToArray();
+			}
+			finally
 			{
-				Key = keyBytes,
-				IV = rgbIV
-			};
-
-			ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-
-			using MemoryStream msDecrypt = new MemoryStream(data, 16, data.Length - 16, writable: false);
-			using CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
-			using MemoryStream msDecrypted = new MemoryStream();
-			csDecrypt.CopyTo(msDecrypted);
-
-			return msDecrypted.ToArray();
+				ByteArrayPool.Return(rgbIV);
+			}
 		}
 		#endregion
 

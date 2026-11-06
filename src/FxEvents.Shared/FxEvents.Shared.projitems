@@ -10,6 +10,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)BinaryHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buffers\ByteArrayPool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buffers\PooledMemoryStream.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ContractResolvers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Encryption\Encryption.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Encryption\Curve25519.cs" />
