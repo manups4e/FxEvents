@@ -44,7 +44,12 @@ namespace FxEvents
 			Tick += OnTick;
 		}
 
-		public static void Initialize(Action customRegistration = null)
+		public static void Initialize()
+		{
+			Initialize(null);
+		}
+
+		public static void Initialize(Action customRegistration)
 		{
 			if (Initialized) return;
 			Initialized = true;
